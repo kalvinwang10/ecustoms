@@ -1,0 +1,10 @@
+<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Outer shield border -->
+  <path d="M24 2L6 8v12c0 11.25 7.5 21.75 18 26 10.5-4.25 18-14.75 18-26V8L24 2z" fill="#1e3a8a" stroke="#0f172a" stroke-width="1"/>
+  
+  <!-- Inner shield -->
+  <path d="M24 4L8 9v11c0 10 6.5 19 16 23 9.5-4 16-13 16-23V9L24 4z" fill="#1e40af"/>
+  
+  <!-- e-CD text -->
+  <text x="24" y="24" text-anchor="middle" dominant-baseline="middle" fill="#ffffff" font-family="serif" font-size="10" font-weight="bold">e-CD</text>
+</svg>
