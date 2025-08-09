@@ -16,7 +16,7 @@ interface FormWizardProps {
   language: Language;
 }
 
-export default function FormWizard({ currentStep, steps, children, language }: FormWizardProps) {
+export default function FormWizard({ currentStep, steps, children }: FormWizardProps) {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="bg-white border-b border-gray-200">

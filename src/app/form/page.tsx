@@ -1,13 +1,22 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
-import FormWizard from '@/components/FormWizard';
 import FormInput from '@/components/ui/FormInput';
 import FormSelect from '@/components/ui/FormSelect';
 import { Language, getTranslation } from '@/lib/translations';
 import { FormData, initialFormData } from '@/lib/formData';
+import { trackFormSubmission } from '@/lib/gtag';
+import { 
+  trackFormStart, 
+  trackFormFieldUpdate, 
+  trackFormValidationError, 
+  trackFormSubmission as trackMixpanelFormSubmission,
+  trackButtonClick,
+  trackLanguageChange,
+  trackUserJourney 
+} from '@/lib/mixpanel';
 
 const countries = [
   { value: 'AD', label: 'AD - ANDORRA' },
@@ -290,12 +299,33 @@ export default function FormPage() {
   const [language, setLanguage] = useState<Language>('en');
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [formStarted, setFormStarted] = useState(false);
+
+  // Track form start when component mounts
+  useEffect(() => {
+    trackUserJourney('Form Page Loaded', 3);
+  }, []);
+
+  // Handle language changes
+  const handleLanguageChange = (newLanguage: Language) => {
+    trackLanguageChange(newLanguage, language);
+    setLanguage(newLanguage);
+  };
 
   const updateFormData = (field: keyof FormData, value: string) => {
+    // Track form start on first field interaction
+    if (!formStarted) {
+      trackFormStart();
+      setFormStarted(true);
+    }
+
     setFormData(prev => ({
       ...prev,
       [field]: value,
     }));
+    
+    // Track field update in Mixpanel
+    trackFormFieldUpdate(field, value);
     
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }));
@@ -306,16 +336,24 @@ export default function FormPage() {
     const newErrors: Record<string, string> = {};
     
     if (!formData.fullPassportName.trim()) {
-      newErrors.fullPassportName = getTranslation('fullPassportNameRequired', language);
+      const errorMsg = getTranslation('fullPassportNameRequired', language);
+      newErrors.fullPassportName = errorMsg;
+      trackFormValidationError('fullPassportName', errorMsg);
     }
     if (!formData.nationality) {
-      newErrors.nationality = getTranslation('nationalityRequired', language);
+      const errorMsg = getTranslation('nationalityRequired', language);
+      newErrors.nationality = errorMsg;
+      trackFormValidationError('nationality', errorMsg);
     }
     if (!formData.flightNumber.trim()) {
-      newErrors.flightNumber = getTranslation('flightNumberRequired', language);
+      const errorMsg = getTranslation('flightNumberRequired', language);
+      newErrors.flightNumber = errorMsg;
+      trackFormValidationError('flightNumber', errorMsg);
     }
     if (!formData.arrivalDate) {
-      newErrors.arrivalDate = getTranslation('arrivalDateRequired', language);
+      const errorMsg = getTranslation('arrivalDateRequired', language);
+      newErrors.arrivalDate = errorMsg;
+      trackFormValidationError('arrivalDate', errorMsg);
     } else {
       // Validate date is within allowed range (today to 3 days from today)
       const selectedDate = new Date(formData.arrivalDate);
@@ -325,13 +363,19 @@ export default function FormPage() {
       maxDate.setDate(today.getDate() + 3);
       
       if (selectedDate < today) {
-        newErrors.arrivalDate = getTranslation('arrivalDatePast', language);
+        const errorMsg = getTranslation('arrivalDatePast', language);
+        newErrors.arrivalDate = errorMsg;
+        trackFormValidationError('arrivalDate', errorMsg);
       } else if (selectedDate > maxDate) {
-        newErrors.arrivalDate = getTranslation('arrivalDateTooFar', language);
+        const errorMsg = getTranslation('arrivalDateTooFar', language);
+        newErrors.arrivalDate = errorMsg;
+        trackFormValidationError('arrivalDate', errorMsg);
       }
     }
     if (!formData.portOfArrival) {
-      newErrors.portOfArrival = getTranslation('portOfArrivalRequired', language);
+      const errorMsg = getTranslation('portOfArrivalRequired', language);
+      newErrors.portOfArrival = errorMsg;
+      trackFormValidationError('portOfArrival', errorMsg);
     }
 
     setErrors(newErrors);
@@ -339,10 +383,20 @@ export default function FormPage() {
   };
 
   const handleSubmit = () => {
+    trackButtonClick('Continue to E-Customs', 'Form Page');
+    trackUserJourney('Form Submit Attempted', 4);
+    
     if (validateForm()) {
-      // Redirect to official Indonesian e-CD system
-      window.open('https://ecd.beacukai.go.id/', '_blank');
+      // Track successful form submission in both systems
+      trackMixpanelFormSubmission();
+      trackFormSubmission('https://ecd.beacukai.go.id/');
+      trackUserJourney('Form Submitted Successfully', 5);
     }
+  };
+
+  const handleBackToHome = () => {
+    trackButtonClick('Back to Home', 'Form Page');
+    router.push('/');
   };
 
   // Get today's date and max date (3 days from today) in YYYY-MM-DD format
@@ -360,7 +414,7 @@ export default function FormPage() {
 
   return (
     <div>
-      <Header language={language} onLanguageChange={setLanguage} />
+      <Header language={language} onLanguageChange={handleLanguageChange} />
       
       <div className="min-h-screen bg-gray-50">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
@@ -438,7 +492,7 @@ export default function FormPage() {
               <div className="flex flex-col sm:flex-row justify-between gap-4">
                 <button
                   type="button"
-                  onClick={() => router.push('/')}
+                  onClick={handleBackToHome}
                   className="px-4 sm:px-6 py-2 sm:py-3 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 text-sm sm:text-base"
                 >
                   {getTranslation('backToHome', language)}

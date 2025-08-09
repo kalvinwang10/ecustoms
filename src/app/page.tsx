@@ -1,17 +1,32 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Language, getTranslation } from '@/lib/translations';
+import { trackButtonClick, trackLanguageChange, trackUserJourney } from '@/lib/mixpanel';
 
 export default function Home() {
   const [language, setLanguage] = useState<Language>('en');
 
+  useEffect(() => {
+    trackUserJourney('Home Page Loaded', 1);
+  }, []);
+
+  const handleLanguageChange = (newLanguage: Language) => {
+    trackLanguageChange(newLanguage, language);
+    setLanguage(newLanguage);
+  };
+
+  const handleStartFormClick = (location: string) => {
+    trackButtonClick('Start Form', location);
+    trackUserJourney('Form Start Clicked', 2);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header language={language} onLanguageChange={setLanguage} />
+      <Header language={language} onLanguageChange={handleLanguageChange} />
       
       <main>
         <section className="py-12 sm:py-16 min-h-[50vh] sm:min-h-0 flex items-center" style={{backgroundColor: '#153854'}}>
@@ -25,6 +40,7 @@ export default function Home() {
               </p>
               <Link
                 href="/form"
+                onClick={() => handleStartFormClick('Hero Section')}
                 className="inline-flex items-center px-6 py-3 sm:px-8 sm:py-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors shadow-lg text-sm sm:text-base"
               >
                 {getTranslation('continueOnline', language)}
@@ -131,6 +147,7 @@ export default function Home() {
             </p>
             <Link
               href="/form"
+              onClick={() => handleStartFormClick('CTA Section')}
               className="inline-flex items-center px-6 py-3 sm:px-8 sm:py-4 bg-white text-blue-600 font-semibold rounded-lg hover:bg-gray-100 transition-colors shadow-lg text-sm sm:text-base"
             >
               {getTranslation('continueOnline', language)}
