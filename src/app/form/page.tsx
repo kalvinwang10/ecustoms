@@ -317,7 +317,7 @@ export default function FormPage() {
     setLanguage(newLanguage);
   };
 
-  const updateFormData = (field: keyof FormData, value: any) => {
+  const updateFormData = (field: keyof FormData, value: string | boolean | Array<any> | null) => {
     // Track form start on first field interaction
     if (!formStarted) {
       trackFormStart();
@@ -473,7 +473,7 @@ export default function FormPage() {
       
       // Validate each declared good
       if (formData.hasGoodsToDeclarate && formData.declaredGoods.length > 0) {
-        formData.declaredGoods.forEach((good, index) => {
+        formData.declaredGoods.forEach((good) => {
           if (!good.description.trim()) {
             const errorMsg = getTranslation('goodDescriptionRequired', language);
             newErrors[`good-${good.id}-description`] = errorMsg;
@@ -542,10 +542,6 @@ export default function FormPage() {
     }
   };
 
-  const handleBackToHome = () => {
-    trackButtonClick('Back to Home', 'Form Page');
-    router.push('/');
-  };
 
   // Get today's date and max date (3 days from today) in YYYY-MM-DD format
   const getTodayDate = () => {
@@ -936,7 +932,7 @@ export default function FormPage() {
               name="hasGoodsToDeclarate"
               value="true"
               checked={formData.hasGoodsToDeclarate === true}
-              onChange={(e) => updateFormData('hasGoodsToDeclarate', true)}
+              onChange={() => updateFormData('hasGoodsToDeclarate', true)}
               className="w-4 h-4 text-blue-600 focus:ring-blue-500"
             />
             <span className="text-sm font-medium text-gray-700">
@@ -950,7 +946,7 @@ export default function FormPage() {
               name="hasGoodsToDeclarate"
               value="false"
               checked={formData.hasGoodsToDeclarate === false}
-              onChange={(e) => updateFormData('hasGoodsToDeclarate', false)}
+              onChange={() => updateFormData('hasGoodsToDeclarate', false)}
               className="w-4 h-4 text-blue-600 focus:ring-blue-500"
             />
             <span className="text-sm font-medium text-gray-700">
@@ -1006,7 +1002,7 @@ export default function FormPage() {
               name="hasTechnologyDevices"
               value="true"
               checked={formData.hasTechnologyDevices === true}
-              onChange={(e) => updateFormData('hasTechnologyDevices', true)}
+              onChange={() => updateFormData('hasTechnologyDevices', true)}
               className="w-4 h-4 text-blue-600 focus:ring-blue-500"
             />
             <span className="text-sm font-medium text-gray-700">
@@ -1020,7 +1016,7 @@ export default function FormPage() {
               name="hasTechnologyDevices"
               value="false"
               checked={formData.hasTechnologyDevices === false}
-              onChange={(e) => updateFormData('hasTechnologyDevices', false)}
+              onChange={() => updateFormData('hasTechnologyDevices', false)}
               className="w-4 h-4 text-blue-600 focus:ring-blue-500"
             />
             <span className="text-sm font-medium text-gray-700">

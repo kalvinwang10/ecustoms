@@ -57,8 +57,8 @@ export const initialFormData: FormData = {
   familyMembers: [],
   
   // Page 3: Customs Declaration (Official Indonesian Form)
-  hasGoodsToDeclarate: null as any,
+  hasGoodsToDeclarate: null,
   declaredGoods: [],
-  hasTechnologyDevices: null as any,
+  hasTechnologyDevices: null,
   consentAccurate: false,
 };
