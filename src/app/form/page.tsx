@@ -1,10 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import FormInput from '@/components/ui/FormInput';
 import FormSelect from '@/components/ui/FormSelect';
+import FormCheckbox from '@/components/ui/FormCheckbox';
+import FamilyMemberManager from '@/components/ui/FamilyMemberManager';
+import DateOfBirthSelect from '@/components/ui/DateOfBirthSelect';
+import ArrivalDateSelect from '@/components/ui/ArrivalDateSelect';
+import GoodsDeclarationTable from '@/components/ui/GoodsDeclarationTable';
 import { Language, getTranslation } from '@/lib/translations';
 import { FormData, initialFormData } from '@/lib/formData';
 import { trackFormSubmission } from '@/lib/gtag';
@@ -295,7 +299,6 @@ const ports = [
 ];
 
 export default function FormPage() {
-  const router = useRouter();
   const [language, setLanguage] = useState<Language>('en');
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -312,7 +315,7 @@ export default function FormPage() {
     setLanguage(newLanguage);
   };
 
-  const updateFormData = (field: keyof FormData, value: string) => {
+  const updateFormData = (field: keyof FormData, value: string | boolean | number | unknown[] | null) => {
     // Track form start on first field interaction
     if (!formStarted) {
       trackFormStart();
@@ -324,58 +327,198 @@ export default function FormPage() {
       [field]: value,
     }));
     
-    // Track field update in Mixpanel
-    trackFormFieldUpdate(field, value);
+    // Track field update in Mixpanel (only for simple values, not arrays)
+    if (typeof value !== 'object') {
+      trackFormFieldUpdate(field, typeof value === 'string' ? value : value?.toString() || '');
+    }
     
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }));
     }
   };
 
-  const validateForm = () => {
-    const newErrors: Record<string, string> = {};
-    
-    if (!formData.fullPassportName.trim()) {
-      const errorMsg = getTranslation('fullPassportNameRequired', language);
-      newErrors.fullPassportName = errorMsg;
-      trackFormValidationError('fullPassportName', errorMsg);
-    }
-    if (!formData.nationality) {
-      const errorMsg = getTranslation('nationalityRequired', language);
-      newErrors.nationality = errorMsg;
-      trackFormValidationError('nationality', errorMsg);
-    }
-    if (!formData.flightNumber.trim()) {
-      const errorMsg = getTranslation('flightNumberRequired', language);
-      newErrors.flightNumber = errorMsg;
-      trackFormValidationError('flightNumber', errorMsg);
-    }
-    if (!formData.arrivalDate) {
-      const errorMsg = getTranslation('arrivalDateRequired', language);
-      newErrors.arrivalDate = errorMsg;
-      trackFormValidationError('arrivalDate', errorMsg);
-    } else {
-      // Validate date is within allowed range (today to 3 days from today)
-      const selectedDate = new Date(formData.arrivalDate);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0); // Reset time to start of day
-      const maxDate = new Date(today);
-      maxDate.setDate(today.getDate() + 3);
-      
-      if (selectedDate < today) {
-        const errorMsg = getTranslation('arrivalDatePast', language);
-        newErrors.arrivalDate = errorMsg;
-        trackFormValidationError('arrivalDate', errorMsg);
-      } else if (selectedDate > maxDate) {
-        const errorMsg = getTranslation('arrivalDateTooFar', language);
-        newErrors.arrivalDate = errorMsg;
-        trackFormValidationError('arrivalDate', errorMsg);
+  const nextStep = () => {
+    if (validateCurrentStep()) {
+      if (formData.currentStep < 3) {
+        updateFormData('currentStep', formData.currentStep + 1);
+        trackUserJourney(`Step ${formData.currentStep + 1} Started`, formData.currentStep + 3);
       }
     }
-    if (!formData.portOfArrival) {
-      const errorMsg = getTranslation('portOfArrivalRequired', language);
-      newErrors.portOfArrival = errorMsg;
-      trackFormValidationError('portOfArrival', errorMsg);
+  };
+
+  const previousStep = () => {
+    if (formData.currentStep > 1) {
+      updateFormData('currentStep', formData.currentStep - 1);
+    }
+  };
+
+  const validateCurrentStep = () => {
+    const newErrors: Record<string, string> = {};
+
+    if (formData.currentStep === 1) {
+      // Page 1: Declaration & Disclaimer validation - no validation required, just informational
+    } else if (formData.currentStep === 2) {
+      // Page 2: Arrival Information & Passenger Information validation
+      if (!formData.fullPassportName.trim()) {
+        const errorMsg = getTranslation('fullPassportNameRequired', language);
+        newErrors.fullPassportName = errorMsg;
+        trackFormValidationError('fullPassportName', errorMsg);
+      }
+      if (!formData.passportNumber.trim()) {
+        const errorMsg = getTranslation('passportNumberRequired', language);
+        newErrors.passportNumber = errorMsg;
+        trackFormValidationError('passportNumber', errorMsg);
+      }
+      if (!formData.dateOfBirth.trim()) {
+        const errorMsg = getTranslation('dateOfBirthRequired', language);
+        newErrors.dateOfBirth = errorMsg;
+        trackFormValidationError('dateOfBirth', errorMsg);
+      } else {
+        // Validate date of birth
+        const [year, month, day] = formData.dateOfBirth.split('-');
+        if (year && month && day) {
+          const birthDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+          const today = new Date();
+          today.setHours(23, 59, 59, 999); // End of today
+          
+          // Check if the date is valid (handles invalid dates like Feb 30)
+          const isValidCalendarDate = 
+            birthDate.getFullYear() === parseInt(year) &&
+            birthDate.getMonth() === parseInt(month) - 1 &&
+            birthDate.getDate() === parseInt(day);
+          
+          // Check if the date is not in the future
+          const isNotFuture = birthDate <= today;
+          
+          if (!isValidCalendarDate) {
+            const errorMsg = getTranslation('dateOfBirthInvalid', language);
+            newErrors.dateOfBirth = errorMsg;
+            trackFormValidationError('dateOfBirth', errorMsg);
+          } else if (!isNotFuture) {
+            const errorMsg = getTranslation('dateOfBirthFuture', language);
+            newErrors.dateOfBirth = errorMsg;
+            trackFormValidationError('dateOfBirth', errorMsg);
+          }
+        }
+      }
+      if (!formData.flightVesselNumber.trim()) {
+        const errorMsg = getTranslation('flightVesselNumberRequired', language);
+        newErrors.flightVesselNumber = errorMsg;
+        trackFormValidationError('flightVesselNumber', errorMsg);
+      }
+      if (!formData.nationality) {
+        const errorMsg = getTranslation('nationalityRequired', language);
+        newErrors.nationality = errorMsg;
+        trackFormValidationError('nationality', errorMsg);
+      }
+      if (!formData.numberOfLuggage.trim()) {
+        const errorMsg = getTranslation('numberOfLuggageRequired', language);
+        newErrors.numberOfLuggage = errorMsg;
+        trackFormValidationError('numberOfLuggage', errorMsg);
+      } else if (parseInt(formData.numberOfLuggage) < 0) {
+        const errorMsg = getTranslation('numberOfLuggageInvalid', language);
+        newErrors.numberOfLuggage = errorMsg;
+        trackFormValidationError('numberOfLuggage', errorMsg);
+      }
+      if (!formData.addressInIndonesia.trim()) {
+        const errorMsg = getTranslation('addressInIndonesiaRequired', language);
+        newErrors.addressInIndonesia = errorMsg;
+        trackFormValidationError('addressInIndonesia', errorMsg);
+      }
+      if (!formData.arrivalDate) {
+        const errorMsg = getTranslation('arrivalDateRequired', language);
+        newErrors.arrivalDate = errorMsg;
+        trackFormValidationError('arrivalDate', errorMsg);
+      } else {
+        // Validate date is one of the allowed options (today, +1 day, +2 days)
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        const allowedDates = [];
+        for (let i = 0; i <= 2; i++) {
+          const allowedDate = new Date(today);
+          allowedDate.setDate(today.getDate() + i);
+          allowedDates.push(allowedDate.toISOString().split('T')[0]);
+        }
+        
+        if (!allowedDates.includes(formData.arrivalDate)) {
+          const errorMsg = getTranslation('arrivalDateInvalid', language);
+          newErrors.arrivalDate = errorMsg;
+          trackFormValidationError('arrivalDate', errorMsg);
+        }
+      }
+      if (!formData.portOfArrival) {
+        const errorMsg = getTranslation('portOfArrivalRequired', language);
+        newErrors.portOfArrival = errorMsg;
+        trackFormValidationError('portOfArrival', errorMsg);
+      }
+    } else if (formData.currentStep === 3) {
+      // Page 3: Customs Declaration validation
+      
+      // Check if goods declaration is selected
+      if (formData.hasGoodsToDeclarate === null || formData.hasGoodsToDeclarate === undefined) {
+        const errorMsg = getTranslation('goodsDeclarationRequired', language);
+        newErrors.hasGoodsToDeclarate = errorMsg;
+        trackFormValidationError('hasGoodsToDeclarate', errorMsg);
+      }
+      
+      // If declaring goods, validate at least one item is added
+      if (formData.hasGoodsToDeclarate && formData.declaredGoods.length === 0) {
+        const errorMsg = getTranslation('declaredGoodsRequired', language);
+        newErrors.declaredGoods = errorMsg;
+        trackFormValidationError('declaredGoods', errorMsg);
+      }
+      
+      // Validate each declared good
+      if (formData.hasGoodsToDeclarate && formData.declaredGoods.length > 0) {
+        formData.declaredGoods.forEach((good) => {
+          if (!good.description.trim()) {
+            const errorMsg = getTranslation('goodDescriptionRequired', language);
+            newErrors[`good-${good.id}-description`] = errorMsg;
+            trackFormValidationError(`good-${good.id}-description`, errorMsg);
+          }
+          
+          if (!good.quantity.trim()) {
+            const errorMsg = getTranslation('quantityRequired', language);
+            newErrors[`good-${good.id}-quantity`] = errorMsg;
+            trackFormValidationError(`good-${good.id}-quantity`, errorMsg);
+          } else if (parseInt(good.quantity) <= 0) {
+            const errorMsg = getTranslation('quantityInvalid', language);
+            newErrors[`good-${good.id}-quantity`] = errorMsg;
+            trackFormValidationError(`good-${good.id}-quantity`, errorMsg);
+          }
+          
+          if (!good.value.trim()) {
+            const errorMsg = getTranslation('valueRequired', language);
+            newErrors[`good-${good.id}-value`] = errorMsg;
+            trackFormValidationError(`good-${good.id}-value`, errorMsg);
+          } else if (parseFloat(good.value) <= 0) {
+            const errorMsg = getTranslation('valueInvalid', language);
+            newErrors[`good-${good.id}-value`] = errorMsg;
+            trackFormValidationError(`good-${good.id}-value`, errorMsg);
+          }
+          
+          if (!good.currency) {
+            const errorMsg = getTranslation('currencyRequired', language);
+            newErrors[`good-${good.id}-currency`] = errorMsg;
+            trackFormValidationError(`good-${good.id}-currency`, errorMsg);
+          }
+        });
+      }
+      
+      // Check if technology devices selection is made
+      if (formData.hasTechnologyDevices === null || formData.hasTechnologyDevices === undefined) {
+        const errorMsg = getTranslation('technologyDevicesRequired', language);
+        newErrors.hasTechnologyDevices = errorMsg;
+        trackFormValidationError('hasTechnologyDevices', errorMsg);
+      }
+      
+      // Check final consent
+      if (!formData.consentAccurate) {
+        const errorMsg = getTranslation('consentRequired', language);
+        newErrors.consentAccurate = errorMsg;
+        trackFormValidationError('consentAccurate', errorMsg);
+      }
     }
 
     setErrors(newErrors);
@@ -386,31 +529,501 @@ export default function FormPage() {
     trackButtonClick('Continue to E-Customs', 'Form Page');
     trackUserJourney('Form Submit Attempted', 4);
     
-    if (validateForm()) {
+    if (validateCurrentStep()) {
       // Track successful form submission in both systems
       trackMixpanelFormSubmission();
       trackFormSubmission('https://ecd.beacukai.go.id/');
       trackUserJourney('Form Submitted Successfully', 5);
+      
+      // Redirect to official Indonesian e-CD system
+      window.open('https://ecd.beacukai.go.id/', '_blank');
     }
   };
 
-  const handleBackToHome = () => {
-    trackButtonClick('Back to Home', 'Form Page');
-    router.push('/');
-  };
 
-  // Get today's date and max date (3 days from today) in YYYY-MM-DD format
-  const getTodayDate = () => {
-    const today = new Date();
-    return today.toISOString().split('T')[0];
-  };
 
-  const getMaxDate = () => {
-    const today = new Date();
-    const maxDate = new Date(today);
-    maxDate.setDate(today.getDate() + 3);
-    return maxDate.toISOString().split('T')[0];
-  };
+  // Render Page 1: Declaration & Disclaimer (Complete Official BC 2.2 Content)
+  const renderPage1 = () => (
+    <div className="space-y-6">
+      {/* Title Section */}
+      <div className="text-center">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
+          {getTranslation('declarationTitle', language)}
+        </h1>
+        <h2 className="text-xl sm:text-2xl font-semibold text-gray-800 mb-4">
+          {getTranslation('welcomeToIndonesia', language)}
+        </h2>
+        <p className="text-base text-gray-700 mb-6">
+          {getTranslation('pleaseReadInformation', language)}
+        </p>
+      </div>
+
+      {/* Main Information Content */}
+      <div className="bg-white border border-gray-200 rounded-lg p-4 space-y-4">
+        <p className="text-sm text-gray-700 leading-relaxed">
+          {getTranslation('cooperationMessage', language)}
+        </p>
+
+        <div className="space-y-4 text-sm text-gray-700">
+          <p className="leading-relaxed">
+            {getTranslation('declarationRuleA', language)}
+          </p>
+          
+          <p className="leading-relaxed">
+            {getTranslation('declarationRuleB', language)}
+          </p>
+          
+          <p className="leading-relaxed">
+            {getTranslation('declarationRuleC', language)}
+          </p>
+
+          {/* Section D: Duty-Free Exemption Table */}
+          <div className="mt-4">
+            <p className="font-medium leading-relaxed mb-3">
+              {getTranslation('declarationRuleD', language)}
+            </p>
+            <div className="overflow-x-auto">
+              <table className="w-full border border-gray-300 text-sm">
+                <thead className="bg-gray-100">
+                  <tr>
+                    <th className="border border-gray-300 px-2 py-1 text-left">
+                      {getTranslation('subjectObject', language)}
+                    </th>
+                    <th className="border border-gray-300 px-2 py-1 text-left">
+                      {getTranslation('dutyFreeExemption', language)}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td className="border border-gray-300 px-2 py-1">
+                      {getTranslation('generalPassengers', language)}
+                    </td>
+                    <td className="border border-gray-300 px-2 py-1">
+                      {getTranslation('upToUSD500', language)}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="border border-gray-300 px-2 py-1">
+                      {getTranslation('hajjPassengers', language)}
+                    </td>
+                    <td className="border border-gray-300 px-2 py-1">
+                      {getTranslation('accordingToRegulations', language)}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="border border-gray-300 px-2 py-1">
+                      {getTranslation('competitionGifts', language)}
+                    </td>
+                    <td className="border border-gray-300 px-2 py-1">
+                      {getTranslation('accordingToRegulations', language)}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="border border-gray-300 px-2 py-1">
+                      {getTranslation('transportationCrew', language)}
+                    </td>
+                    <td className="border border-gray-300 px-2 py-1">
+                      {getTranslation('upToUSD50', language)}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Section E: BKC Exemption Table */}
+          <div className="mt-4">
+            <p className="font-medium leading-relaxed mb-3">
+              {getTranslation('declarationRuleE', language)}
+            </p>
+            <div className="overflow-x-auto">
+              <table className="w-full border border-gray-300 text-sm">
+                <thead className="bg-gray-100">
+                  <tr>
+                    <th className="border border-gray-300 px-2 py-1 text-left">
+                      {getTranslation('bkcType', language)}
+                    </th>
+                    <th className="border border-gray-300 px-2 py-1 text-left">
+                      {getTranslation('perPassenger', language)}
+                    </th>
+                    <th className="border border-gray-300 px-2 py-1 text-left">
+                      {getTranslation('perCrewMember', language)}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td className="border border-gray-300 px-2 py-1">
+                      {getTranslation('alcoholicBeverages', language)}
+                    </td>
+                    <td className="border border-gray-300 px-2 py-1">1 Liter</td>
+                    <td className="border border-gray-300 px-2 py-1">350 ml</td>
+                  </tr>
+                  <tr className="bg-gray-50">
+                    <td className="border border-gray-300 px-2 py-1 font-medium" colSpan={3}>
+                      {getTranslation('tobaccoProducts', language)}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="border border-gray-300 px-2 py-1 pl-4">
+                      {getTranslation('cigarettes', language)}
+                    </td>
+                    <td className="border border-gray-300 px-2 py-1">200 batang</td>
+                    <td className="border border-gray-300 px-2 py-1">40 batang</td>
+                  </tr>
+                  <tr>
+                    <td className="border border-gray-300 px-2 py-1 pl-4">
+                      {getTranslation('cigars', language)}
+                    </td>
+                    <td className="border border-gray-300 px-2 py-1">25 batang</td>
+                    <td className="border border-gray-300 px-2 py-1">10 batang</td>
+                  </tr>
+                  <tr>
+                    <td className="border border-gray-300 px-2 py-1 pl-4">
+                      {getTranslation('cutTobacco', language)}
+                    </td>
+                    <td className="border border-gray-300 px-2 py-1">100 gr</td>
+                    <td className="border border-gray-300 px-2 py-1">40 gr</td>
+                  </tr>
+                  <tr>
+                    <td className="border border-gray-300 px-2 py-1 pl-4">
+                      {getTranslation('otherTobaccoProducts', language)}
+                    </td>
+                    <td className="border border-gray-300 px-2 py-1">100 gr atau setara</td>
+                    <td className="border border-gray-300 px-2 py-1">40 gr atau setara</td>
+                  </tr>
+                  <tr>
+                    <td className="border border-gray-300 px-2 py-1 pl-4">
+                      {getTranslation('solidElectronicCigarettes', language)}
+                    </td>
+                    <td className="border border-gray-300 px-2 py-1">140 batang atau 40 kapsul</td>
+                    <td className="border border-gray-300 px-2 py-1">20 batang atau 5 kapsul</td>
+                  </tr>
+                  <tr>
+                    <td className="border border-gray-300 px-2 py-1 pl-4">
+                      {getTranslation('openSystemElectronicCigarettes', language)}
+                    </td>
+                    <td className="border border-gray-300 px-2 py-1">30 ml</td>
+                    <td className="border border-gray-300 px-2 py-1">15 ml</td>
+                  </tr>
+                  <tr>
+                    <td className="border border-gray-300 px-2 py-1 pl-4">
+                      {getTranslation('closedSystemElectronicCigarettes', language)}
+                    </td>
+                    <td className="border border-gray-300 px-2 py-1">12 ml</td>
+                    <td className="border border-gray-300 px-2 py-1">6 ml</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            
+            <div className="mt-3 space-y-1 text-sm text-gray-600">
+              <p>{getTranslation('bkcNote1', language)}</p>
+              <p>{getTranslation('bkcNote2', language)}</p>
+            </div>
+          </div>
+
+          {/* Sections F-J */}
+          <div className="space-y-3 mt-4">
+            <p className="leading-relaxed">
+              {getTranslation('declarationRuleF', language)}
+            </p>
+            
+            <p className="leading-relaxed">
+              {getTranslation('declarationRuleG', language)}
+            </p>
+            
+            <p className="leading-relaxed">
+              {getTranslation('declarationRuleH', language)}
+            </p>
+            
+            <p className="leading-relaxed">
+              {getTranslation('declarationRuleI', language)}
+            </p>
+            
+            <p className="leading-relaxed font-medium">
+              {getTranslation('declarationRuleJ', language)}
+            </p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  );
+
+  // Render Page 2: Arrival Information & Passenger Information
+  const renderPage2 = () => (
+    <div className="space-y-6">
+      <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
+        {getTranslation('travelDataTitle', language)}
+      </h2>
+      
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+        <FormInput
+          label={getTranslation('passportNumber', language)}
+          required
+          placeholder={getTranslation('passportNumberPlaceholder', language)}
+          value={formData.passportNumber}
+          onChange={(e) => updateFormData('passportNumber', e.target.value.toUpperCase())}
+          error={errors.passportNumber}
+        />
+        
+        <FormSelect
+          label={getTranslation('portOfArrival', language)}
+          required
+          options={ports}
+          value={formData.portOfArrival}
+          onChange={(e) => updateFormData('portOfArrival', e.target.value)}
+          error={errors.portOfArrival}
+        />
+        
+        <ArrivalDateSelect
+          label={getTranslation('arrivalDate', language)}
+          required
+          value={formData.arrivalDate}
+          onChange={(e) => updateFormData('arrivalDate', e.target.value)}
+          error={errors.arrivalDate}
+        />
+        
+        <div className="sm:col-span-2">
+          <FormInput
+            label={getTranslation('fullPassportName', language)}
+            required
+            placeholder={getTranslation('fullPassportNamePlaceholder', language)}
+            value={formData.fullPassportName}
+            onChange={(e) => updateFormData('fullPassportName', e.target.value.toUpperCase())}
+            error={errors.fullPassportName}
+          />
+        </div>
+        
+        <DateOfBirthSelect
+          label={getTranslation('dateOfBirth', language)}
+          required
+          value={formData.dateOfBirth}
+          onChange={(value) => updateFormData('dateOfBirth', value)}
+          error={errors.dateOfBirth}
+        />
+        
+        <FormInput
+          label={getTranslation('flightVesselNumber', language)}
+          required
+          placeholder={getTranslation('flightVesselNumberPlaceholder', language)}
+          value={formData.flightVesselNumber}
+          onChange={(e) => updateFormData('flightVesselNumber', e.target.value.toUpperCase())}
+          error={errors.flightVesselNumber}
+        />
+        
+        <FormSelect
+          label={getTranslation('nationality', language)}
+          required
+          options={countries}
+          value={formData.nationality}
+          onChange={(e) => updateFormData('nationality', e.target.value)}
+          error={errors.nationality}
+        />
+        
+        <FormInput
+          label={getTranslation('numberOfLuggage', language)}
+          type="number"
+          min="0"
+          max="99"
+          required
+          placeholder={getTranslation('numberOfLuggagePlaceholder', language)}
+          value={formData.numberOfLuggage}
+          onChange={(e) => {
+            // Only allow numbers
+            const value = e.target.value.replace(/[^0-9]/g, '');
+            updateFormData('numberOfLuggage', value);
+          }}
+          onKeyPress={(e) => {
+            // Prevent non-numeric characters from being entered
+            if (!/[0-9]/.test(e.key)) {
+              e.preventDefault();
+            }
+          }}
+          error={errors.numberOfLuggage}
+        />
+        
+        <FormInput
+          label={getTranslation('addressInIndonesia', language)}
+          required
+          placeholder={getTranslation('addressInIndonesiaPlaceholder', language)}
+          value={formData.addressInIndonesia}
+          onChange={(e) => updateFormData('addressInIndonesia', e.target.value)}
+          error={errors.addressInIndonesia}
+        />
+        
+        <div className="sm:col-span-2">
+          <FamilyMemberManager
+            familyMembers={formData.familyMembers}
+            onChange={(familyMembers) => updateFormData('familyMembers', familyMembers)}
+            countries={countries}
+            labels={{
+              title: getTranslation('familyMembers', language),
+              passportNumber: getTranslation('passportNumber', language),
+              name: getTranslation('fullPassportName', language),
+              nationality: getTranslation('nationality', language),
+              addMember: getTranslation('addFamilyMember', language),
+              removeMember: getTranslation('removeFamilyMember', language),
+              maxMembersReached: getTranslation('maxFamilyMembers', language)
+            }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+
+  // Render Page 3: Customs Declaration (Official Indonesian Form)
+  const renderPage3 = () => (
+    <div className="space-y-8">
+      <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
+        {getTranslation('customsDeclarationTitle', language)}
+      </h2>
+      
+      {/* Section 1: Main Goods Declaration */}
+      <div className="space-y-6">
+        <h3 className="text-lg font-semibold text-gray-800">
+          {getTranslation('goodsDeclarationQuestion', language)}
+        </h3>
+        
+        {/* 8 Categories of Goods */}
+        <div className="space-y-4">
+          {[1, 2, 3, 4, 5, 6, 7, 8].map(num => (
+            <div key={num} className="flex gap-3">
+              <span className="text-sm font-medium text-gray-700 mt-1 min-w-[20px]">
+                {num}.
+              </span>
+              <p className="text-sm text-gray-700 leading-tight">
+                {getTranslation(`goodsCategory${num}`, language)}
+              </p>
+            </div>
+          ))}
+        </div>
+        
+        {/* Selection Instructions */}
+        <p className="text-sm text-gray-600 italic">
+          {getTranslation('selectYesIfBringing', language)}
+        </p>
+        
+        {/* Yes/No Radio Buttons */}
+        <div className="flex flex-col sm:flex-row gap-4 p-4 bg-gray-50 rounded-lg">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="radio"
+              name="hasGoodsToDeclarate"
+              value="true"
+              checked={formData.hasGoodsToDeclarate === true}
+              onChange={() => updateFormData('hasGoodsToDeclarate', true)}
+              className="w-4 h-4 text-blue-600 focus:ring-blue-500"
+            />
+            <span className="text-sm font-medium text-gray-700">
+              {getTranslation('yes', language)}
+            </span>
+          </label>
+          
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="radio"
+              name="hasGoodsToDeclarate"
+              value="false"
+              checked={formData.hasGoodsToDeclarate === false}
+              onChange={() => updateFormData('hasGoodsToDeclarate', false)}
+              className="w-4 h-4 text-blue-600 focus:ring-blue-500"
+            />
+            <span className="text-sm font-medium text-gray-700">
+              {getTranslation('no', language)}
+            </span>
+          </label>
+        </div>
+        
+        {errors.hasGoodsToDeclarate && (
+          <p className="text-sm text-red-600">{errors.hasGoodsToDeclarate}</p>
+        )}
+      </div>
+
+      {/* Section 2: Goods Declaration Table (conditional) */}
+      {formData.hasGoodsToDeclarate && (
+        <div className="space-y-4">
+          <GoodsDeclarationTable
+            goods={formData.declaredGoods}
+            onChange={(goods) => updateFormData('declaredGoods', goods)}
+            labels={{
+              title: getTranslation('goodsDeclarationTableTitle', language),
+              description: getTranslation('goodsDescription', language),
+              quantity: getTranslation('quantity', language),
+              value: getTranslation('value', language),
+              currency: getTranslation('currencyType', language),
+              addItem: getTranslation('addItem', language),
+              removeItem: getTranslation('removeItem', language),
+              noData: getTranslation('noData', language)
+            }}
+          />
+          
+          {errors.declaredGoods && (
+            <p className="text-sm text-red-600">{errors.declaredGoods}</p>
+          )}
+        </div>
+      )}
+
+      {/* Section 3: Technology Devices Question */}
+      <div className="space-y-4 border-t pt-6">
+        <div className="flex gap-3">
+          <span className="text-sm font-medium text-gray-700 mt-1 min-w-[20px]">
+            9.
+          </span>
+          <p className="text-sm text-gray-700 leading-tight">
+            {getTranslation('technologyDevicesQuestion', language)}
+          </p>
+        </div>
+        
+        <div className="flex flex-col sm:flex-row gap-4 p-4 bg-gray-50 rounded-lg ml-6">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="radio"
+              name="hasTechnologyDevices"
+              value="true"
+              checked={formData.hasTechnologyDevices === true}
+              onChange={() => updateFormData('hasTechnologyDevices', true)}
+              className="w-4 h-4 text-blue-600 focus:ring-blue-500"
+            />
+            <span className="text-sm font-medium text-gray-700">
+              {getTranslation('yes', language)}
+            </span>
+          </label>
+          
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="radio"
+              name="hasTechnologyDevices"
+              value="false"
+              checked={formData.hasTechnologyDevices === false}
+              onChange={() => updateFormData('hasTechnologyDevices', false)}
+              className="w-4 h-4 text-blue-600 focus:ring-blue-500"
+            />
+            <span className="text-sm font-medium text-gray-700">
+              {getTranslation('no', language)}
+            </span>
+          </label>
+        </div>
+        
+        {errors.hasTechnologyDevices && (
+          <p className="text-sm text-red-600">{errors.hasTechnologyDevices}</p>
+        )}
+      </div>
+
+      {/* Section 4: Final Consent */}
+      <div className="space-y-4 border-t pt-6">
+        <FormCheckbox
+          label={getTranslation('finalConsentStatement', language)}
+          checked={formData.consentAccurate}
+          onChange={(e) => updateFormData('consentAccurate', e.target.checked)}
+          error={errors.consentAccurate}
+          required
+        />
+      </div>
+    </div>
+  );
 
   return (
     <div>
@@ -419,91 +1032,43 @@ export default function FormPage() {
       <div className="min-h-screen bg-gray-50">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
           <div className="bg-white rounded-lg shadow-lg p-4 sm:p-8">
-            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">
-              {getTranslation('formTitle', language)}
-            </h2>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-              <div className="sm:col-span-2">
-                <FormInput
-                  label={getTranslation('fullPassportName', language)}
-                  required
-                  placeholder={getTranslation('fullPassportNamePlaceholder', language)}
-                  value={formData.fullPassportName}
-                  onChange={(e) => updateFormData('fullPassportName', e.target.value)}
-                  error={errors.fullPassportName}
-                />
-              </div>
-              
-              <FormSelect
-                label={getTranslation('nationality', language)}
-                required
-                options={countries}
-                value={formData.nationality}
-                onChange={(e) => updateFormData('nationality', e.target.value)}
-                error={errors.nationality}
-              />
-              
-              <FormInput
-                label={getTranslation('flightNumber', language)}
-                required
-                placeholder={getTranslation('flightNumberPlaceholder', language)}
-                value={formData.flightNumber}
-                onChange={(e) => updateFormData('flightNumber', e.target.value)}
-                error={errors.flightNumber}
-              />
-              
-              <FormInput
-                label={getTranslation('arrivalDate', language)}
-                type="date"
-                required
-                min={getTodayDate()}
-                max={getMaxDate()}
-                value={formData.arrivalDate}
-                onChange={(e) => updateFormData('arrivalDate', e.target.value)}
-                error={errors.arrivalDate}
-              />
-              
-              <FormSelect
-                label={getTranslation('portOfArrival', language)}
-                required
-                options={ports}
-                value={formData.portOfArrival}
-                onChange={(e) => updateFormData('portOfArrival', e.target.value)}
-                error={errors.portOfArrival}
-              />
-            </div>
+            {/* Render current step */}
+            {formData.currentStep === 1 && renderPage1()}
+            {formData.currentStep === 2 && renderPage2()}
+            {formData.currentStep === 3 && renderPage3()}
 
-            <div className="mt-8 pt-6 border-t border-gray-200">
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-                <div className="flex items-start space-x-3">
-                  <svg className="w-5 h-5 text-yellow-600 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                  </svg>
-                  <div>
-                    <p className="text-sm font-medium text-yellow-800">{getTranslation('importantNotice', language)}</p>
-                    <p className="text-sm text-yellow-700 mt-1">
-                      {getTranslation('importantNoticeText', language)}
-                    </p>
-                  </div>
+            {/* Navigation buttons */}
+            <div className="mt-8">
+              <div className="flex justify-between gap-4">
+                <div>
+                  {formData.currentStep > 1 && (
+                    <button
+                      type="button"
+                      onClick={previousStep}
+                      className="px-4 sm:px-6 py-3 sm:py-3 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 text-base"
+                    >
+                      {getTranslation('previousStep', language)}
+                    </button>
+                  )}
                 </div>
-              </div>
-
-              <div className="flex flex-col sm:flex-row justify-between gap-4">
-                <button
-                  type="button"
-                  onClick={handleBackToHome}
-                  className="px-4 sm:px-6 py-2 sm:py-3 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 text-sm sm:text-base"
-                >
-                  {getTranslation('backToHome', language)}
-                </button>
                 
-                <button
-                  onClick={handleSubmit}
-                  className="px-6 sm:px-8 py-2 sm:py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 text-sm sm:text-base"
-                >
-                  {getTranslation('continueToECustoms', language)}
-                </button>
+                <div>
+                  {formData.currentStep < 3 ? (
+                    <button
+                      onClick={nextStep}
+                      className="px-8 sm:px-8 py-4 sm:py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 text-base"
+                    >
+                      {getTranslation('nextStep', language)}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleSubmit}
+                      className="px-8 sm:px-8 py-4 sm:py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 text-base"
+                    >
+                      {getTranslation('submitDeclaration', language)}
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </div>

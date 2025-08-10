@@ -35,7 +35,7 @@ export default function LanguageSelector({ currentLanguage, onLanguageChange }: 
         aria-expanded={isOpen}
         aria-haspopup="listbox"
       >
-        <span className="text-base sm:text-lg">{currentLang?.flag}</span>
+        <span className="text-sm sm:text-base font-semibold text-gray-700 uppercase">{currentLang?.code}</span>
         <span className="text-xs sm:text-sm font-medium text-gray-700 hidden sm:inline">{currentLang?.name}</span>
         <svg
           className={`w-3 h-3 sm:w-4 sm:h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`}
@@ -63,7 +63,7 @@ export default function LanguageSelector({ currentLanguage, onLanguageChange }: 
                   role="option"
                   aria-selected={language.code === currentLanguage}
                 >
-                  <span className="text-lg">{language.flag}</span>
+                  <span className="text-sm font-semibold text-gray-700 uppercase w-8">{language.code}</span>
                   <span className="text-sm">{language.name}</span>
                   {language.code === currentLanguage && (
                     <svg className="w-4 h-4 ml-auto text-blue-700" fill="currentColor" viewBox="0 0 20 20">
