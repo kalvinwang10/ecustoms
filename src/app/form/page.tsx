@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import FormInput from '@/components/ui/FormInput';
 import FormSelect from '@/components/ui/FormSelect';
@@ -300,7 +299,6 @@ const ports = [
 ];
 
 export default function FormPage() {
-  const router = useRouter();
   const [language, setLanguage] = useState<Language>('en');
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -317,7 +315,7 @@ export default function FormPage() {
     setLanguage(newLanguage);
   };
 
-  const updateFormData = (field: keyof FormData, value: string | boolean | Array<any> | null) => {
+  const updateFormData = (field: keyof FormData, value: string | boolean | unknown[] | null) => {
     // Track form start on first field interaction
     if (!formStarted) {
       trackFormStart();
