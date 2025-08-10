@@ -194,7 +194,7 @@ export const translations: Translations = {
   },
   nationality: {
     en: 'Nationality',
-    id: 'Kewarganegaraan',
+    id: 'Negara/Wilayah Paspor',
     zh: '国籍',
     ja: '国籍',
     ar: 'الجنسية',
@@ -305,6 +305,30 @@ export const translations: Translations = {
     ar: 'ميناء الوصول مطلوب',
     hi: 'आगमन बंदरगाह आवश्यक है',
   },
+  flightVesselNumberRequired: {
+    en: 'Flight/Vessel/Vehicle number is required',
+    id: 'Nomor penerbangan/pelayaran/kendaraan diperlukan',
+    zh: '需要航班/船只/车辆号码',
+    ja: 'フライト/船舶/車両番号は必須です',
+    ar: 'رقم الطيران/السفينة/المركبة مطلوب',
+    hi: 'उड़ान/पोत/वाहन संख्या आवश्यक है',
+  },
+  numberOfLuggageRequired: {
+    en: 'Number of luggage is required',
+    id: 'Jumlah bagasi diperlukan',
+    zh: '需要行李件数',
+    ja: '荷物の数は必須です',
+    ar: 'عدد الحقائب مطلوب',
+    hi: 'सामान की संख्या आवश्यक है',
+  },
+  addressInIndonesiaRequired: {
+    en: 'Address in Indonesia is required',
+    id: 'Alamat di Indonesia diperlukan',
+    zh: '需要在印尼的地址',
+    ja: 'インドネシアでの住所は必須です',
+    ar: 'العنوان في إندونيسيا مطلوب',
+    hi: 'इंडोनेशिया में पता आवश्यक है',
+  },
   arrivalDatePast: {
     en: 'Arrival date cannot be in the past',
     id: 'Tanggal kedatangan tidak boleh di masa lalu',
@@ -320,6 +344,14 @@ export const translations: Translations = {
     ja: '到着日は3日以上先に設定できません',
     ar: 'لا يمكن أن يكون تاريخ الوصول أكثر من 3 أيام مقدماً',
     hi: 'आगमन तिथि 3 दिन से अधिक पहले नहीं हो सकती',
+  },
+  arrivalDateInvalid: {
+    en: 'Please select a valid arrival date',
+    id: 'Silakan pilih tanggal kedatangan yang valid',
+    zh: '请选择有效的到达日期',
+    ja: '有効な到着日を選択してください',
+    ar: 'يرجى اختيار تاريخ وصول صحيح',
+    hi: 'कृपया एक वैध आगमन तिथि चुनें',
   },
   
   // Page 1: Declaration & Disclaimer - Official BC 2.2 Content

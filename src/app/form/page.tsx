@@ -5,9 +5,9 @@ import Header from '@/components/Header';
 import FormInput from '@/components/ui/FormInput';
 import FormSelect from '@/components/ui/FormSelect';
 import FormCheckbox from '@/components/ui/FormCheckbox';
-import FormTextArea from '@/components/ui/FormTextArea';
 import FamilyMemberManager from '@/components/ui/FamilyMemberManager';
 import DateOfBirthSelect from '@/components/ui/DateOfBirthSelect';
+import ArrivalDateSelect from '@/components/ui/ArrivalDateSelect';
 import GoodsDeclarationTable from '@/components/ui/GoodsDeclarationTable';
 import { Language, getTranslation } from '@/lib/translations';
 import { FormData, initialFormData } from '@/lib/formData';
@@ -430,19 +430,19 @@ export default function FormPage() {
         newErrors.arrivalDate = errorMsg;
         trackFormValidationError('arrivalDate', errorMsg);
       } else {
-        // Validate date is within allowed range (today to 3 days from today)
-        const selectedDate = new Date(formData.arrivalDate);
+        // Validate date is one of the allowed options (today, +1 day, +2 days)
         const today = new Date();
-        today.setHours(0, 0, 0, 0); // Reset time to start of day
-        const maxDate = new Date(today);
-        maxDate.setDate(today.getDate() + 3);
+        today.setHours(0, 0, 0, 0);
         
-        if (selectedDate < today) {
-          const errorMsg = getTranslation('arrivalDatePast', language);
-          newErrors.arrivalDate = errorMsg;
-          trackFormValidationError('arrivalDate', errorMsg);
-        } else if (selectedDate > maxDate) {
-          const errorMsg = getTranslation('arrivalDateTooFar', language);
+        const allowedDates = [];
+        for (let i = 0; i <= 2; i++) {
+          const allowedDate = new Date(today);
+          allowedDate.setDate(today.getDate() + i);
+          allowedDates.push(allowedDate.toISOString().split('T')[0]);
+        }
+        
+        if (!allowedDates.includes(formData.arrivalDate)) {
+          const errorMsg = getTranslation('arrivalDateInvalid', language);
           newErrors.arrivalDate = errorMsg;
           trackFormValidationError('arrivalDate', errorMsg);
         }
@@ -541,18 +541,6 @@ export default function FormPage() {
   };
 
 
-  // Get today's date and max date (3 days from today) in YYYY-MM-DD format
-  const getTodayDate = () => {
-    const today = new Date();
-    return today.toISOString().split('T')[0];
-  };
-
-  const getMaxDate = () => {
-    const today = new Date();
-    const maxDate = new Date(today);
-    maxDate.setDate(today.getDate() + 3);
-    return maxDate.toISOString().split('T')[0];
-  };
 
   // Render Page 1: Declaration & Disclaimer (Complete Official BC 2.2 Content)
   const renderPage1 = () => (
@@ -790,12 +778,9 @@ export default function FormPage() {
           error={errors.portOfArrival}
         />
         
-        <FormInput
+        <ArrivalDateSelect
           label={getTranslation('arrivalDate', language)}
-          type="date"
           required
-          min={getTodayDate()}
-          max={getMaxDate()}
           value={formData.arrivalDate}
           onChange={(e) => updateFormData('arrivalDate', e.target.value)}
           error={errors.arrivalDate}
@@ -860,21 +845,20 @@ export default function FormPage() {
           error={errors.numberOfLuggage}
         />
         
-        <div className="sm:col-span-2">
-          <FormTextArea
-            label={getTranslation('addressInIndonesia', language)}
-            required
-            placeholder={getTranslation('addressInIndonesiaPlaceholder', language)}
-            value={formData.addressInIndonesia}
-            onChange={(e) => updateFormData('addressInIndonesia', e.target.value)}
-            error={errors.addressInIndonesia}
-          />
-        </div>
+        <FormInput
+          label={getTranslation('addressInIndonesia', language)}
+          required
+          placeholder={getTranslation('addressInIndonesiaPlaceholder', language)}
+          value={formData.addressInIndonesia}
+          onChange={(e) => updateFormData('addressInIndonesia', e.target.value)}
+          error={errors.addressInIndonesia}
+        />
         
         <div className="sm:col-span-2">
           <FamilyMemberManager
             familyMembers={formData.familyMembers}
             onChange={(familyMembers) => updateFormData('familyMembers', familyMembers)}
+            countries={countries}
             labels={{
               title: getTranslation('familyMembers', language),
               passportNumber: getTranslation('passportNumber', language),

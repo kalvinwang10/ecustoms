@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import FormInput from './FormInput';
+import FormSelect from './FormSelect';
 
 interface FamilyMember {
   id: string;
@@ -13,6 +14,7 @@ interface FamilyMember {
 interface FamilyMemberManagerProps {
   familyMembers: FamilyMember[];
   onChange: (familyMembers: FamilyMember[]) => void;
+  countries: Array<{ value: string; label: string }>;
   labels: {
     title: string;
     passportNumber: string;
@@ -27,6 +29,7 @@ interface FamilyMemberManagerProps {
 const FamilyMemberManager: React.FC<FamilyMemberManagerProps> = ({
   familyMembers,
   onChange,
+  countries,
   labels
 }) => {
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
@@ -129,8 +132,9 @@ const FamilyMemberManager: React.FC<FamilyMemberManagerProps> = ({
                   required
                 />
                 
-                <FormInput
+                <FormSelect
                   label={labels.nationality}
+                  options={countries}
                   value={member.nationality}
                   onChange={(e) => updateFamilyMember(member.id, 'nationality', e.target.value)}
                   error={errors[`${member.id}-nationality`]}
