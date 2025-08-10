@@ -315,7 +315,7 @@ export default function FormPage() {
     setLanguage(newLanguage);
   };
 
-  const updateFormData = (field: keyof FormData, value: string | boolean | unknown[] | null) => {
+  const updateFormData = (field: keyof FormData, value: string | boolean | number | unknown[] | null) => {
     // Track form start on first field interaction
     if (!formStarted) {
       trackFormStart();
@@ -329,7 +329,7 @@ export default function FormPage() {
     
     // Track field update in Mixpanel (only for simple values, not arrays)
     if (typeof value !== 'object') {
-      trackFormFieldUpdate(field, typeof value === 'boolean' ? value.toString() : value as string);
+      trackFormFieldUpdate(field, typeof value === 'string' ? value : value?.toString() || '');
     }
     
     if (errors[field]) {
@@ -1033,7 +1033,7 @@ export default function FormPage() {
         <FormCheckbox
           label={getTranslation('finalConsentStatement', language)}
           checked={formData.consentAccurate}
-          onChange={(checked) => updateFormData('consentAccurate', checked)}
+          onChange={(e) => updateFormData('consentAccurate', e.target.checked)}
           error={errors.consentAccurate}
           required
         />
