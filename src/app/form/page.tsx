@@ -329,7 +329,7 @@ export default function FormPage() {
     
     // Track field update in Mixpanel (only for simple values, not arrays)
     if (typeof value !== 'object') {
-      trackFormFieldUpdate(field, value);
+      trackFormFieldUpdate(field, typeof value === 'boolean' ? value.toString() : value as string);
     }
     
     if (errors[field]) {
