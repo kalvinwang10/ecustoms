@@ -308,7 +308,13 @@ export default function FormPage() {
   const [submissionResult, setSubmissionResult] = useState<{
     success: boolean;
     qrCode?: { imageData?: string };
-    submissionDetails?: { submissionId?: string; submissionTime?: string; status?: string };
+    submissionDetails?: { 
+      submissionId?: string; 
+      submissionTime?: string; 
+      status?: string;
+      portInfo?: string;
+      customsOffice?: string;
+    };
   } | null>(null);
   const [showQRModal, setShowQRModal] = useState(false);
 

@@ -332,7 +332,9 @@ export async function automateCustomsSubmission(
         submissionId: submissionDetails.registrationNumber,
         submissionTime: new Date().toISOString(),
         status: 'completed',
-        referenceNumber: submissionDetails.registrationNumber
+        referenceNumber: submissionDetails.registrationNumber,
+        portInfo: submissionDetails.portInfo,
+        customsOffice: submissionDetails.customsOffice
       },
       message: 'Customs form submitted successfully'
     };

@@ -26,6 +26,8 @@ export interface SubmitCustomsSuccess {
     submissionTime: string;
     status: string;
     referenceNumber?: string;
+    portInfo?: string;
+    customsOffice?: string;
   };
   message: string;
 }
