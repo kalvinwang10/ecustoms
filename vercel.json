@@ -3,8 +3,5 @@
     "app/api/submit-customs/route.ts": {
       "maxDuration": 30
     }
-  },
-  "env": {
-    "CHROME_PATH": "/opt/chromium"
   }
 }

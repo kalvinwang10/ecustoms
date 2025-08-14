@@ -148,43 +148,38 @@ export async function automateCustomsSubmission(
   try {
     reportProgress('initialization', 5, 'Starting browser...');
     
-    // Get optimized browser options based on environment
-    const browserOptions = await getBrowserOptions({ headless: options.headless });
-    
-    try {
-      // Try standard Puppeteer launch first
-      browser = await puppeteer.launch(browserOptions);
-      logger.logBrowserLaunch(true, browserOptions);
-      logger.info('BROWSER_STARTED', `Browser launched successfully in ${process.env.NODE_ENV} mode`);
-    } catch (launchError) {
-      logger.logBrowserLaunch(false, browserOptions, launchError instanceof Error ? launchError : undefined);
+    // Use serverless launcher directly in production environments
+    if (process.env.NODE_ENV === 'production') {
+      logger.info('BROWSER_LAUNCH', 'Using serverless browser launcher for production');
       
-      const errorMessage = launchError instanceof Error ? launchError.message : 'Unknown error';
-      const isChromeMissing = errorMessage.includes('Could not find Chrome');
-      
-      // If Chrome is missing in production, try serverless launcher
-      if (isChromeMissing && process.env.NODE_ENV === 'production') {
-        logger.info('BROWSER_RETRY', 'Attempting serverless browser launch...');
+      try {
+        browser = await launchServerlessBrowser({ headless: options.headless });
+        logger.logBrowserLaunch(true, { serverless: true });
+        logger.info('BROWSER_STARTED', 'Browser launched successfully in serverless mode');
+      } catch (serverlessError) {
+        logger.logBrowserLaunch(false, { serverless: true }, serverlessError instanceof Error ? serverlessError : undefined);
+        const serverlessErrorMsg = serverlessError instanceof Error ? serverlessError.message : 'Unknown error';
         
-        try {
-          browser = await launchServerlessBrowser({ headless: options.headless });
-          logger.logBrowserLaunch(true, { serverless: true });
-          logger.info('BROWSER_STARTED', 'Browser launched successfully in serverless mode');
-        } catch (serverlessError) {
-          const serverlessErrorMsg = serverlessError instanceof Error ? serverlessError.message : 'Unknown error';
-          
-          const productionHelp = '\n\nFor production deployment:\n' +
-            '1. If using Vercel: npm install @sparticuz/chromium\n' +
-            '2. If using AWS Lambda: npm install chrome-aws-lambda\n' +
-            '3. If using Docker: Add chromium-browser to Dockerfile\n' +
-            '4. Set CHROME_PATH environment variable to Chrome executable path\n\n' +
-            'See: https://github.com/puppeteer/puppeteer/blob/main/docs/troubleshooting.md';
-          
-          throw new Error(`Browser launch failed in both standard and serverless modes.\n${serverlessErrorMsg}${productionHelp}`);
-        }
-      } else {
-        // For development or non-Chrome errors, throw original error
-        const help = isChromeMissing 
+        const productionHelp = '\n\nFor production deployment:\n' +
+          '1. If using Vercel: @sparticuz/chromium should be installed as optional dependency\n' +
+          '2. If using AWS Lambda: @sparticuz/chromium should be installed as optional dependency\n' +
+          '3. If using Docker: Add chromium-browser to Dockerfile\n' +
+          '4. Check deployment logs for Chrome installation status';
+        
+        throw new Error(`Browser launch failed: ${serverlessErrorMsg}${productionHelp}`);
+      }
+    } else {
+      // Use standard Puppeteer in development
+      const browserOptions = await getBrowserOptions({ headless: options.headless });
+      
+      try {
+        browser = await puppeteer.launch(browserOptions);
+        logger.logBrowserLaunch(true, browserOptions);
+        logger.info('BROWSER_STARTED', `Browser launched successfully in ${process.env.NODE_ENV} mode`);
+      } catch (launchError) {
+        logger.logBrowserLaunch(false, browserOptions, launchError instanceof Error ? launchError : undefined);
+        const errorMessage = launchError instanceof Error ? launchError.message : 'Unknown error';
+        const help = errorMessage.includes('Could not find Chrome') 
           ? '\n\nFor local development: Run "npx puppeteer browsers install chrome"'
           : '';
         throw new Error(`Browser launch failed: ${errorMessage}${help}`);

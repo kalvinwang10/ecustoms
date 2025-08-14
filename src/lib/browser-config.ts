@@ -4,21 +4,10 @@ import puppeteer from 'puppeteer';
  * Get the appropriate Chrome executable path based on the environment
  */
 export function getChromePath(): string | undefined {
-  // In production/serverless environments, we need to use chrome-aws-lambda
+  // In production/serverless environments, let the serverless launcher handle Chrome detection
   if (process.env.NODE_ENV === 'production') {
-    // Common paths for serverless Chrome
-    const possiblePaths = [
-      '/opt/chromium',
-      '/tmp/chromium',
-      '/var/task/chrome/chromium',
-      process.env.CHROME_PATH,
-    ].filter(Boolean);
-
-    for (const path of possiblePaths) {
-      if (path) {
-        return path;
-      }
-    }
+    // Only return custom Chrome path if explicitly set in environment
+    return process.env.CHROME_PATH;
   }
   
   // In development, let Puppeteer find Chrome automatically
