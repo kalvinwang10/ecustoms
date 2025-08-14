@@ -549,6 +549,9 @@ export default function FormPage() {
       setIsSubmitting(true);
       setErrors({});
       
+      // Track Google Ads conversion when form passes validation and processing starts
+      trackFormSubmission(); // Remove URL parameter to prevent unwanted redirect
+      
       try {
         // Call our API to automate the submission
         const response = await fetch('/api/submit-customs', {
@@ -571,7 +574,6 @@ export default function FormPage() {
         if (result.success) {
           // Track successful form submission
           trackMixpanelFormSubmission();
-          trackFormSubmission(); // Remove URL parameter to prevent unwanted redirect
           trackUserJourney('Form Submitted Successfully', 5);
           
           // Store the result and show QR modal
