@@ -2091,8 +2091,10 @@ async function downloadQRCodeImage(page: Page): Promise<Record<string, unknown>>
   console.log('🔄 Downloading QR code image using download button...');
   
   try {
-    // Set up download path
-    const downloadPath = path.join(process.cwd(), 'downloads');
+    // Set up download path - use /tmp for Vercel serverless environment
+    const downloadPath = process.env.NODE_ENV === 'production' 
+      ? '/tmp/qr-downloads' 
+      : path.join(process.cwd(), 'downloads');
     await fs.mkdir(downloadPath, { recursive: true });
     console.log('✅ Download directory created');
     
