@@ -305,7 +305,11 @@ export default function FormPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formStarted, setFormStarted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submissionResult, setSubmissionResult] = useState<any>(null);
+  const [submissionResult, setSubmissionResult] = useState<{
+    success: boolean;
+    qrCode?: { imageData?: string };
+    submissionDetails?: { submissionId?: string; submissionTime?: string; status?: string };
+  } | null>(null);
   const [showQRModal, setShowQRModal] = useState(false);
 
   // Track form start when component mounts
@@ -1169,12 +1173,14 @@ export default function FormPage() {
       </div>
       
       {/* QR Code Success Modal */}
-      <QRCodeModal
-        isOpen={showQRModal}
-        onClose={() => setShowQRModal(false)}
-        submissionResult={submissionResult}
-        language={language}
-      />
+      {submissionResult && (
+        <QRCodeModal
+          isOpen={showQRModal}
+          onClose={() => setShowQRModal(false)}
+          submissionResult={submissionResult}
+          language={language}
+        />
+      )}
     </div>
   );
 };

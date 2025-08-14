@@ -23,7 +23,7 @@ interface LogContext {
   sessionId?: string;
   step?: string;
   duration?: number;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 interface SystemInfo {
@@ -126,7 +126,7 @@ class Logger {
   }
 
   // Specific logging methods for common scenarios
-  logBrowserLaunch(success: boolean, options?: any, error?: Error) {
+  logBrowserLaunch(success: boolean, options?: Record<string, unknown>, error?: Error) {
     if (success) {
       this.info('BROWSER_LAUNCH', 'Browser launched successfully', { options });
     } else {
@@ -170,7 +170,7 @@ class Logger {
     }
   }
 
-  logFormValidation(fields: any[], allValid: boolean) {
+  logFormValidation(fields: Array<{field: string, issue?: string}>, allValid: boolean) {
     if (allValid) {
       this.info('FORM_VALIDATION', 'All form fields valid', { fieldCount: fields.length });
     } else {
@@ -190,21 +190,21 @@ class Logger {
     });
   }
 
-  logApiResponse(success: boolean, duration: number, error?: any) {
+  logApiResponse(success: boolean, duration: number, error?: unknown) {
     if (success) {
-      this.info('API_RESPONSE', 'Request completed successfully', { duration: `${duration}ms` });
+      this.info('API_RESPONSE', 'Request completed successfully', { duration });
     } else {
       this.error(
         ErrorCode.API_ERROR,
         'Request failed',
-        { duration: `${duration}ms` },
-        error
+        { duration },
+        error instanceof Error ? error : undefined
       );
     }
   }
 
   // Performance logging
-  startTimer(label: string): () => void {
+  startTimer(label: string): () => number {
     const start = Date.now();
     return () => {
       const duration = Date.now() - start;

@@ -134,7 +134,7 @@ export async function POST(request: NextRequest) {
       logger.error(
         ErrorCode.API_ERROR,
         'Failed to parse request body',
-        { requestId, error: parseError.message },
+        { requestId, error: parseError instanceof Error ? parseError.message : 'Unknown error' },
         parseError instanceof Error ? parseError : undefined
       );
       console.error('Failed to parse request body:', parseError);
@@ -159,7 +159,7 @@ export async function POST(request: NextRequest) {
     if (!validateFormData(body.formData)) {
       logger.warn('VALIDATION_FAILED', 'Form data validation failed', {
         requestId,
-        passport: body.formData?.passportNumber
+        passport: (body.formData as {passportNumber?: string})?.passportNumber || 'unknown'
       });
       return createErrorResponse(
         'INVALID_FORM_DATA',

@@ -30,7 +30,7 @@ async function waitForStableElement(page: Page, selector: string, timeout = 3000
 
 async function waitForDropdownReady(page: Page, selector: string, timeout = 2000): Promise<void> {
   await page.waitForFunction((sel) => {
-    const element = document.querySelector(sel);
+    const element = document.querySelector(sel) as HTMLElement;
     if (!element) return false;
     
     // Check if dropdown is interactive and not disabled
@@ -51,7 +51,7 @@ async function waitForDropdownOptions(page: Page, timeout = 2000): Promise<void>
 async function waitForElementInteractable(page: Page, selector: string, timeout = 3000): Promise<boolean> {
   try {
     await page.waitForFunction((sel) => {
-      const element = document.querySelector(sel);
+      const element = document.querySelector(sel) as HTMLElement;
       if (!element) return false;
       
       const rect = element.getBoundingClientRect();
@@ -141,6 +141,7 @@ export async function automateCustomsSubmission(
   };
   
   const automationTimer = logger.startTimer('Complete Automation');
+  let automationSuccess = false;
   
   try {
     reportProgress('initialization', 5, 'Starting browser...');
@@ -182,7 +183,7 @@ export async function automateCustomsSubmission(
     ] : [];
     
     const launchOptions = {
-      headless: options.headless ? 'new' : false, // Use new headless mode for better performance
+      headless: options.headless === true, // Boolean value for headless mode
       args: [...baseArgs, ...headlessOptimizations]
     };
     
@@ -190,8 +191,8 @@ export async function automateCustomsSubmission(
       browser = await puppeteer.launch(launchOptions);
       logger.logBrowserLaunch(true, launchOptions);
     } catch (launchError) {
-      logger.logBrowserLaunch(false, launchOptions, launchError);
-      throw new Error(`Browser launch failed: ${launchError.message}`);
+      logger.logBrowserLaunch(false, launchOptions, launchError instanceof Error ? launchError : undefined);
+      throw new Error(`Browser launch failed: ${launchError instanceof Error ? launchError.message : 'Unknown error'}`);
     }
     
     const page = await browser.newPage();
@@ -215,8 +216,8 @@ export async function automateCustomsSubmission(
       logger.debug('PAGE_READY', 'Page body element found, ready for interaction');
     } catch (navError) {
       navigationTimer();
-      logger.logNavigation('https://ecd.beacukai.go.id/', false, 0, navError);
-      throw new Error(`Navigation failed: ${navError.message}`);
+      logger.logNavigation('https://ecd.beacukai.go.id/', false, 0, navError instanceof Error ? navError : undefined);
+      throw new Error(`Navigation failed: ${navError instanceof Error ? navError.message : 'Unknown error'}`);
     }
     
     reportProgress('form-access', 15, 'Accessing declaration form...');
@@ -242,7 +243,7 @@ export async function automateCustomsSubmission(
     const fieldValidation = await validateAllFormFields(page, formData);
     if (!fieldValidation.allFieldsValid) {
       console.log('⚠️ Some fields are missing or invalid:');
-      fieldValidation.invalidFields.forEach(field => {
+      fieldValidation.invalidFields.forEach((field: {field: string, issue: string}) => {
         console.log(`   - ${field.field}: ${field.issue}`);
       });
       
@@ -329,11 +330,11 @@ export async function automateCustomsSubmission(
     return {
       success: true,
       qrCode: {
-        imageData: qrCodeData.imageBase64,
+        imageData: qrCodeData.imageBase64 as string,
         format: 'png',
         size: {
-          width: qrCodeData.width || 256,
-          height: qrCodeData.height || 256
+          width: (qrCodeData.width as number) || 256,
+          height: (qrCodeData.height as number) || 256
         }
       },
       submissionDetails: {
@@ -345,9 +346,11 @@ export async function automateCustomsSubmission(
       message: 'Customs form submitted successfully'
     };
     
+    automationSuccess = true;
+    
   } catch (error) {
     automationTimer();
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    const errorMessage = error instanceof Error ? error instanceof Error ? error.message : 'Unknown error' : 'Unknown error occurred';
     
     logger.error(
       ErrorCode.API_ERROR,
@@ -392,7 +395,7 @@ export async function automateCustomsSubmission(
     logger.info('AUTOMATION_END', `Automation completed in ${totalDuration}ms`, {
       passport: formData.passportNumber,
       duration: totalDuration,
-      success: !error
+      success: automationSuccess
     });
   }
 }
@@ -500,7 +503,7 @@ async function safeFieldInput(page: Page, selector: string, value: string): Prom
     return true;
   } catch (error) {
     logger.logElementInteraction('type', selector, false, error instanceof Error ? error : undefined);
-    console.log(`❌ Failed to fill ${selector}: ${error.message}`);
+    console.log(`❌ Failed to fill ${selector}: ${error instanceof Error ? error instanceof Error ? error.message : 'Unknown error' : 'Unknown error'}`);
     return false;
   }
 }
@@ -527,7 +530,7 @@ async function safeDropdownSelect(page: Page, selector: string, value: string): 
     
     // Smart delay based on dropdown type
     const isArrivalDate = selector === '#tanggalKedatangan';
-    await smartDelay(page, isArrivalDate ? 'dropdown' : 'click');
+    await smartDelay(page, isArrivalDate ? 2000 : 1500);
     if (isArrivalDate) {
       console.log('📅 Using arrival date optimizations');
     }
@@ -545,7 +548,7 @@ async function safeDropdownSelect(page: Page, selector: string, value: string): 
         console.log(`✅ Method 1 (direct input click) opened dropdown`);
       }
     } catch (e) {
-      console.log(`  Method 1 failed: ${e.message}`);
+      console.log(`  Method 1 failed: ${e instanceof Error ? e instanceof Error ? e.message : 'Unknown error' : 'Unknown error'}`);
     }
     
     // Method 2: Find and click the parent .ant-select container
@@ -560,7 +563,7 @@ async function safeDropdownSelect(page: Page, selector: string, value: string): 
           while (element && element.parentElement) {
             element = element.parentElement;
             if (element.classList && element.classList.contains('ant-select')) {
-              element.click();
+              (element as HTMLElement).click();
               return true;
             }
           }
@@ -576,7 +579,7 @@ async function safeDropdownSelect(page: Page, selector: string, value: string): 
           }
         }
       } catch (e) {
-        console.log(`  Method 2 failed: ${e.message}`);
+        console.log(`  Method 2 failed: ${e instanceof Error ? e instanceof Error ? e.message : 'Unknown error' : 'Unknown error'}`);
       }
     }
     
@@ -586,8 +589,8 @@ async function safeDropdownSelect(page: Page, selector: string, value: string): 
         await page.evaluate((inputSel) => {
           const input = document.querySelector(inputSel);
           if (input) {
-            input.focus();
-            input.click();
+            (input as HTMLElement).focus();
+            (input as HTMLElement).click();
             
             // Find parent ant-select and click it too
             let parent = input.parentElement;
@@ -608,7 +611,7 @@ async function safeDropdownSelect(page: Page, selector: string, value: string): 
           console.log(`✅ Method 3 (JavaScript force click) opened dropdown`);
         }
       } catch (e) {
-        console.log(`  Method 3 failed: ${e.message}`);
+        console.log(`  Method 3 failed: ${e instanceof Error ? e.message : 'Unknown error'}`);
       }
     }
     
@@ -638,12 +641,12 @@ async function safeDropdownSelect(page: Page, selector: string, value: string): 
               }
             }
           } catch (e) {
-            console.log(`  Alternative selector ${altSel} failed: ${e.message}`);
+            console.log(`  Alternative selector ${altSel} failed: ${e instanceof Error ? e.message : 'Unknown error'}`);
             continue;
           }
         }
       } catch (e) {
-        console.log(`  Method 4 failed: ${e.message}`);
+        console.log(`  Method 4 failed: ${e instanceof Error ? e.message : 'Unknown error'}`);
       }
     }
     
@@ -684,7 +687,7 @@ async function safeDropdownSelect(page: Page, selector: string, value: string): 
     return false;
     
   } catch (error) {
-    console.log(`❌ Failed to select ${value} in ${selector}: ${error.message}`);
+    console.log(`❌ Failed to select ${value} in ${selector}: ${error instanceof Error ? error.message : 'Unknown error'}`);
     return false;
   }
 }
@@ -708,7 +711,7 @@ async function fillFamilyMembers(page: Page, familyMembers: FormData['familyMemb
       console.log(`✅ Clicked add button for family member ${i + 1}`);
       await new Promise(resolve => setTimeout(resolve, 1000));
     } catch (clickError) {
-      console.log(`❌ Failed to click add button for family member ${i + 1}: ${clickError.message}`);
+      console.log(`❌ Failed to click add button for family member ${i + 1}: ${clickError instanceof Error ? clickError.message : 'Unknown error'}`);
       continue; // Skip this member but continue with others
     }
     
@@ -893,7 +896,7 @@ async function safeDropdownSelectFamily(page: Page, rowIndex: number, value: str
           await selectedOption.click();
         } catch (e) {
           console.log(`  Regular click failed, trying JavaScript click...`);
-          await selectedOption.evaluate(el => el.click());
+          await selectedOption.evaluate(el => (el as HTMLElement).click());
         }
         
         // Smart wait for first family member + trigger change events
@@ -921,7 +924,7 @@ async function safeDropdownSelectFamily(page: Page, rowIndex: number, value: str
         if (!input) return { inputValue: null, displayText: null, domState: 'input_not_found' };
         
         // Get input value
-        const inputValue = input.value;
+        const inputValue = (input as HTMLInputElement).value;
         
         // Multiple methods to get display text (especially important for first row)
         let displayText = null;
@@ -960,7 +963,7 @@ async function safeDropdownSelectFamily(page: Page, rowIndex: number, value: str
         // For debugging first row issues
         const domState = {
           hasInput: !!input,
-          inputVisible: input.offsetParent !== null,
+          inputVisible: (input as HTMLElement).offsetParent !== null,
           hasFormItem: !!input.closest('.ant-form-item'),
           hasAntSelect: !!input.closest('.ant-select'),
           hasSelectionItem: !!input.closest('.ant-form-item')?.querySelector('.ant-select-selection-item')
@@ -1050,7 +1053,7 @@ async function safeDropdownSelectFamily(page: Page, rowIndex: number, value: str
     return selectionSuccess;
     
   } catch (error) {
-    console.log(`❌ Failed to select family nationality "${value}": ${error.message}`);
+    console.log(`❌ Failed to select family nationality "${value}": ${error instanceof Error ? error.message : 'Unknown error'}`);
     return false;
   }
 }
@@ -1091,17 +1094,17 @@ async function navigateToConsentPageWithValidation(page: Page, formData: FormDat
       // Check for visible radio buttons
       const radios = document.querySelectorAll('input[type="radio"]');
       const visibleRadios = Array.from(radios).filter(radio => {
-        return radio.offsetParent !== null && 
-               getComputedStyle(radio).display !== 'none' && 
-               getComputedStyle(radio).visibility !== 'hidden';
+        return (radio as HTMLElement).offsetParent !== null && 
+               getComputedStyle(radio as HTMLElement).display !== 'none' && 
+               getComputedStyle(radio as HTMLElement).visibility !== 'hidden';
       });
       
       // Look for form fields from page 1 (should be absent on consent page)
       const page1Fields = document.querySelectorAll('#paspor, #nama, #nomorPengangkut');
       const visiblePage1Fields = Array.from(page1Fields).filter(field => {
-        return field.offsetParent !== null && 
-               getComputedStyle(field).display !== 'none' && 
-               getComputedStyle(field).visibility !== 'hidden';
+        return (field as HTMLElement).offsetParent !== null && 
+               getComputedStyle(field as HTMLElement).display !== 'none' && 
+               getComputedStyle(field as HTMLElement).visibility !== 'hidden';
       });
       
       return {
@@ -1132,7 +1135,7 @@ async function navigateToConsentPageWithValidation(page: Page, formData: FormDat
     
     if (validationCheck.hasErrors) {
       console.log(`📋 Found validation errors on attempt ${attempts}:`);
-      validationCheck.errorMessages.forEach(msg => console.log(`   - ${msg}`));
+      validationCheck.errorMessages.forEach((msg: string) => console.log(`   - ${msg}`));
       
       // Try to fix the validation errors
       const fixAttempted = await fixIncompleteFields(page, validationCheck, formData);
@@ -1206,7 +1209,7 @@ async function fillDeclaredGoods(page: Page, declaredGoods: FormData['declaredGo
       console.log(`✅ Clicked add button for goods item ${i + 1}`);
       await new Promise(resolve => setTimeout(resolve, 1000));
     } catch (clickError) {
-      console.log(`❌ Failed to click add button for goods item ${i + 1}: ${clickError.message}`);
+      console.log(`❌ Failed to click add button for goods item ${i + 1}: ${clickError instanceof Error ? clickError.message : 'Unknown error'}`);
       continue; // Skip this item but continue with others
     }
     
@@ -1346,7 +1349,7 @@ async function safeDropdownSelectGoods(page: Page, rowIndex: number, value: stri
           await selectedOption.click();
         } catch (e) {
           console.log(`  Regular click failed, trying JavaScript click...`);
-          await selectedOption.evaluate(el => el.click());
+          await selectedOption.evaluate(el => (el as HTMLElement).click());
         }
         
         // Smart wait for first goods item + trigger change events
@@ -1374,7 +1377,7 @@ async function safeDropdownSelectGoods(page: Page, rowIndex: number, value: stri
         if (!input) return { inputValue: null, displayText: null };
         
         // Get input value
-        const inputValue = input.value;
+        const inputValue = (input as HTMLInputElement).value;
         
         // Get display text from selection item (more reliable for Ant Design)
         const selectionItem = input.closest('.ant-form-item')?.querySelector('.ant-select-selection-item') ||
@@ -1453,7 +1456,7 @@ async function safeDropdownSelectGoods(page: Page, rowIndex: number, value: stri
     return selectionSuccess;
     
   } catch (error) {
-    console.log(`❌ Failed to select goods currency "${value}" in ${inputSelector}: ${error.message}`);
+    console.log(`❌ Failed to select goods currency "${value}" in ${inputSelector}: ${error instanceof Error ? error.message : 'Unknown error'}`);
     return false;
   }
 }
@@ -1504,7 +1507,10 @@ async function submitForm(page: Page): Promise<void> {
 }
 
 // Validate all form fields before navigation
-async function validateAllFormFields(page: Page, formData: FormData): Promise<any> {
+async function validateAllFormFields(page: Page, formData: FormData): Promise<{
+  allFieldsValid: boolean;
+  invalidFields: Array<{field: string, selector: string, issue: string, expected?: unknown, actual?: unknown}>;
+}> {
   console.log('📋 Validating all form fields...');
   
   // Pre-format data outside of page.evaluate
@@ -1514,8 +1520,8 @@ async function validateAllFormFields(page: Page, formData: FormData): Promise<an
   const validation = await page.evaluate((expectedData) => {
     const result = {
       allFieldsValid: true,
-      invalidFields: [] as any[],
-      fieldValues: {} as any
+      invalidFields: [] as Array<{field: string, selector: string, issue: string, expected?: unknown, actual?: unknown}>,
+      fieldValues: {} as Record<string, unknown>
     };
     
     // Define required fields with their selectors
@@ -1576,9 +1582,9 @@ async function validateAllFormFields(page: Page, formData: FormData): Promise<an
       }
       
       // Check if element is visible
-      const isVisible = element.offsetParent !== null && 
-                       getComputedStyle(element).display !== 'none' && 
-                       getComputedStyle(element).visibility !== 'hidden';
+      const isVisible = (element as HTMLElement).offsetParent !== null && 
+                       getComputedStyle(element as HTMLElement).display !== 'none' && 
+                       getComputedStyle(element as HTMLElement).visibility !== 'hidden';
       
       if (!isVisible) {
         result.allFieldsValid = false;
@@ -1613,7 +1619,7 @@ async function validateAllFormFields(page: Page, formData: FormData): Promise<an
           () => antSelect?.querySelector('.ant-select-selection-item')?.textContent?.trim(),
           
           // Method 2: From parent ant-select
-          () => document.querySelector(`${field.selector}`).closest('.ant-select')?.querySelector('.ant-select-selection-item')?.textContent?.trim(),
+          () => document.querySelector(`${field.selector}`)?.closest('.ant-select')?.querySelector('.ant-select-selection-item')?.textContent?.trim(),
           
           // Method 3: Using title attribute
           () => antSelect?.querySelector('.ant-select-selection-item')?.getAttribute('title')?.trim(),
@@ -1638,7 +1644,7 @@ async function validateAllFormFields(page: Page, formData: FormData): Promise<an
               break;
             }
           } catch (e) {
-            console.log(`🔍 DEBUG: Method ${i + 1} failed for ${field.selector}:`, e.message);
+            console.log(`🔍 DEBUG: Method ${i + 1} failed for ${field.selector}:`, e instanceof Error ? e.message : 'Unknown error');
           }
         }
         
@@ -1671,7 +1677,7 @@ async function validateAllFormFields(page: Page, formData: FormData): Promise<an
               break;
             }
           } catch (e) {
-            console.log(`🔍 VALIDATION DEBUG: Fallback method ${i + 1} failed for ${field.selector}:`, e.message);
+            console.log(`🔍 VALIDATION DEBUG: Fallback method ${i + 1} failed for ${field.selector}:`, e instanceof Error ? e.message : 'Unknown error');
           }
         }
       }
@@ -1719,7 +1725,7 @@ async function validateAllFormFields(page: Page, formData: FormData): Promise<an
 }
 
 // Fix form field issues found during validation
-async function fixFormFieldIssues(page: Page, formData: FormData, invalidFields: any[]): Promise<boolean> {
+async function fixFormFieldIssues(page: Page, formData: FormData, invalidFields: Array<{field: string, selector: string, issue: string}>): Promise<boolean> {
   console.log('🔧 Attempting to fix form field issues...');
   
   let fixedCount = 0;
@@ -1789,7 +1795,7 @@ async function fixFormFieldIssues(page: Page, formData: FormData, invalidFields:
       }
       
     } catch (error) {
-      console.log(`❌ Error fixing ${field.field}: ${error.message}`);
+      console.log(`❌ Error fixing ${field.field}: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
   
@@ -1798,26 +1804,32 @@ async function fixFormFieldIssues(page: Page, formData: FormData, invalidFields:
 }
 
 // Fix incomplete fields based on validation results
-async function fixIncompleteFields(page: Page, validationResult: any, formData: FormData): Promise<boolean> {
+async function fixIncompleteFields(page: Page, validationResult: {
+  hasErrors: boolean;
+  errorMessages: string[];
+  modalAppeared?: boolean;
+  invalidFields?: Array<{field: string, issue: string}>;
+  incompleteFields?: Array<{field: string, selector: string}>;
+}, formData: FormData): Promise<boolean> {
   console.log('🔧 Attempting to fix incomplete fields...');
   
   let fixedCount = 0;
   const allFieldsToFix = [
-    ...validationResult.incompleteFields,
-    ...validationResult.invalidFields
+    ...(validationResult.incompleteFields || []),
+    ...(validationResult.invalidFields || [])
   ];
   
-  // Deduplicate fields by ID to prevent fixing the same field multiple times
+  // Deduplicate fields by field name to prevent fixing the same field multiple times
   const uniqueFields = allFieldsToFix.filter((field, index, array) => {
-    const fieldId = field.id || field.field;
-    return array.findIndex(f => (f.id || f.field) === fieldId) === index;
+    const fieldId = field.field;
+    return array.findIndex(f => f.field === fieldId) === index;
   });
   
   console.log(`📋 Found ${allFieldsToFix.length} fields to fix (${uniqueFields.length} unique)`);
   
   for (const field of uniqueFields) {
     try {
-      const fieldId = field.id || field.field;
+      const fieldId = field.field;
       console.log(`🔧 Fixing field: ${fieldId}`);
       
       // Check if field is currently visible before attempting to fix
@@ -1826,9 +1838,9 @@ async function fixIncompleteFields(page: Page, validationResult: any, formData: 
       
       if (element) {
         const isVisible = await element.evaluate(el => {
-          return el.offsetParent !== null && 
-                 getComputedStyle(el).display !== 'none' && 
-                 getComputedStyle(el).visibility !== 'hidden';
+          return (el as HTMLElement).offsetParent !== null && 
+                 getComputedStyle(el as HTMLElement).display !== 'none' && 
+                 getComputedStyle(el as HTMLElement).visibility !== 'hidden';
         });
         
         if (!isVisible) {
@@ -1887,7 +1899,7 @@ async function fixIncompleteFields(page: Page, validationResult: any, formData: 
       } else if (fieldId.includes('kodeMataUang')) {
         // Handle currency fields for declared goods
         const match = fieldId.match(/dataBarang_(\d+)_kodeMataUang/);
-        if (match && formData.declaredGoods && formData.declaredGoods[match[1]]) {
+        if (match && formData.declaredGoods && formData.declaredGoods[parseInt(match[1])]) {
           const goodsIndex = parseInt(match[1]);
           const currencyFull = CURRENCY_MAP[formData.declaredGoods[goodsIndex].currency] || formData.declaredGoods[goodsIndex].currency;
           console.log(`  🔄 Attempting to fix currency field for goods item ${goodsIndex + 1}: ${currencyFull}`);
@@ -1896,7 +1908,7 @@ async function fixIncompleteFields(page: Page, validationResult: any, formData: 
       } else if (fieldId.includes('dataKeluarga') && fieldId.includes('kodeNegara')) {
         // Handle family member nationality fields
         const match = fieldId.match(/dataKeluarga_(\d+)_kodeNegara/);
-        if (match && formData.familyMembers && formData.familyMembers[match[1]]) {
+        if (match && formData.familyMembers && formData.familyMembers[parseInt(match[1])]) {
           const familyIndex = parseInt(match[1]);
           const familyMember = formData.familyMembers[familyIndex];
           console.log(`  🔄 Attempting to fix family nationality field for member ${familyIndex + 1}: ${familyMember.nationality}`);
@@ -1912,7 +1924,7 @@ async function fixIncompleteFields(page: Page, validationResult: any, formData: 
       }
       
     } catch (error) {
-      console.log(`❌ Error fixing field ${field.id || field.field}: ${error.message}`);
+      console.log(`❌ Error fixing field ${field.field}: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
   
@@ -1921,7 +1933,14 @@ async function fixIncompleteFields(page: Page, validationResult: any, formData: 
 }
 
 // Check for validation errors (ported from test script)
-async function checkForValidationErrors(page: Page): Promise<any> {
+async function checkForValidationErrors(page: Page): Promise<{
+  hasErrors: boolean;
+  errorMessages: string[];
+  modalAppeared: boolean;
+  qrCodeVisible: boolean;
+  invalidFields: Array<{field: string, issue: string}>;
+  incompleteFields: Array<{field: string, selector: string}>;
+}> {
   console.log('🔍 Checking for validation errors...');
   
   try {
@@ -1929,11 +1948,10 @@ async function checkForValidationErrors(page: Page): Promise<any> {
       const result = {
         hasErrors: false,
         errorMessages: [] as string[],
-        invalidFields: [] as any[],
-        alertMessages: [] as string[],
+        invalidFields: [] as Array<{field: string, issue: string}>,
         modalAppeared: false,
         qrCodeVisible: false,
-        incompleteFields: [] as any[]
+        incompleteFields: [] as Array<{field: string, selector: string}>
       };
       
       // Check for validation error fields
@@ -1951,7 +1969,7 @@ async function checkForValidationErrors(page: Page): Promise<any> {
           const errorMsg = field.closest('.ant-form-item')?.querySelector('.ant-form-item-explain-error')?.textContent;
           result.invalidFields.push({
             field: fieldId,
-            error: errorMsg || 'validation error'
+            issue: errorMsg || 'validation error'
           });
         });
       }
@@ -1960,7 +1978,7 @@ async function checkForValidationErrors(page: Page): Promise<any> {
       const alerts = document.querySelectorAll('.ant-alert-error, .ant-message-error, .ant-notification-error');
       alerts.forEach(alert => {
         result.hasErrors = true;
-        result.alertMessages.push(alert.textContent?.trim() || '');
+        result.errorMessages.push(alert.textContent?.trim() || 'Alert detected');
       });
       
       // Check for error messages in form
@@ -1979,9 +1997,9 @@ async function checkForValidationErrors(page: Page): Promise<any> {
         const element = field as HTMLInputElement | HTMLSelectElement;
         
         // Only check fields that are currently visible
-        const isVisible = element.offsetParent !== null && 
-                         getComputedStyle(element).display !== 'none' && 
-                         getComputedStyle(element).visibility !== 'hidden';
+        const isVisible = (element as HTMLElement).offsetParent !== null && 
+                         getComputedStyle(element as HTMLElement).display !== 'none' && 
+                         getComputedStyle(element as HTMLElement).visibility !== 'hidden';
         
         if (isVisible && (!element.value || element.value.trim() === '')) {
           // For Ant Design dropdowns, check selection display with multiple methods
@@ -2018,10 +2036,8 @@ async function checkForValidationErrors(page: Page): Promise<any> {
             if (fieldId && fieldId !== 'undefined' && fieldId !== '') {
               result.hasErrors = true;
               result.incompleteFields.push({
-                id: element.id,
-                name: element.getAttribute('name'),
-                type: element.type,
-                placeholder: element.getAttribute('placeholder')
+                field: fieldId,
+                selector: `#${fieldId}`
               });
             }
           }
@@ -2048,9 +2064,8 @@ async function checkForValidationErrors(page: Page): Promise<any> {
     console.error('❌ Error checking validation:', error);
     return {
       hasErrors: true,
-      errorMessages: [`Validation check failed: ${error.message}`],
+      errorMessages: [`Validation check failed: ${error instanceof Error ? error.message : 'Unknown error'}`],
       invalidFields: [],
-      alertMessages: [],
       modalAppeared: false,
       qrCodeVisible: false,
       incompleteFields: []
@@ -2091,7 +2106,6 @@ async function downloadQRCodeImage(page: Page): Promise<Record<string, unknown>>
     console.log('✅ Download directory created');
     
     // Set up download behavior with CDP
-    // @ts-expect-error - CDP session type
     const client = await page.target().createCDPSession();
     await client.send('Page.setDownloadBehavior', {
       behavior: 'allow',
@@ -2120,7 +2134,7 @@ async function downloadQRCodeImage(page: Page): Promise<Record<string, unknown>>
           break;
         }
       } catch (e) {
-        console.log(`   Selector "${selector}" failed: ${e.message}`);
+        console.log(`   Selector "${selector}" failed: ${e instanceof Error ? e.message : 'Unknown error'}`);
         continue;
       }
     }
@@ -2196,6 +2210,9 @@ async function downloadQRCodeImage(page: Page): Promise<Record<string, unknown>>
     console.log(`✅ QR code image downloaded successfully via ${detectionMethod} detection`);
     
     // Read the downloaded file and convert to base64
+    if (!downloadedFilename) {
+      throw new Error('No QR code file was downloaded');
+    }
     const filePath = path.join(downloadPath, downloadedFilename);
     const imageBuffer = await fs.readFile(filePath);
     const imageBase64 = `data:image/png;base64,${imageBuffer.toString('base64')}`;
@@ -2211,7 +2228,7 @@ async function downloadQRCodeImage(page: Page): Promise<Record<string, unknown>>
     };
     
   } catch (error) {
-    console.log(`❌ QR code download failed: ${error.message}`);
+    console.log(`❌ QR code download failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     
     // Fallback: try to screenshot just the QR code element
     console.log('🔄 Attempting fallback: screenshot QR code element...');
@@ -2230,15 +2247,22 @@ async function downloadQRCodeImage(page: Page): Promise<Record<string, unknown>>
         };
       }
     } catch (fallbackError) {
-      console.log(`❌ Fallback screenshot failed: ${fallbackError.message}`);
+      console.log(`❌ Fallback screenshot failed: ${fallbackError instanceof Error ? fallbackError.message : 'Unknown error'}`);
     }
     
-    throw new Error(`Failed to extract QR code: ${error.message}`);
+    throw new Error(`Failed to extract QR code: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
 
 // Extract submission details (enhanced version from test script)
-async function extractSubmissionDetails(page: Page): Promise<any> {
+async function extractSubmissionDetails(page: Page): Promise<{
+  registrationNumber: string;
+  submissionTime: string;
+  portInfo: string;
+  customsOffice: string;
+  extractedAt?: string;
+  debugInfo?: unknown;
+}> {
   console.log('🔍 Extracting submission details from success modal...');
   
   try {
@@ -2251,7 +2275,7 @@ async function extractSubmissionDetails(page: Page): Promise<any> {
       
       let registrationNumber = '';
       let portInfo = '';
-      let message = '';
+      const message = '';
       let customsOffice = '';
       
       // Extract h4 elements which typically contain the key information
@@ -2286,7 +2310,7 @@ async function extractSubmissionDetails(page: Page): Promise<any> {
       
       // Fallback: extract registration number from any h4 if not found above
       if (!registrationNumber) {
-        for (let h4 of h4Elements) {
+        for (const h4 of h4Elements) {
           const text = h4.textContent?.trim();
           if (text && /^[A-Za-z0-9]{6}$/.test(text)) {
             registrationNumber = text;
@@ -2297,7 +2321,7 @@ async function extractSubmissionDetails(page: Page): Promise<any> {
       
       // Fallback: extract port info from any h4 containing parentheses
       if (!portInfo) {
-        for (let h4 of h4Elements) {
+        for (const h4 of h4Elements) {
           const text = h4.textContent?.trim();
           if (text && text.includes('(') && text.includes(')')) {
             portInfo = text;
@@ -2308,7 +2332,7 @@ async function extractSubmissionDetails(page: Page): Promise<any> {
       
       // Fallback: extract customs office from any h4 containing "KPPBC" or "BEA"
       if (!customsOffice) {
-        for (let h4 of h4Elements) {
+        for (const h4 of h4Elements) {
           const text = h4.textContent?.trim();
           if (text && (text.includes('KPPBC') || text.includes('BEA') || text.includes('CUKAI'))) {
             customsOffice = text;
@@ -2345,6 +2369,7 @@ async function extractSubmissionDetails(page: Page): Promise<any> {
       
       return {
         registrationNumber: submissionData.registrationNumber || 'UNKNOWN',
+        submissionTime: new Date().toISOString(),
         portInfo: submissionData.portInfo,
         customsOffice: submissionData.customsOffice,
         extractedAt: submissionData.extractedAt,
@@ -2352,17 +2377,27 @@ async function extractSubmissionDetails(page: Page): Promise<any> {
       };
     } else {
       console.log('⚠️ Could not extract submission details from modal');
-      return { registrationNumber: 'UNKNOWN' };
+      return { 
+        registrationNumber: 'UNKNOWN', 
+        submissionTime: new Date().toISOString(),
+        portInfo: '',
+        customsOffice: ''
+      };
     }
     
   } catch (error) {
-    console.log(`❌ Failed to extract submission details: ${error.message}`);
-    return { registrationNumber: 'UNKNOWN' };
+    console.log(`❌ Failed to extract submission details: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    return { 
+      registrationNumber: 'UNKNOWN',
+      submissionTime: new Date().toISOString(),
+      portInfo: '',
+      customsOffice: ''
+    };
   }
 }
 
 // Helper functions - Comprehensive add button finder (ported from test script)
-async function findAddButton(page: Page, text: string): Promise<any> {
+async function findAddButton(page: Page, text: string): Promise<import('puppeteer').ElementHandle<Element> | null> {
   console.log(`🔍 Looking for add button with text: "${text}"`);
   
   // Try specific selectors first
@@ -2382,8 +2417,8 @@ async function findAddButton(page: Page, text: string): Promise<any> {
       for (const btn of buttons) {
         const buttonInfo = await btn.evaluate(el => ({
           text: el.textContent?.toLowerCase().trim(),
-          isVisible: el.offsetParent !== null,
-          isDisabled: el.disabled,
+          isVisible: (el as HTMLElement).offsetParent !== null,
+          isDisabled: (el as HTMLInputElement).disabled,
           isDanger: el.classList.contains('ant-btn-dangerous'),
           hasPlus: !!el.querySelector('.anticon-plus') || !!el.querySelector('.anticon-plus-circle')
         }));
@@ -2405,11 +2440,11 @@ async function findAddButton(page: Page, text: string): Promise<any> {
   // Fallback: look for any button containing the text
   console.log(`🔍 Fallback: searching all buttons for "${text}"`);
   const allButtons = await page.$$('button');
-  for (let button of allButtons) {
+  for (const button of allButtons) {
     const buttonInfo = await button.evaluate(el => ({
       text: el.textContent?.toLowerCase().trim(),
-      isVisible: el.offsetParent !== null,
-      isDisabled: el.disabled,
+      isVisible: (el as HTMLElement).offsetParent !== null,
+      isDisabled: (el as HTMLInputElement).disabled,
       isDanger: el.classList.contains('ant-btn-dangerous'),
       hasDelete: !!el.querySelector('.anticon-delete')
     }));

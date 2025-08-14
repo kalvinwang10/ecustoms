@@ -273,13 +273,13 @@ export const formNavigation = {
       waitForLoad: '.ant-form, #paspor'
     }
   }
-};
+} as const;
 
 // Legacy form sections for backward compatibility
 export const formSections: FormSection[] = [
   {
     name: 'customs_declaration',
-    fields: formNavigation.mainForm.fields,
+    fields: formNavigation.mainForm.fields as unknown as FieldMapping[],
     navigation: formNavigation.mainForm.navigation
   }
 ];
