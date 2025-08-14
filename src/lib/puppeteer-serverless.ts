@@ -5,22 +5,16 @@
 
 import { Browser, LaunchOptions } from 'puppeteer';
 
-interface ServerlessChrome {
-  puppeteer: any;
-  executablePath: () => Promise<string>;
-}
-
 /**
  * Get the appropriate Puppeteer instance and Chrome path for serverless
  */
 export async function getServerlessPuppeteer(): Promise<{
-  puppeteer: any;
+  puppeteer: typeof import('puppeteer');
   executablePath?: string;
   args: string[];
 }> {
   const isVercel = process.env.VERCEL || process.env.VERCEL_ENV;
   const isAWSLambda = process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.AWS_EXECUTION_ENV;
-  const isProduction = process.env.NODE_ENV === 'production';
 
   // Common args for serverless environments
   const args = [
@@ -36,35 +30,24 @@ export async function getServerlessPuppeteer(): Promise<{
   ];
 
   // Try to use serverless-optimized Chrome if available
-  if (isVercel) {
+  if (isVercel || isAWSLambda) {
     try {
-      // For Vercel, try @sparticuz/chromium
-      const chromium = await import('@sparticuz/chromium').catch(() => null);
-      if (chromium) {
+      // For Vercel and AWS Lambda, try @sparticuz/chromium
+      // Use require.resolve to check if package exists before importing
+      try {
+        require.resolve('@sparticuz/chromium');
+        const chromium = await import('@sparticuz/chromium');
+        const puppeteerCore = await import('puppeteer-core');
         return {
-          puppeteer: await import('puppeteer-core'),
-          executablePath: await chromium.executablePath(),
-          args: [...chromium.args, ...args],
+          puppeteer: puppeteerCore as unknown as typeof import('puppeteer'),
+          executablePath: await chromium.default.executablePath(),
+          args: [...chromium.default.args, ...args],
         };
+      } catch {
+        // Package not installed, continue
       }
-    } catch (error) {
+    } catch {
       console.warn('⚠️ @sparticuz/chromium not found, falling back to bundled Puppeteer');
-    }
-  }
-
-  if (isAWSLambda) {
-    try {
-      // For AWS Lambda, try chrome-aws-lambda
-      const chromium = await import('chrome-aws-lambda').catch(() => null);
-      if (chromium) {
-        return {
-          puppeteer: chromium.puppeteer,
-          executablePath: await chromium.executablePath,
-          args: [...chromium.args, ...args],
-        };
-      }
-    } catch (error) {
-      console.warn('⚠️ chrome-aws-lambda not found, falling back to bundled Puppeteer');
     }
   }
 
@@ -72,7 +55,7 @@ export async function getServerlessPuppeteer(): Promise<{
   if (process.env.CHROME_PATH) {
     const puppeteer = await import('puppeteer-core');
     return {
-      puppeteer,
+      puppeteer: puppeteer as unknown as typeof import('puppeteer'),
       executablePath: process.env.CHROME_PATH,
       args,
     };
@@ -99,7 +82,6 @@ export async function launchServerlessBrowser(options: Partial<LaunchOptions> = 
       width: 1920,
       height: 1080,
     },
-    ignoreHTTPSErrors: true,
     ...options,
   };
 

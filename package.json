@@ -13,6 +13,7 @@
     "mixpanel-browser": "^2.67.0",
     "next": "15.4.5",
     "puppeteer": "^24.16.1",
+    "puppeteer-core": "^24.16.1",
     "puppeteer-extra": "^3.3.6",
     "puppeteer-extra-plugin-stealth": "^2.11.2",
     "react": "19.1.0",
@@ -30,5 +31,8 @@
     "eslint-config-next": "15.4.5",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "optionalDependencies": {
+    "@sparticuz/chromium": "^138.0.2"
   }
 }

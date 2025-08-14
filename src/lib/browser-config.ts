@@ -29,7 +29,6 @@ export function getChromePath(): string | undefined {
  * Get browser launch options optimized for serverless environments
  */
 export async function getBrowserOptions(options: { headless?: boolean } = {}) {
-  const isProduction = process.env.NODE_ENV === 'production';
   const isServerless = process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME;
   
   // Base args for all environments
