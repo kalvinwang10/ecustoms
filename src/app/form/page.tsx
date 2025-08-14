@@ -20,7 +20,8 @@ import {
   trackFormSubmission as trackMixpanelFormSubmission,
   trackButtonClick,
   trackLanguageChange,
-  trackUserJourney 
+  trackUserJourney,
+  trackAutomationFailure
 } from '@/lib/mixpanel';
 
 const countries = [
@@ -576,30 +577,51 @@ export default function FormPage() {
           setSubmissionResult(result);
           setShowQRModal(true);
         } else {
-          // Show error message
-          setErrors({
-            submission: result.error?.message || 'Submission failed. Please try again.'
-          });
+          // Track automation failure in Mixpanel
+          trackAutomationFailure(
+            result.error?.code || 'UNKNOWN_ERROR',
+            result.error?.message || 'Unknown error',
+            result.error?.step,
+            result.error?.details
+          );
           
-          // Track error
+          // Track error for form validation (backwards compatibility)
           trackFormValidationError('submission', result.error?.message || 'Unknown error');
           
-          // Offer fallback option
-          if (result.fallbackUrl) {
-            const useFallback = window.confirm(
-              'Automated submission failed. Would you like to complete the form manually on the official website?'
-            );
-            if (useFallback) {
-              window.open(result.fallbackUrl, '_blank');
-            }
-          }
+          // Show brief notification before redirecting
+          setErrors({
+            submission: 'Automation failed. Redirecting to official customs website...'
+          });
+          
+          // Auto-redirect to official customs website after brief delay
+          setTimeout(() => {
+            window.location.href = 'https://ecd.beacukai.go.id/';
+          }, 2000);
         }
       } catch (error) {
         console.error('Submission error:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Network error';
+        
+        // Track network failure in Mixpanel
+        trackAutomationFailure(
+          'NETWORK_ERROR',
+          errorMessage,
+          'api_call',
+          error
+        );
+        
+        // Show brief notification before redirecting
         setErrors({
-          submission: 'Network error. Please check your connection and try again.'
+          submission: 'Network error. Redirecting to official customs website...'
         });
+        
+        // Track error for form validation (backwards compatibility)
         trackFormValidationError('submission', 'Network error');
+        
+        // Auto-redirect to official customs website after brief delay
+        setTimeout(() => {
+          window.location.href = 'https://ecd.beacukai.go.id/';
+        }, 2000);
       } finally {
         setIsSubmitting(false);
       }

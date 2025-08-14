@@ -159,6 +159,26 @@ export const trackFormAbandonment = (completionPercentage: number) => {
   });
 };
 
+export const trackAutomationFailure = (errorCode: string, errorMessage: string, errorStep?: string, errorDetails?: unknown) => {
+  trackEvent('Automation Failed', {
+    form_type: 'customs_declaration',
+    error_code: errorCode,
+    error_message: errorMessage,
+    error_step: errorStep,
+    failure_date: new Date().toISOString(),
+    user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',
+    url: typeof window !== 'undefined' ? window.location.href : 'unknown',
+    error_details: errorDetails,
+  });
+  
+  updateUserProfile({
+    last_automation_failure: new Date().toISOString(),
+    automation_failure_count: mixpanel.people.increment('automation_failure_count', 1),
+    last_error_code: errorCode,
+    last_error_step: errorStep,
+  });
+};
+
 // Button click tracking
 export const trackButtonClick = (buttonName: string, location: string, properties?: Record<string, unknown>) => {
   trackEvent('Button Click', {

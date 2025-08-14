@@ -1394,6 +1394,30 @@ export const translations: Translations = {
     ar: 'يجب أن توافق على أن المعلومات المقدمة دقيقة',
     hi: 'आपको सहमत होना होगा कि प्रदान की गई जानकारी सटीक है',
   },
+  'qrModal.thankYou': {
+    en: 'Thank you, we have received your Customs Declaration form',
+    id: 'Terima kasih, kami telah menerima formulir Deklarasi Bea Cukai Anda',
+    zh: '谢谢，我们已收到您的海关申报表',
+    ja: 'ありがとうございます。税関申告書を受け取りました',
+    ar: 'شكرًا لك، لقد استلمنا نموذج الإعلان الجمركي الخاص بك',
+    hi: 'धन्यवाद, हमें आपका कस्टम घोषणा फॉर्म प्राप्त हो गया है',
+  },
+  'qrModal.download': {
+    en: 'Download',
+    id: 'Unduh',
+    zh: '下载',
+    ja: 'ダウンロード',
+    ar: 'تحميل',
+    hi: 'डाउनलोड',
+  },
+  'qrModal.instructions': {
+    en: 'Please print or download it on your device, then show the QR code or mention the registration code to the Customs officer at the terminal or local Customs Service Office to complete this registration.',
+    id: 'Silakan cetak atau unduh di perangkat Anda, kemudian tunjukkan kode QR atau sebutkan kode registrasi kepada petugas Bea Cukai di terminal atau Kantor Layanan Bea Cukai setempat untuk menyelesaikan registrasi ini.',
+    zh: '请在您的设备上打印或下载，然后向航站楼或当地海关服务办公室的海关官员出示二维码或提及注册代码以完成此注册。',
+    ja: 'デバイスに印刷またはダウンロードしてから、ターミナルまたは地域の税関サービスオフィスの税関職員にQRコードを見せるか登録コードを伝えて、この登録を完了してください。',
+    ar: 'يرجى طباعته أو تنزيله على جهازك، ثم أظهر رمز الاستجابة السريعة أو اذكر رمز التسجيل لموظف الجمارك في المحطة أو مكتب خدمة الجمارك المحلي لإكمال هذا التسجيل.',
+    hi: 'कृपया इसे अपने डिवाइस पर प्रिंट या डाउनलोड करें, फिर इस पंजीकरण को पूरा करने के लिए टर्मिनल या स्थानीय कस्टम सेवा कार्यालय में कस्टम अधिकारी को QR कोड दिखाएं या पंजीकरण कोड बताएं।',
+  },
 };
 
 export const getTranslation = (key: string, language: Language): string => {

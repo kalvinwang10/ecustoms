@@ -93,15 +93,42 @@ async function automateCustomsSubmission(formData: FormData): Promise<SubmitCust
     
     return result;
   } catch (error) {
-    console.error('Automation failed:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Automation failed';
+    const errorDetails = error instanceof Error ? {
+      name: error.name,
+      message: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    } : error;
+    
+    // Enhanced logging for monitoring
+    logger.error(
+      ErrorCode.API_ERROR,
+      '🤖 Automation execution failed',
+      {
+        error_code: 'AUTOMATION_FAILED',
+        error_message: errorMessage,
+        error_step: 'submission',
+        form_data_summary: {
+          passport: formData.passportNumber,
+          port: formData.portOfArrival,
+          arrival_date: formData.arrivalDate,
+          has_goods: formData.hasGoodsToDeclarate,
+          family_members: formData.familyMembers.length
+        },
+        error_details: errorDetails
+      },
+      error instanceof Error ? error : undefined
+    );
+    
+    console.error('🤖 Automation failed:', errorMessage);
     
     return {
       success: false,
       error: {
         code: 'AUTOMATION_FAILED',
-        message: error instanceof Error ? error.message : 'Automation failed',
+        message: errorMessage,
         step: 'submission',
-        details: error
+        details: process.env.NODE_ENV === 'development' ? errorDetails : undefined
       },
       fallbackUrl: 'https://ecd.beacukai.go.id/'
     };
