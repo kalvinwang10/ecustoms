@@ -19,6 +19,8 @@ import { SubmitCustomsResponse } from '@/types/customs-api';
 import path from 'path';
 import fs from 'fs/promises';
 import { logger, ErrorCode } from './logger';
+import { getBrowserOptions } from './browser-config';
+import { launchServerlessBrowser } from './puppeteer-serverless';
 
 // Smart waiting utilities for performance optimization
 async function waitForStableElement(page: Page, selector: string, timeout = 3000): Promise<void> {
@@ -145,54 +147,48 @@ export async function automateCustomsSubmission(
   
   try {
     reportProgress('initialization', 5, 'Starting browser...');
-    // Launch browser with speed optimizations
-    const baseArgs = [
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      '--disable-dev-shm-usage',
-      '--no-first-run',
-      '--no-zygote',
-      // Speed optimizations
-      '--disable-background-networking',
-      '--disable-background-timer-throttling',
-      '--disable-renderer-backgrounding',
-      '--disable-backgrounding-occluded-windows',
-      '--aggressive-cache-discard',
-      '--disable-ipc-flooding-protection',
-      '--disable-hang-monitor',
-      '--disable-prompt-on-repost',
-      '--disable-sync',
-      '--memory-pressure-off'
-    ];
     
-    // Additional headless optimizations for production
-    const headlessOptimizations = options.headless ? [
-      '--disable-gpu',
-      '--disable-accelerated-2d-canvas',
-      '--disable-features=VizDisplayCompositor,VizServiceDisplay',
-      '--disable-extensions',
-      '--disable-plugins',
-      '--disable-images', // Forms don't need images for automation
-      '--disable-javascript-harmony-shipping',
-      '--no-experiments',
-      '--disable-web-security', // Speed up for automation only
-      '--disable-features=TranslateUI',
-      '--disable-blink-features=AutomationControlled', // Avoid detection
-      '--disable-dev-shm-usage',
-      '--disable-logging'
-    ] : [];
-    
-    const launchOptions = {
-      headless: options.headless === true, // Boolean value for headless mode
-      args: [...baseArgs, ...headlessOptimizations]
-    };
+    // Get optimized browser options based on environment
+    const browserOptions = await getBrowserOptions({ headless: options.headless });
     
     try {
-      browser = await puppeteer.launch(launchOptions);
-      logger.logBrowserLaunch(true, launchOptions);
+      // Try standard Puppeteer launch first
+      browser = await puppeteer.launch(browserOptions);
+      logger.logBrowserLaunch(true, browserOptions);
+      logger.info('BROWSER_STARTED', `Browser launched successfully in ${process.env.NODE_ENV} mode`);
     } catch (launchError) {
-      logger.logBrowserLaunch(false, launchOptions, launchError instanceof Error ? launchError : undefined);
-      throw new Error(`Browser launch failed: ${launchError instanceof Error ? launchError.message : 'Unknown error'}`);
+      logger.logBrowserLaunch(false, browserOptions, launchError instanceof Error ? launchError : undefined);
+      
+      const errorMessage = launchError instanceof Error ? launchError.message : 'Unknown error';
+      const isChromeMissing = errorMessage.includes('Could not find Chrome');
+      
+      // If Chrome is missing in production, try serverless launcher
+      if (isChromeMissing && process.env.NODE_ENV === 'production') {
+        logger.info('BROWSER_RETRY', 'Attempting serverless browser launch...');
+        
+        try {
+          browser = await launchServerlessBrowser({ headless: options.headless });
+          logger.logBrowserLaunch(true, { serverless: true });
+          logger.info('BROWSER_STARTED', 'Browser launched successfully in serverless mode');
+        } catch (serverlessError) {
+          const serverlessErrorMsg = serverlessError instanceof Error ? serverlessError.message : 'Unknown error';
+          
+          const productionHelp = '\n\nFor production deployment:\n' +
+            '1. If using Vercel: npm install @sparticuz/chromium\n' +
+            '2. If using AWS Lambda: npm install chrome-aws-lambda\n' +
+            '3. If using Docker: Add chromium-browser to Dockerfile\n' +
+            '4. Set CHROME_PATH environment variable to Chrome executable path\n\n' +
+            'See: https://github.com/puppeteer/puppeteer/blob/main/docs/troubleshooting.md';
+          
+          throw new Error(`Browser launch failed in both standard and serverless modes.\n${serverlessErrorMsg}${productionHelp}`);
+        }
+      } else {
+        // For development or non-Chrome errors, throw original error
+        const help = isChromeMissing 
+          ? '\n\nFor local development: Run "npx puppeteer browsers install chrome"'
+          : '';
+        throw new Error(`Browser launch failed: ${errorMessage}${help}`);
+      }
     }
     
     const page = await browser.newPage();

@@ -6,7 +6,8 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "postinstall": "node scripts/install-chromium.js || true"
   },
   "dependencies": {
     "mixpanel-browser": "^2.67.0",
