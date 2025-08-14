@@ -9,6 +9,8 @@ import FamilyMemberManager from '@/components/ui/FamilyMemberManager';
 import DateOfBirthSelect from '@/components/ui/DateOfBirthSelect';
 import ArrivalDateSelect from '@/components/ui/ArrivalDateSelect';
 import GoodsDeclarationTable from '@/components/ui/GoodsDeclarationTable';
+import QRCodeModal from '@/components/QRCodeModal';
+import ProcessingModal from '@/components/ProcessingModal';
 import { Language, getTranslation } from '@/lib/translations';
 import { FormData, initialFormData } from '@/lib/formData';
 import { trackFormSubmission } from '@/lib/gtag';
@@ -19,7 +21,8 @@ import {
   trackFormSubmission as trackMixpanelFormSubmission,
   trackButtonClick,
   trackLanguageChange,
-  trackUserJourney 
+  trackUserJourney,
+  trackAutomationFailure
 } from '@/lib/mixpanel';
 
 const countries = [
@@ -303,6 +306,19 @@ export default function FormPage() {
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formStarted, setFormStarted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submissionResult, setSubmissionResult] = useState<{
+    success: boolean;
+    qrCode?: { imageData?: string };
+    submissionDetails?: { 
+      submissionId?: string; 
+      submissionTime?: string; 
+      status?: string;
+      portInfo?: string;
+      customsOffice?: string;
+    };
+  } | null>(null);
+  const [showQRModal, setShowQRModal] = useState(false);
 
   // Track form start when component mounts
   useEffect(() => {
@@ -525,18 +541,91 @@ export default function FormPage() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     trackButtonClick('Continue to E-Customs', 'Form Page');
     trackUserJourney('Form Submit Attempted', 4);
     
     if (validateCurrentStep()) {
-      // Track successful form submission in both systems
-      trackMixpanelFormSubmission();
-      trackFormSubmission('https://ecd.beacukai.go.id/');
-      trackUserJourney('Form Submitted Successfully', 5);
+      setIsSubmitting(true);
+      setErrors({});
       
-      // Redirect to official Indonesian e-CD system
-      window.open('https://ecd.beacukai.go.id/', '_blank');
+      try {
+        // Call our API to automate the submission
+        const response = await fetch('/api/submit-customs', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            formData: formData,
+            options: {
+              headless: true,
+              timeout: 60000,
+              retries: 3
+            }
+          }),
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          // Track successful form submission
+          trackMixpanelFormSubmission();
+          trackFormSubmission(); // Remove URL parameter to prevent unwanted redirect
+          trackUserJourney('Form Submitted Successfully', 5);
+          
+          // Store the result and show QR modal
+          setSubmissionResult(result);
+          setShowQRModal(true);
+        } else {
+          // Track automation failure in Mixpanel
+          trackAutomationFailure(
+            result.error?.code || 'UNKNOWN_ERROR',
+            result.error?.message || 'Unknown error',
+            result.error?.step,
+            result.error?.details
+          );
+          
+          // Track error for form validation (backwards compatibility)
+          trackFormValidationError('submission', result.error?.message || 'Unknown error');
+          
+          // Show brief notification before redirecting
+          setErrors({
+            submission: 'Automation failed. Redirecting to official customs website...'
+          });
+          
+          // Auto-redirect to official customs website after brief delay
+          setTimeout(() => {
+            window.location.href = 'https://ecd.beacukai.go.id/';
+          }, 2000);
+        }
+      } catch (error) {
+        console.error('Submission error:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Network error';
+        
+        // Track network failure in Mixpanel
+        trackAutomationFailure(
+          'NETWORK_ERROR',
+          errorMessage,
+          'api_call',
+          error
+        );
+        
+        // Show brief notification before redirecting
+        setErrors({
+          submission: 'Network error. Redirecting to official customs website...'
+        });
+        
+        // Track error for form validation (backwards compatibility)
+        trackFormValidationError('submission', 'Network error');
+        
+        // Auto-redirect to official customs website after brief delay
+        setTimeout(() => {
+          window.location.href = 'https://ecd.beacukai.go.id/';
+        }, 2000);
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
 
@@ -553,6 +642,28 @@ export default function FormPage() {
         <h2 className="text-xl sm:text-2xl font-semibold text-gray-800 mb-4">
           {getTranslation('welcomeToIndonesia', language)}
         </h2>
+        
+        {/* Display submission error */}
+        {errors.submission && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-red-800">
+                  Submission Error
+                </h3>
+                <div className="mt-2 text-sm text-red-700">
+                  {errors.submission}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        
         <p className="text-base text-gray-700 mb-6">
           {getTranslation('pleaseReadInformation', language)}
         </p>
@@ -1063,9 +1174,24 @@ export default function FormPage() {
                   ) : (
                     <button
                       onClick={handleSubmit}
-                      className="px-8 sm:px-8 py-4 sm:py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 text-base"
+                      disabled={isSubmitting}
+                      className={`px-8 sm:px-8 py-4 sm:py-3 rounded-lg font-medium text-base transition-colors ${
+                        isSubmitting 
+                          ? 'bg-gray-400 text-gray-700 cursor-not-allowed' 
+                          : 'bg-green-600 text-white hover:bg-green-700'
+                      }`}
                     >
-                      {getTranslation('submitDeclaration', language)}
+                      {isSubmitting ? (
+                        <div className="flex items-center">
+                          <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          Processing...
+                        </div>
+                      ) : (
+                        getTranslation('submitDeclaration', language)
+                      )}
                     </button>
                   )}
                 </div>
@@ -1074,6 +1200,22 @@ export default function FormPage() {
           </div>
         </div>
       </div>
+      
+      {/* Processing Modal */}
+      <ProcessingModal
+        isOpen={isSubmitting}
+        language={language}
+      />
+      
+      {/* QR Code Success Modal */}
+      {submissionResult && (
+        <QRCodeModal
+          isOpen={showQRModal}
+          onClose={() => setShowQRModal(false)}
+          submissionResult={submissionResult}
+          language={language}
+        />
+      )}
     </div>
   );
 };

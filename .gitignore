@@ -39,3 +39,19 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Test outputs and screenshots
+*.png
+*.jpg
+*.jpeg
+customs-submission-*.json
+QRCode_*.png
+form-*.png
+navigation-*.png
+multi-step-*.png
+test-data.json
+downloads/
+
+# IDE
+.vscode/
+.idea/
