@@ -10,6 +10,7 @@ import DateOfBirthSelect from '@/components/ui/DateOfBirthSelect';
 import ArrivalDateSelect from '@/components/ui/ArrivalDateSelect';
 import GoodsDeclarationTable from '@/components/ui/GoodsDeclarationTable';
 import QRCodeModal from '@/components/QRCodeModal';
+import ProcessingModal from '@/components/ProcessingModal';
 import { Language, getTranslation } from '@/lib/translations';
 import { FormData, initialFormData } from '@/lib/formData';
 import { trackFormSubmission } from '@/lib/gtag';
@@ -1199,6 +1200,12 @@ export default function FormPage() {
           </div>
         </div>
       </div>
+      
+      {/* Processing Modal */}
+      <ProcessingModal
+        isOpen={isSubmitting}
+        language={language}
+      />
       
       {/* QR Code Success Modal */}
       {submissionResult && (

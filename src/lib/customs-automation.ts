@@ -23,34 +23,30 @@ import { getBrowserOptions } from './browser-config';
 import { launchServerlessBrowser } from './puppeteer-serverless';
 
 // Smart waiting utilities for performance optimization
-async function waitForStableElement(page: Page, selector: string, timeout = 3000): Promise<void> {
-  await page.waitForFunction((sel) => {
-    const element = document.querySelector(sel) as HTMLElement;
-    return element && element.offsetParent !== null && element.style.visibility !== 'hidden';
-  }, { timeout }, selector);
-}
 
-async function waitForDropdownReady(page: Page, selector: string, timeout = 2000): Promise<void> {
+async function waitForDropdownReady(page: Page, selector: string, timeout = 1500): Promise<void> {
   await page.waitForFunction((sel) => {
     const element = document.querySelector(sel) as HTMLElement;
     if (!element) return false;
     
-    // Check if dropdown is interactive and not disabled
-    return !element.hasAttribute('disabled') && 
-           !element.classList.contains('ant-select-disabled') &&
-           element.offsetParent !== null;
-  }, { timeout }, selector);
+    // Enhanced dropdown readiness checks
+    const isEnabled = !element.hasAttribute('disabled') && 
+                     !element.classList.contains('ant-select-disabled') &&
+                     !element.classList.contains('ant-select-loading');
+    
+    const isVisible = element.offsetParent !== null &&
+                     getComputedStyle(element).visibility !== 'hidden';
+    
+    // Check if dropdown is not in a transitioning state
+    const isStable = !element.classList.contains('ant-select-open') ||
+                    document.querySelector('.ant-select-dropdown:not(.ant-select-dropdown-hidden)');
+    
+    return isEnabled && isVisible && isStable;
+  }, { timeout, polling: 50 }, selector);
 }
 
-async function waitForDropdownOptions(page: Page, timeout = 2000): Promise<void> {
-  await page.waitForFunction(() => {
-    const dropdown = document.querySelector('.ant-select-dropdown:not(.ant-select-dropdown-hidden)');
-    const options = dropdown?.querySelectorAll('.ant-select-item');
-    return dropdown && options && options.length > 0;
-  }, { timeout });
-}
 
-async function waitForElementInteractable(page: Page, selector: string, timeout = 3000): Promise<boolean> {
+async function waitForElementInteractable(page: Page, selector: string, timeout = 2500): Promise<boolean> {
   try {
     await page.waitForFunction((sel) => {
       const element = document.querySelector(sel) as HTMLElement;
@@ -59,24 +55,85 @@ async function waitForElementInteractable(page: Page, selector: string, timeout 
       const rect = element.getBoundingClientRect();
       const style = getComputedStyle(element);
       
-      return rect.width > 0 && 
-             rect.height > 0 && 
-             style.visibility !== 'hidden' && 
-             style.display !== 'none' && 
-             !element.hasAttribute('disabled') &&
-             element.offsetParent !== null;
-    }, { timeout }, selector);
+      // Enhanced checks for better element readiness detection
+      const isVisible = rect.width > 0 && 
+                       rect.height > 0 && 
+                       style.visibility !== 'hidden' && 
+                       style.display !== 'none' && 
+                       style.opacity !== '0' &&
+                       element.offsetParent !== null;
+      
+      const isInteractable = !element.hasAttribute('disabled') &&
+                            !element.hasAttribute('readonly') &&
+                            !element.classList.contains('ant-select-disabled') &&
+                            !element.classList.contains('disabled');
+      
+      // Removed overly restrictive element coverage check that was causing issues
+      // with Ant Design components and nested form structures
+      
+      return isVisible && isInteractable;
+    }, { timeout, polling: 50 }, selector); // Reduce polling interval to 50ms
     return true;
   } catch {
     return false;
   }
 }
 
-// Restore original delay function with proper timing
+// Enhanced delay function with DOM-aware waiting and fallback
 async function smartDelay(page: Page, delay: number = 1500): Promise<void> {
   // Use consistent longer delays for reliability
   await new Promise(resolve => setTimeout(resolve, delay));
 }
+
+// New adaptive delay that waits for DOM stability or timeout
+async function adaptiveDelay(page: Page, maxDelay: number = 1500, checkStability: boolean = true): Promise<void> {
+  if (!checkStability) {
+    return smartDelay(page, maxDelay);
+  }
+  
+  const startTime = Date.now();
+  
+  // Set up mutation observer to detect DOM changes
+  await page.evaluate(() => {
+    if (!(window as unknown as { domStable?: { lastChange: number } }).domStable) {
+      (window as unknown as { domStable: { lastChange: number } }).domStable = { lastChange: Date.now() };
+      const observer = new MutationObserver(() => {
+        (window as unknown as { domStable: { lastChange: number } }).domStable.lastChange = Date.now();
+      });
+      observer.observe(document.body, { 
+        childList: true, 
+        subtree: true, 
+        attributes: true 
+      });
+    }
+  });
+  
+  // Wait for DOM to be stable for at least 200ms or until maxDelay
+  return new Promise<void>((resolve) => {
+    const checkStable = async () => {
+      const elapsed = Date.now() - startTime;
+      
+      if (elapsed >= maxDelay) {
+        resolve();
+        return;
+      }
+      
+      const lastChange = await page.evaluate(() => (window as unknown as { domStable?: { lastChange: number } }).domStable?.lastChange || Date.now());
+      const timeSinceLastChange = Date.now() - lastChange;
+      
+      if (timeSinceLastChange >= 200) {
+        // DOM has been stable for 200ms
+        resolve();
+      } else {
+        // Check again in 50ms
+        setTimeout(checkStable, 50);
+      }
+    };
+    
+    checkStable();
+  });
+}
+
 
 // Currency mapping for Indonesian customs format
 const CURRENCY_MAP: Record<string, string> = {
@@ -102,6 +159,7 @@ interface ProgressUpdate {
 }
 
 type ProgressCallback = (update: ProgressUpdate) => void;
+
 
 // Main automation function
 export async function automateCustomsSubmission(
@@ -225,9 +283,9 @@ export async function automateCustomsSubmission(
       await fillFamilyMembers(page, formData.familyMembers);
     }
     
-    // Wait for DOM updates to complete after field filling (original timing)
+    // Wait for DOM updates to complete after field filling (adaptive timing)
     console.log('⏳ Waiting for DOM updates to complete after field filling...');
-    await smartDelay(page, 3000); // Restore original longer delay
+    await adaptiveDelay(page, 3000, true); // Use adaptive delay with 3000ms max
     
     // Comprehensive field validation before navigation
     console.log('🔍 Performing comprehensive field validation before navigation...');
@@ -243,7 +301,7 @@ export async function automateCustomsSubmission(
       if (fixAttempted) {
         // Wait for DOM updates after field fixes
         console.log('⏳ Waiting for DOM updates after field fixes...');
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await adaptiveDelay(page, 800, true);
         
         console.log('🔄 Re-validating fields after fixes...');
         const retryValidation = await validateAllFormFields(page, formData);
@@ -523,7 +581,7 @@ async function safeDropdownSelect(page: Page, selector: string, value: string): 
     
     // Smart delay based on dropdown type
     const isArrivalDate = selector === '#tanggalKedatangan';
-    await smartDelay(page, isArrivalDate ? 2000 : 1500);
+    await smartDelay(page, isArrivalDate ? 1500 : 1200);
     if (isArrivalDate) {
       console.log('📅 Using arrival date optimizations');
     }
@@ -534,14 +592,14 @@ async function safeDropdownSelect(page: Page, selector: string, value: string): 
     // Method 1: Click on the input directly
     try {
       await page.click(selector);
-      await new Promise(resolve => setTimeout(resolve, 800));
+      await smartDelay(page, 600);
       const dropdown = await page.$('.ant-select-dropdown:not(.ant-select-dropdown-hidden)');
       if (dropdown) {
         dropdownOpened = true;
         console.log(`✅ Method 1 (direct input click) opened dropdown`);
       }
-    } catch (e) {
-      console.log(`  Method 1 failed: ${e instanceof Error ? e instanceof Error ? e.message : 'Unknown error' : 'Unknown error'}`);
+    } catch (_e) {
+      console.log(`  Method 1 failed: ${_e instanceof Error ? _e.message : 'Unknown error'}`);
     }
     
     // Method 2: Find and click the parent .ant-select container
@@ -564,15 +622,15 @@ async function safeDropdownSelect(page: Page, selector: string, value: string): 
         }, selector);
         
         if (selectContainer) {
-          await new Promise(resolve => setTimeout(resolve, 800));
+          await smartDelay(page, 600);
           const dropdown = await page.$('.ant-select-dropdown:not(.ant-select-dropdown-hidden)');
           if (dropdown) {
             dropdownOpened = true;
             console.log(`✅ Method 2 (parent container click) opened dropdown`);
           }
         }
-      } catch (e) {
-        console.log(`  Method 2 failed: ${e instanceof Error ? e instanceof Error ? e.message : 'Unknown error' : 'Unknown error'}`);
+      } catch (_e) {
+        console.log(`  Method 2 failed: ${_e instanceof Error ? _e.message : 'Unknown error'}`);
       }
     }
     
@@ -597,14 +655,14 @@ async function safeDropdownSelect(page: Page, selector: string, value: string): 
           }
         }, selector);
         
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await smartDelay(page, 700);
         const dropdown = await page.$('.ant-select-dropdown:not(.ant-select-dropdown-hidden)');
         if (dropdown) {
           dropdownOpened = true;
           console.log(`✅ Method 3 (JavaScript force click) opened dropdown`);
         }
-      } catch (e) {
-        console.log(`  Method 3 failed: ${e instanceof Error ? e.message : 'Unknown error'}`);
+      } catch (_e) {
+        console.log(`  Method 3 failed: ${_e instanceof Error ? _e.message : 'Unknown error'}`);
       }
     }
     
@@ -625,7 +683,7 @@ async function safeDropdownSelect(page: Page, selector: string, value: string): 
             if (element) {
               console.log(`  Trying alternative selector: ${altSel}`);
               await element.click();
-              await new Promise(resolve => setTimeout(resolve, 800));
+              await smartDelay(page, 600);
               const dropdown = await page.$('.ant-select-dropdown:not(.ant-select-dropdown-hidden)');
               if (dropdown) {
                 dropdownOpened = true;
@@ -633,13 +691,13 @@ async function safeDropdownSelect(page: Page, selector: string, value: string): 
                 break;
               }
             }
-          } catch (e) {
-            console.log(`  Alternative selector ${altSel} failed: ${e instanceof Error ? e.message : 'Unknown error'}`);
+          } catch (_e) {
+            console.log(`  Alternative selector ${altSel} failed: ${_e instanceof Error ? _e.message : 'Unknown error'}`);
             continue;
           }
         }
-      } catch (e) {
-        console.log(`  Method 4 failed: ${e instanceof Error ? e.message : 'Unknown error'}`);
+      } catch (_e) {
+        console.log(`  Method 4 failed: ${_e instanceof Error ? _e.message : 'Unknown error'}`);
       }
     }
     
@@ -662,7 +720,7 @@ async function safeDropdownSelect(page: Page, selector: string, value: string): 
           (title && title.includes(value))) {
         console.log(`✅ Found matching option: "${text}" (selecting...)`);
         await option.click();
-        await new Promise(resolve => setTimeout(resolve, 300));
+        await smartDelay(page, 300);
         return true;
       }
     }
@@ -702,7 +760,7 @@ async function fillFamilyMembers(page: Page, familyMembers: FormData['familyMemb
     try {
       await addButton.click();
       console.log(`✅ Clicked add button for family member ${i + 1}`);
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await adaptiveDelay(page, 400, true); // Reduced from 800ms with DOM stability check
     } catch (clickError) {
       console.log(`❌ Failed to click add button for family member ${i + 1}: ${clickError instanceof Error ? clickError.message : 'Unknown error'}`);
       continue; // Skip this member but continue with others
@@ -742,7 +800,7 @@ async function safeDropdownSelectFamily(page: Page, rowIndex: number, value: str
     await page.evaluate(() => {
       document.body.click();
     });
-    await new Promise(resolve => setTimeout(resolve, 200));
+    await smartDelay(page, 200);
     
     // Verify the dropdown exists and is for the correct family member
     const dropdownExists = await page.evaluate((selector, expectedIndex) => {
@@ -782,7 +840,7 @@ async function safeDropdownSelectFamily(page: Page, rowIndex: number, value: str
     
     await waitForDropdownReady(page, inputSelector, 3000);
     await page.click(inputSelector);
-    await smartDelay(page, 1500);
+    await smartDelay(page, 1200);
     console.log(`✅ Clicked family nationality dropdown ${inputSelector}`);
     
     // Wait for the specific dropdown list to appear
@@ -790,7 +848,7 @@ async function safeDropdownSelectFamily(page: Page, rowIndex: number, value: str
     try {
       await page.waitForSelector(listboxSelector, { visible: true, timeout: 3000 });
       console.log(`✅ Specific listbox ${listboxSelector} is visible`);
-    } catch (e) {
+    } catch (_e) {
       console.log(`⚠️ Specific listbox ${listboxSelector} not found, falling back to generic selector`);
     }
     
@@ -814,7 +872,7 @@ async function safeDropdownSelectFamily(page: Page, rowIndex: number, value: str
       } else {
         console.log(`🔍 Found visible dropdown, but no selectable items. This might be a timing issue.`);
         // Wait a bit more and retry
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await adaptiveDelay(page, 400, true); // Reduced from 800ms with DOM stability check
         options = await page.$$('.ant-select-dropdown:not(.ant-select-dropdown-hidden) .ant-select-item');
         console.log(`🔍 After additional wait, found ${options.length} options`);
       }
@@ -882,12 +940,12 @@ async function safeDropdownSelectFamily(page: Page, rowIndex: number, value: str
       if (rowIndex === 0) {
         // Ensure the dropdown is still open and focused
         await page.click(inputSelector);
-        await new Promise(resolve => setTimeout(resolve, 300));
+        await smartDelay(page, 300);
         
         // Use both regular click and JavaScript click for first row
         try {
           await selectedOption.click();
-        } catch (e) {
+        } catch (_e) {
           console.log(`  Regular click failed, trying JavaScript click...`);
           await selectedOption.evaluate(el => (el as HTMLElement).click());
         }
@@ -908,7 +966,7 @@ async function safeDropdownSelectFamily(page: Page, rowIndex: number, value: str
       } else {
         // Regular selection for other family members
         await selectedOption.click();
-        await smartDelay(page, 800);
+        await adaptiveDelay(page, 400, true); // Reduced from 800ms with DOM stability check
       }
       
       // Verify selection was successful - check both input value and display text
@@ -948,7 +1006,7 @@ async function safeDropdownSelectFamily(page: Page, rowIndex: number, value: str
               displayText = result;
               break;
             }
-          } catch (e) {
+          } catch (_e) {
             // Continue to next method
           }
         }
@@ -1008,9 +1066,9 @@ async function safeDropdownSelectFamily(page: Page, rowIndex: number, value: str
         await page.evaluate(() => {
           document.body.click();
         });
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await smartDelay(page, 400);
         await page.click(inputSelector);
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await adaptiveDelay(page, 400, true); // Reduced from 800ms with DOM stability check
         
         // Re-find the option as DOM might have changed
         let retryOptions = await page.$$(`${listboxSelector} .ant-select-item`);
@@ -1041,7 +1099,7 @@ async function safeDropdownSelectFamily(page: Page, rowIndex: number, value: str
     await page.evaluate(() => {
       document.body.click();
     });
-    await new Promise(resolve => setTimeout(resolve, 200));
+    await smartDelay(page, 200);
     
     return selectionSuccess;
     
@@ -1154,9 +1212,6 @@ async function navigateToConsentPageWithValidation(page: Page, formData: FormDat
 }
 
 // Navigate to consent page (legacy function kept for compatibility)
-async function navigateToConsentPage(page: Page): Promise<boolean> {
-  return navigateToConsentPageWithValidation(page, {} as FormData);
-}
 
 // Goods declaration handling
 async function selectGoodsDeclarationYes(page: Page): Promise<void> {
@@ -1200,7 +1255,7 @@ async function fillDeclaredGoods(page: Page, declaredGoods: FormData['declaredGo
     try {
       await addButton.click();
       console.log(`✅ Clicked add button for goods item ${i + 1}`);
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await adaptiveDelay(page, 400, true); // Reduced from 800ms with DOM stability check
     } catch (clickError) {
       console.log(`❌ Failed to click add button for goods item ${i + 1}: ${clickError instanceof Error ? clickError.message : 'Unknown error'}`);
       continue; // Skip this item but continue with others
@@ -1252,13 +1307,13 @@ async function safeDropdownSelectGoods(page: Page, rowIndex: number, value: stri
     await page.evaluate(() => {
       document.body.click();
     });
-    await new Promise(resolve => setTimeout(resolve, 200));
+    await smartDelay(page, 200);
     
     await waitForDropdownReady(page, inputSelector, 3000);
     console.log(`✅ Currency dropdown ${inputSelector} found and ready`);
     
     await page.click(inputSelector);
-    await smartDelay(page, 1500); // Smart delay instead of fixed 1000ms
+    await smartDelay(page, 1200); // Optimized delay for goods dropdown
     console.log(`✅ Clicked currency dropdown ${inputSelector}`);
     
     // Wait for the specific dropdown list to appear
@@ -1266,7 +1321,7 @@ async function safeDropdownSelectGoods(page: Page, rowIndex: number, value: stri
     try {
       await page.waitForSelector(listboxSelector, { visible: true, timeout: 3000 });
       console.log(`✅ Specific listbox ${listboxSelector} is visible`);
-    } catch (e) {
+    } catch (_e) {
       console.log(`⚠️ Specific listbox ${listboxSelector} not found, falling back to generic selector`);
     }
     
@@ -1283,7 +1338,7 @@ async function safeDropdownSelectGoods(page: Page, rowIndex: number, value: stri
     if (options.length === 0) {
       console.log(`⚠️ No dropdown options found, retrying click...`);
       await page.click(inputSelector);
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await adaptiveDelay(page, 400, true); // Reduced from 800ms with DOM stability check
       
       // Try specific listbox first on retry
       let retryOptions = await page.$$(`${listboxSelector} .ant-select-item`);
@@ -1335,12 +1390,12 @@ async function safeDropdownSelectGoods(page: Page, rowIndex: number, value: stri
       if (rowIndex === 0) {
         // Ensure the dropdown is still open and focused
         await page.click(inputSelector);
-        await new Promise(resolve => setTimeout(resolve, 300));
+        await smartDelay(page, 300);
         
         // Use both regular click and JavaScript click for first row
         try {
           await selectedOption.click();
-        } catch (e) {
+        } catch (_e) {
           console.log(`  Regular click failed, trying JavaScript click...`);
           await selectedOption.evaluate(el => (el as HTMLElement).click());
         }
@@ -1361,7 +1416,7 @@ async function safeDropdownSelectGoods(page: Page, rowIndex: number, value: stri
       } else {
         // Regular selection for other goods items
         await selectedOption.click();
-        await smartDelay(page, 800);
+        await adaptiveDelay(page, 400, true); // Reduced from 800ms with DOM stability check
       }
       
       // Verify selection was successful - check both input value and display text (same as family dropdown)
@@ -1415,9 +1470,9 @@ async function safeDropdownSelectGoods(page: Page, rowIndex: number, value: stri
         await page.evaluate(() => {
           document.body.click();
         });
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await smartDelay(page, 400);
         await page.click(inputSelector);
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await adaptiveDelay(page, 400, true); // Reduced from 800ms with DOM stability check
         
         // Re-find the option as DOM might have changed
         // Try specific listbox first
@@ -1444,7 +1499,7 @@ async function safeDropdownSelectGoods(page: Page, rowIndex: number, value: stri
     await page.evaluate(() => {
       document.body.click();
     });
-    await new Promise(resolve => setTimeout(resolve, 200));
+    await smartDelay(page, 200);
     
     return selectionSuccess;
     
@@ -1636,8 +1691,8 @@ async function validateAllFormFields(page: Page, formData: FormData): Promise<{
               selectedValue = methodResult;
               break;
             }
-          } catch (e) {
-            console.log(`🔍 DEBUG: Method ${i + 1} failed for ${field.selector}:`, e instanceof Error ? e.message : 'Unknown error');
+          } catch (_e) {
+            console.log(`🔍 DEBUG: Method ${i + 1} failed for ${field.selector}:`, _e instanceof Error ? _e.message : 'Unknown error');
           }
         }
         
@@ -1669,8 +1724,8 @@ async function validateAllFormFields(page: Page, formData: FormData): Promise<{
               currentValue = fallbackValue;
               break;
             }
-          } catch (e) {
-            console.log(`🔍 VALIDATION DEBUG: Fallback method ${i + 1} failed for ${field.selector}:`, e instanceof Error ? e.message : 'Unknown error');
+          } catch (_e) {
+            console.log(`🔍 VALIDATION DEBUG: Fallback method ${i + 1} failed for ${field.selector}:`, _e instanceof Error ? _e.message : 'Unknown error');
           }
         }
       }
@@ -1767,15 +1822,15 @@ async function fixFormFieldIssues(page: Page, formData: FormData, invalidFields:
           }
           break;
         case 'dateOfBirthDay':
-          const [year, month, day] = formData.dateOfBirth.split('-');
+          const [_year, _month, day] = formData.dateOfBirth.split('-');
           fieldFixed = await safeDropdownSelect(page, '#tanggalLahirTgl', day);
           break;
         case 'dateOfBirthMonth':
-          const [y, m, d] = formData.dateOfBirth.split('-');
+          const [_y, m, _d] = formData.dateOfBirth.split('-');
           fieldFixed = await safeDropdownSelect(page, '#tanggalLahirBln', m);
           break;
         case 'dateOfBirthYear':
-          const [yr, mo, dy] = formData.dateOfBirth.split('-');
+          const [yr, _mo, _dy] = formData.dateOfBirth.split('-');
           fieldFixed = await safeDropdownSelect(page, '#tanggalLahirThn', yr);
           break;
       }
@@ -2128,8 +2183,8 @@ async function downloadQRCodeImage(page: Page): Promise<Record<string, unknown>>
           console.log(`✅ Download button found using selector: ${selector}`);
           break;
         }
-      } catch (e) {
-        console.log(`   Selector "${selector}" failed: ${e instanceof Error ? e.message : 'Unknown error'}`);
+      } catch (_e) {
+        console.log(`   Selector "${selector}" failed: ${_e instanceof Error ? _e.message : 'Unknown error'}`);
         continue;
       }
     }
@@ -2146,7 +2201,7 @@ async function downloadQRCodeImage(page: Page): Promise<Record<string, unknown>>
       const existingFiles = await fs.readdir(downloadPath);
       existingFiles.forEach(file => filesBefore.add(file));
       console.log(`📋 Files before download: ${existingFiles.length}`);
-    } catch (readError) {
+    } catch (_readError) {
       console.log('📋 No existing files in download directory');
     }
     
@@ -2192,7 +2247,7 @@ async function downloadQRCodeImage(page: Page): Promise<Record<string, unknown>>
           console.log(`✅ Filesystem detected new file: ${downloadedFilename}`);
           break;
         }
-      } catch (fsError) {
+      } catch (_fsError) {
         // Continue trying
       }
     }
@@ -2426,7 +2481,7 @@ async function findAddButton(page: Page, text: string): Promise<import('puppetee
           }
         }
       }
-    } catch (error) {
+    } catch (_error) {
       // Continue to next selector
       continue;
     }
@@ -2466,20 +2521,3 @@ function formatDateForDropdown(dateStr: string): string {
   return `${day}-${month}-${year}`;
 }
 
-function getNationalityName(code: string): string {
-  const nationalityMap: Record<string, string> = {
-    'US': 'UNITED STATES',
-    'GB': 'UNITED KINGDOM',
-    'CA': 'CANADA',
-    'AU': 'AUSTRALIA',
-    'JP': 'JAPAN',
-    'CN': 'CHINA',
-    'IN': 'INDIA',
-    'SG': 'SINGAPORE',
-    'MY': 'MALAYSIA',
-    'TH': 'THAILAND',
-    // Add more as needed
-  };
-  
-  return nationalityMap[code] || code;
-}
