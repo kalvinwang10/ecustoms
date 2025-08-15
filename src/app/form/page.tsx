@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import FormInput from '@/components/ui/FormInput';
 import FormSelect from '@/components/ui/FormSelect';
@@ -9,7 +10,6 @@ import FamilyMemberManager from '@/components/ui/FamilyMemberManager';
 import DateOfBirthSelect from '@/components/ui/DateOfBirthSelect';
 import ArrivalDateSelect from '@/components/ui/ArrivalDateSelect';
 import GoodsDeclarationTable from '@/components/ui/GoodsDeclarationTable';
-import QRCodeModal from '@/components/QRCodeModal';
 import ProcessingModal from '@/components/ProcessingModal';
 import { Language, getTranslation } from '@/lib/translations';
 import { FormData, initialFormData } from '@/lib/formData';
@@ -302,23 +302,13 @@ const ports = [
 ];
 
 export default function FormPage() {
+  const router = useRouter();
   const [language, setLanguage] = useState<Language>('en');
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formStarted, setFormStarted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submissionResult, setSubmissionResult] = useState<{
-    success: boolean;
-    qrCode?: { imageData?: string };
-    submissionDetails?: { 
-      submissionId?: string; 
-      submissionTime?: string; 
-      status?: string;
-      portInfo?: string;
-      customsOffice?: string;
-    };
-  } | null>(null);
-  const [showQRModal, setShowQRModal] = useState(false);
+  // Removed submissionResult and showQRModal states as we're using checkout flow now
 
   // Track form start when component mounts
   useEffect(() => {
@@ -576,9 +566,11 @@ export default function FormPage() {
           trackMixpanelFormSubmission();
           trackUserJourney('Form Submitted Successfully', 5);
           
-          // Store the result and show QR modal
-          setSubmissionResult(result);
-          setShowQRModal(true);
+          // Store QR data securely for checkout
+          sessionStorage.setItem('pendingQR', JSON.stringify(result));
+          
+          // Redirect to checkout page
+          router.push('/checkout');
         } else {
           // Track automation failure in Mixpanel
           trackAutomationFailure(
@@ -1209,15 +1201,7 @@ export default function FormPage() {
         language={language}
       />
       
-      {/* QR Code Success Modal */}
-      {submissionResult && (
-        <QRCodeModal
-          isOpen={showQRModal}
-          onClose={() => setShowQRModal(false)}
-          submissionResult={submissionResult}
-          language={language}
-        />
-      )}
+      {/* Removed QR Code Modal - now shown after payment in checkout page */}
     </div>
   );
 };
