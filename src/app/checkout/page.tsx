@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { loadStripe } from '@stripe/stripe-js';
 import {
@@ -14,6 +14,7 @@ import { Language } from '@/lib/translations';
 import { trackPageView, trackButtonClick, trackEvent } from '@/lib/mixpanel';
 import { trackConversion } from '@/lib/gtag';
 import QRCodeModal from '@/components/QRCodeModal';
+import { saveCompletedQR } from '@/lib/qr-storage';
 
 // Initialize Stripe
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
@@ -136,6 +137,7 @@ function CheckoutForm({ onSuccess }: CheckoutFormProps) {
 
 export default function CheckoutPage() {
   const router = useRouter();
+  const modalContainerRef = useRef<HTMLDivElement>(null);
   const [language, setLanguage] = useState<Language>('en');
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -197,14 +199,19 @@ export default function CheckoutPage() {
     // Track conversion for Google Ads (converting IDR to USD approximation for tracking)
     trackConversion('checkout_completed', 30, 'USD');
 
-    // Scroll to top for mobile visibility
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Scroll modal container to top for mobile visibility
+    if (modalContainerRef.current) {
+      modalContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    }
 
     // Retrieve stored QR data
     const pendingQR = sessionStorage.getItem('pendingQR');
     if (pendingQR) {
       const qrData = JSON.parse(pendingQR);
       setSubmissionResult(qrData);
+      
+      // Save QR code to persistent storage for 2 days
+      saveCompletedQR(qrData);
       
       // Small delay to ensure scroll completes before showing QR modal
       setTimeout(() => {
@@ -225,7 +232,10 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="fixed inset-0 bg-gray-900 bg-opacity-50 backdrop-blur-sm overflow-y-auto h-full w-full z-50">
+    <div 
+      ref={modalContainerRef}
+      className="fixed inset-0 bg-gray-900 bg-opacity-50 backdrop-blur-sm overflow-y-auto h-full w-full z-50"
+    >
       <div className="relative flex items-center justify-center min-h-full p-4">
         <div className="relative bg-white rounded-lg shadow-xl p-8 w-full max-w-md mx-auto">
         {/* Header */}
