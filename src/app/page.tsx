@@ -6,12 +6,23 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Language, getTranslation } from '@/lib/translations';
 import { trackButtonClick, trackLanguageChange, trackUserJourney } from '@/lib/mixpanel';
+import { hasValidStoredQR, getStoredQR, StoredQRData } from '@/lib/qr-storage';
+import QRCodeModal from '@/components/QRCodeModal';
+import QRNotificationBanner from '@/components/QRNotificationBanner';
 
 export default function Home() {
   const [language, setLanguage] = useState<Language>('en');
+  const [hasStoredQR, setHasStoredQR] = useState(false);
+  const [showQRModal, setShowQRModal] = useState(false);
+  const [storedQRData, setStoredQRData] = useState<StoredQRData | null>(null);
 
   useEffect(() => {
     trackUserJourney('Home Page Loaded', 1);
+    
+    // Check for stored QR code
+    if (hasValidStoredQR()) {
+      setHasStoredQR(true);
+    }
   }, []);
 
   const handleLanguageChange = (newLanguage: Language) => {
@@ -24,9 +35,27 @@ export default function Home() {
     trackUserJourney('Form Start Clicked', 2);
   };
 
+  const handleViewQRClick = () => {
+    const stored = getStoredQR();
+    if (stored) {
+      setStoredQRData(stored);
+      setShowQRModal(true);
+      trackButtonClick('View Stored QR', 'Homepage');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Header language={language} onLanguageChange={handleLanguageChange} />
+      
+      {/* QR Notification Banner */}
+      {hasStoredQR && (
+        <QRNotificationBanner
+          language={language}
+          onViewQR={handleViewQRClick}
+          onDismiss={() => setHasStoredQR(false)}
+        />
+      )}
       
       <main>
         <section className="py-12 sm:py-16 min-h-[50vh] sm:min-h-0 flex items-center" style={{backgroundColor: '#153854'}}>
@@ -160,6 +189,16 @@ export default function Home() {
       </main>
 
       <Footer language={language} />
+      
+      {/* QR Code Modal for stored QR */}
+      {storedQRData && (
+        <QRCodeModal
+          isOpen={showQRModal}
+          onClose={() => setShowQRModal(false)}
+          submissionResult={storedQRData}
+          language={language}
+        />
+      )}
     </div>
   );
 }

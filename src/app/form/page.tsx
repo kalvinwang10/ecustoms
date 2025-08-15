@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import FormInput from '@/components/ui/FormInput';
 import FormSelect from '@/components/ui/FormSelect';
@@ -9,7 +10,6 @@ import FamilyMemberManager from '@/components/ui/FamilyMemberManager';
 import DateOfBirthSelect from '@/components/ui/DateOfBirthSelect';
 import ArrivalDateSelect from '@/components/ui/ArrivalDateSelect';
 import GoodsDeclarationTable from '@/components/ui/GoodsDeclarationTable';
-import QRCodeModal from '@/components/QRCodeModal';
 import ProcessingModal from '@/components/ProcessingModal';
 import { Language, getTranslation } from '@/lib/translations';
 import { FormData, initialFormData } from '@/lib/formData';
@@ -24,6 +24,9 @@ import {
   trackUserJourney,
   trackAutomationFailure
 } from '@/lib/mixpanel';
+import { hasValidStoredQR, getStoredQR, StoredQRData } from '@/lib/qr-storage';
+import QRCodeModal from '@/components/QRCodeModal';
+import QRNotificationBanner from '@/components/QRNotificationBanner';
 
 const countries = [
   { value: 'AD', label: 'AD - ANDORRA' },
@@ -302,33 +305,40 @@ const ports = [
 ];
 
 export default function FormPage() {
+  const router = useRouter();
   const [language, setLanguage] = useState<Language>('en');
+  const [hasStoredQR, setHasStoredQR] = useState(false);
+  const [showQRModal, setShowQRModal] = useState(false);
+  const [storedQRData, setStoredQRData] = useState<StoredQRData | null>(null);
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formStarted, setFormStarted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submissionResult, setSubmissionResult] = useState<{
-    success: boolean;
-    qrCode?: { imageData?: string };
-    submissionDetails?: { 
-      submissionId?: string; 
-      submissionTime?: string; 
-      status?: string;
-      portInfo?: string;
-      customsOffice?: string;
-    };
-  } | null>(null);
-  const [showQRModal, setShowQRModal] = useState(false);
+  // Removed submissionResult and showQRModal states as we're using checkout flow now
 
   // Track form start when component mounts
   useEffect(() => {
     trackUserJourney('Form Page Loaded', 3);
+    
+    // Check for stored QR code
+    if (hasValidStoredQR()) {
+      setHasStoredQR(true);
+    }
   }, []);
 
   // Handle language changes
   const handleLanguageChange = (newLanguage: Language) => {
     trackLanguageChange(newLanguage, language);
     setLanguage(newLanguage);
+  };
+
+  const handleViewQRClick = () => {
+    const stored = getStoredQR();
+    if (stored) {
+      setStoredQRData(stored);
+      setShowQRModal(true);
+      trackButtonClick('View Stored QR', 'Form Page');
+    }
   };
 
   const updateFormData = (field: keyof FormData, value: string | boolean | number | unknown[] | null) => {
@@ -576,9 +586,11 @@ export default function FormPage() {
           trackMixpanelFormSubmission();
           trackUserJourney('Form Submitted Successfully', 5);
           
-          // Store the result and show QR modal
-          setSubmissionResult(result);
-          setShowQRModal(true);
+          // Store QR data securely for checkout
+          sessionStorage.setItem('pendingQR', JSON.stringify(result));
+          
+          // Redirect to checkout page
+          router.push('/checkout');
         } else {
           // Track automation failure in Mixpanel
           trackAutomationFailure(
@@ -1142,6 +1154,15 @@ export default function FormPage() {
     <div>
       <Header language={language} onLanguageChange={handleLanguageChange} />
       
+      {/* QR Notification Banner */}
+      {hasStoredQR && (
+        <QRNotificationBanner
+          language={language}
+          onViewQR={handleViewQRClick}
+          onDismiss={() => setHasStoredQR(false)}
+        />
+      )}
+      
       <div className="min-h-screen bg-gray-50">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
           <div className="bg-white rounded-lg shadow-lg p-4 sm:p-8">
@@ -1209,12 +1230,12 @@ export default function FormPage() {
         language={language}
       />
       
-      {/* QR Code Success Modal */}
-      {submissionResult && (
+      {/* QR Code Modal for stored QR */}
+      {storedQRData && (
         <QRCodeModal
           isOpen={showQRModal}
           onClose={() => setShowQRModal(false)}
-          submissionResult={submissionResult}
+          submissionResult={storedQRData}
           language={language}
         />
       )}
