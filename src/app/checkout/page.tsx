@@ -197,12 +197,19 @@ export default function CheckoutPage() {
     // Track conversion for Google Ads (converting IDR to USD approximation for tracking)
     trackConversion('checkout_completed', 30, 'USD');
 
+    // Scroll to top for mobile visibility
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
     // Retrieve stored QR data
     const pendingQR = sessionStorage.getItem('pendingQR');
     if (pendingQR) {
       const qrData = JSON.parse(pendingQR);
       setSubmissionResult(qrData);
-      setShowQRModal(true);
+      
+      // Small delay to ensure scroll completes before showing QR modal
+      setTimeout(() => {
+        setShowQRModal(true);
+      }, 300);
       
       // Clear pending data
       sessionStorage.removeItem('pendingQR');
