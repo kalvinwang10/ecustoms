@@ -14,7 +14,9 @@ export async function POST(request: NextRequest) {
     const paymentIntent = await stripe.paymentIntents.create({
       amount,
       currency,
-      payment_method_types: ['card'], // Only allow card payments (includes Apple Pay/Google Pay)
+      automatic_payment_methods: {
+        enabled: true,
+      },
       metadata: {
         service: 'customs_declaration',
         timestamp: new Date().toISOString(),

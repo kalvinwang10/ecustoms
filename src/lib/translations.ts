@@ -48,6 +48,22 @@ export const translations: Translations = {
     ar: 'املأ نموذج الجمارك الخاص بك بسهولة باستخدام واجهتنا البديهية ودعم اللغات المتعددة.',
     hi: 'हमारे सहज इंटरफेस और बहु-भाषा समर्थन के साथ आसानी से अपना सीमा शुल्क फॉर्म भरें।',
   },
+  qrBannerMessage: {
+    en: 'Completed Customs QR Code Available',
+    id: 'Kode QR Bea Cukai Selesai Tersedia',
+    zh: '海关二维码已完成',
+    ja: '税関QRコードが完了しました',
+    ar: 'رمز QR الجمركي المكتمل متاح',
+    hi: 'पूर्ण सीमा शुल्क QR कोड उपलब्ध',
+  },
+  qrBannerButton: {
+    en: 'View QR Code',
+    id: 'Lihat Kode QR',
+    zh: '查看二维码',
+    ja: 'QRコードを表示',
+    ar: 'عرض رمز QR',
+    hi: 'QR कोड देखें',
+  },
   startDeclaration: {
     en: 'Start Declaration',
     id: 'Mulai Deklarasi',

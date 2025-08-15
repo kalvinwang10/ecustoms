@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Language } from '@/lib/translations';
+import { Language, getTranslation } from '@/lib/translations';
 
 interface QRNotificationBannerProps {
   language: Language;
@@ -9,7 +9,7 @@ interface QRNotificationBannerProps {
   onDismiss?: () => void;
 }
 
-export default function QRNotificationBanner({ onViewQR, onDismiss }: QRNotificationBannerProps) {
+export default function QRNotificationBanner({ language, onViewQR, onDismiss }: QRNotificationBannerProps) {
   const [isVisible, setIsVisible] = useState(true);
 
   const handleDismiss = () => {
@@ -31,7 +31,7 @@ export default function QRNotificationBanner({ onViewQR, onDismiss }: QRNotifica
             </div>
             <div className="ml-3">
               <p className="text-sm font-medium text-green-800">
-                Completed Customs QR Code Available
+                {getTranslation('qrBannerMessage', language)}
               </p>
             </div>
           </div>
@@ -41,7 +41,7 @@ export default function QRNotificationBanner({ onViewQR, onDismiss }: QRNotifica
               onClick={onViewQR}
               className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
             >
-              View QR Code
+              {getTranslation('qrBannerButton', language)}
             </button>
             
             <button
