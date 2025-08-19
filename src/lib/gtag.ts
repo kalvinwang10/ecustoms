@@ -59,3 +59,15 @@ export const trackFormSubmission = (url?: string) => {
     });
   }
 };
+
+// Track purchase success conversion when QR code is shown
+export const trackPurchaseSuccess = (transactionId?: string) => {
+  if (typeof window !== 'undefined' && window.gtag) {
+    window.gtag('event', 'conversion', {
+      'send_to': 'AW-16915832546/0eW2CM6E14kbEOK9jII_',
+      'value': 1.0,
+      'currency': 'USD',
+      'transaction_id': transactionId || ''
+    });
+  }
+};
