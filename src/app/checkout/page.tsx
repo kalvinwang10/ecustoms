@@ -12,7 +12,7 @@ import {
 } from '@stripe/react-stripe-js';
 import { Language } from '@/lib/translations';
 import { trackPageView, trackButtonClick, trackEvent } from '@/lib/mixpanel';
-import { trackConversion } from '@/lib/gtag';
+import { trackPurchaseSuccess } from '@/lib/gtag';
 import QRCodeModal from '@/components/QRCodeModal';
 import { saveCompletedQR } from '@/lib/qr-storage';
 
@@ -195,9 +195,9 @@ export default function CheckoutPage() {
     }
   };
 
-  const handlePaymentSuccess = async () => {
-    // Track conversion for Google Ads (converting IDR to USD approximation for tracking)
-    trackConversion('checkout_completed', 30, 'USD');
+  const handlePaymentSuccess = async (paymentIntent?: Record<string, unknown>) => {
+    // Track conversion for Google Ads when QR code is about to be shown
+    trackPurchaseSuccess(paymentIntent?.id as string);
 
     // Scroll modal container to top for mobile visibility
     if (modalContainerRef.current) {
