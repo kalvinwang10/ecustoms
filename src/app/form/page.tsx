@@ -5,12 +5,18 @@ import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import FormInput from '@/components/ui/FormInput';
 import FormSelect from '@/components/ui/FormSelect';
+import CountryCodeSelect from '@/components/ui/CountryCodeSelect';
+import AirlineSelect from '@/components/ui/AirlineSelect';
+import TravellerManager from '@/components/ui/TravellerManager';
 import FormCheckbox from '@/components/ui/FormCheckbox';
+import FormTextArea from '@/components/ui/FormTextArea';
 import FamilyMemberManager from '@/components/ui/FamilyMemberManager';
 import DateOfBirthSelect from '@/components/ui/DateOfBirthSelect';
 import ArrivalDateSelect from '@/components/ui/ArrivalDateSelect';
+import DateInput from '@/components/ui/DateInput';
 import GoodsDeclarationTable from '@/components/ui/GoodsDeclarationTable';
 import ProcessingModal from '@/components/ProcessingModal';
+import CollapsibleSection from '@/components/ui/CollapsibleSection';
 import { Language, getTranslation } from '@/lib/translations';
 import { FormData, initialFormData } from '@/lib/formData';
 import { trackFormSubmission } from '@/lib/gtag';
@@ -29,255 +35,363 @@ import QRCodeModal from '@/components/QRCodeModal';
 import QRNotificationBanner from '@/components/QRNotificationBanner';
 
 const countries = [
-  { value: 'AD', label: 'AD - ANDORRA' },
-  { value: 'AE', label: 'AE - UNITED ARAB EMIRATES' },
-  { value: 'AF', label: 'AF - AFGHANISTAN' },
-  { value: 'AG', label: 'AG - ANTIGUA AND BARBUDA' },
-  { value: 'AI', label: 'AI - ANGUILLA' },
-  { value: 'AL', label: 'AL - ALBANIA' },
-  { value: 'AM', label: 'AM - ARMENIA' },
-  { value: 'AO', label: 'AO - ANGOLA' },
-  { value: 'AQ', label: 'AQ - ANTARCTICA' },
-  { value: 'AR', label: 'AR - ARGENTINA' },
-  { value: 'AS', label: 'AS - AMERICAN SAMOA' },
-  { value: 'AT', label: 'AT - AUSTRIA' },
-  { value: 'AU', label: 'AU - AUSTRALIA' },
-  { value: 'AW', label: 'AW - ARUBA' },
-  { value: 'AX', label: 'AX - ALAND ISLANDS' },
-  { value: 'AZ', label: 'AZ - AZERBAIJAN' },
-  { value: 'BA', label: 'BA - BOSNIA AND HERZEGOVINA' },
-  { value: 'BB', label: 'BB - BARBADOS' },
-  { value: 'BD', label: 'BD - BANGLADESH' },
-  { value: 'BE', label: 'BE - BELGIUM' },
-  { value: 'BF', label: 'BF - BURKINA FASO' },
-  { value: 'BG', label: 'BG - BULGARIA' },
-  { value: 'BH', label: 'BH - BAHRAIN' },
-  { value: 'BI', label: 'BI - BURUNDI' },
-  { value: 'BJ', label: 'BJ - BENIN' },
-  { value: 'BL', label: 'BL - SAINT BARTHELEMY' },
-  { value: 'BM', label: 'BM - BERMUDA' },
-  { value: 'BN', label: 'BN - BRUNEI DARUSSALAM' },
-  { value: 'BO', label: 'BO - BOLIVIA' },
-  { value: 'BQ', label: 'BQ - BONAIRE, SINT EUSTATIUS AND SABA' },
-  { value: 'BR', label: 'BR - BRAZIL' },
-  { value: 'BS', label: 'BS - BAHAMAS' },
-  { value: 'BT', label: 'BT - BHUTAN' },
-  { value: 'BV', label: 'BV - BOUVET ISLAND' },
-  { value: 'BW', label: 'BW - BOTSWANA' },
-  { value: 'BY', label: 'BY - BELARUS' },
-  { value: 'BZ', label: 'BZ - BELIZE' },
-  { value: 'CA', label: 'CA - CANADA' },
-  { value: 'CC', label: 'CC - COCOS (KEELING) ISLANDS' },
-  { value: 'CD', label: 'CD - CONGO, DEMOCRATIC REPUBLIC' },
-  { value: 'CF', label: 'CF - CENTRAL AFRICAN REPUBLIC' },
-  { value: 'CG', label: 'CG - CONGO' },
-  { value: 'CH', label: 'CH - SWITZERLAND' },
-  { value: 'CI', label: 'CI - COTE D\'IVOIRE' },
-  { value: 'CK', label: 'CK - COOK ISLANDS' },
-  { value: 'CL', label: 'CL - CHILE' },
-  { value: 'CM', label: 'CM - CAMEROON' },
-  { value: 'CN', label: 'CN - CHINA' },
-  { value: 'CO', label: 'CO - COLOMBIA' },
-  { value: 'CR', label: 'CR - COSTA RICA' },
-  { value: 'CU', label: 'CU - CUBA' },
-  { value: 'CV', label: 'CV - CAPE VERDE' },
-  { value: 'CW', label: 'CW - CURACAO' },
-  { value: 'CX', label: 'CX - CHRISTMAS ISLAND' },
-  { value: 'CY', label: 'CY - CYPRUS' },
-  { value: 'CZ', label: 'CZ - CZECH REPUBLIC' },
-  { value: 'DE', label: 'DE - GERMANY' },
-  { value: 'DJ', label: 'DJ - DJIBOUTI' },
-  { value: 'DK', label: 'DK - DENMARK' },
-  { value: 'DM', label: 'DM - DOMINICA' },
-  { value: 'DO', label: 'DO - DOMINICAN REPUBLIC' },
-  { value: 'DZ', label: 'DZ - ALGERIA' },
-  { value: 'EC', label: 'EC - ECUADOR' },
-  { value: 'EE', label: 'EE - ESTONIA' },
-  { value: 'EG', label: 'EG - EGYPT' },
-  { value: 'EH', label: 'EH - WESTERN SAHARA' },
-  { value: 'ER', label: 'ER - ERITREA' },
-  { value: 'ES', label: 'ES - SPAIN' },
-  { value: 'ET', label: 'ET - ETHIOPIA' },
-  { value: 'FI', label: 'FI - FINLAND' },
-  { value: 'FJ', label: 'FJ - FIJI' },
-  { value: 'FK', label: 'FK - FALKLAND ISLANDS' },
-  { value: 'FM', label: 'FM - MICRONESIA' },
-  { value: 'FO', label: 'FO - FAROE ISLANDS' },
-  { value: 'FR', label: 'FR - FRANCE' },
-  { value: 'GA', label: 'GA - GABON' },
-  { value: 'GB', label: 'GB - UNITED KINGDOM' },
-  { value: 'GD', label: 'GD - GRENADA' },
-  { value: 'GE', label: 'GE - GEORGIA' },
-  { value: 'GF', label: 'GF - FRENCH GUIANA' },
-  { value: 'GG', label: 'GG - GUERNSEY' },
-  { value: 'GH', label: 'GH - GHANA' },
-  { value: 'GI', label: 'GI - GIBRALTAR' },
-  { value: 'GL', label: 'GL - GREENLAND' },
-  { value: 'GM', label: 'GM - GAMBIA' },
-  { value: 'GN', label: 'GN - GUINEA' },
-  { value: 'GP', label: 'GP - GUADELOUPE' },
-  { value: 'GQ', label: 'GQ - EQUATORIAL GUINEA' },
-  { value: 'GR', label: 'GR - GREECE' },
-  { value: 'GS', label: 'GS - SOUTH GEORGIA AND SOUTH SANDWICH ISLANDS' },
-  { value: 'GT', label: 'GT - GUATEMALA' },
-  { value: 'GU', label: 'GU - GUAM' },
-  { value: 'GW', label: 'GW - GUINEA-BISSAU' },
-  { value: 'GY', label: 'GY - GUYANA' },
-  { value: 'HK', label: 'HK - HONG KONG' },
-  { value: 'HM', label: 'HM - HEARD ISLAND AND MCDONALD ISLANDS' },
-  { value: 'HN', label: 'HN - HONDURAS' },
-  { value: 'HR', label: 'HR - CROATIA' },
-  { value: 'HT', label: 'HT - HAITI' },
-  { value: 'HU', label: 'HU - HUNGARY' },
-  { value: 'ID', label: 'ID - INDONESIA' },
-  { value: 'IE', label: 'IE - IRELAND' },
-  { value: 'IL', label: 'IL - ISRAEL' },
-  { value: 'IM', label: 'IM - ISLE OF MAN' },
-  { value: 'IN', label: 'IN - INDIA' },
-  { value: 'IO', label: 'IO - BRITISH INDIAN OCEAN TERRITORY' },
-  { value: 'IQ', label: 'IQ - IRAQ' },
-  { value: 'IR', label: 'IR - IRAN' },
-  { value: 'IS', label: 'IS - ICELAND' },
-  { value: 'IT', label: 'IT - ITALY' },
-  { value: 'JE', label: 'JE - JERSEY' },
-  { value: 'JM', label: 'JM - JAMAICA' },
-  { value: 'JO', label: 'JO - JORDAN' },
-  { value: 'JP', label: 'JP - JAPAN' },
-  { value: 'KE', label: 'KE - KENYA' },
-  { value: 'KG', label: 'KG - KYRGYZSTAN' },
-  { value: 'KH', label: 'KH - CAMBODIA' },
-  { value: 'KI', label: 'KI - KIRIBATI' },
-  { value: 'KM', label: 'KM - COMOROS' },
-  { value: 'KN', label: 'KN - SAINT KITTS AND NEVIS' },
-  { value: 'KP', label: 'KP - KOREA, NORTH' },
-  { value: 'KR', label: 'KR - KOREA, SOUTH' },
-  { value: 'KW', label: 'KW - KUWAIT' },
-  { value: 'KY', label: 'KY - CAYMAN ISLANDS' },
-  { value: 'KZ', label: 'KZ - KAZAKHSTAN' },
-  { value: 'LA', label: 'LA - LAOS' },
-  { value: 'LB', label: 'LB - LEBANON' },
-  { value: 'LC', label: 'LC - SAINT LUCIA' },
-  { value: 'LI', label: 'LI - LIECHTENSTEIN' },
-  { value: 'LK', label: 'LK - SRI LANKA' },
-  { value: 'LR', label: 'LR - LIBERIA' },
-  { value: 'LS', label: 'LS - LESOTHO' },
-  { value: 'LT', label: 'LT - LITHUANIA' },
-  { value: 'LU', label: 'LU - LUXEMBOURG' },
-  { value: 'LV', label: 'LV - LATVIA' },
-  { value: 'LY', label: 'LY - LIBYA' },
-  { value: 'MA', label: 'MA - MOROCCO' },
-  { value: 'MC', label: 'MC - MONACO' },
-  { value: 'MD', label: 'MD - MOLDOVA' },
-  { value: 'ME', label: 'ME - MONTENEGRO' },
-  { value: 'MF', label: 'MF - SAINT MARTIN' },
-  { value: 'MG', label: 'MG - MADAGASCAR' },
-  { value: 'MH', label: 'MH - MARSHALL ISLANDS' },
-  { value: 'MK', label: 'MK - MACEDONIA' },
-  { value: 'ML', label: 'ML - MALI' },
-  { value: 'MM', label: 'MM - MYANMAR' },
-  { value: 'MN', label: 'MN - MONGOLIA' },
-  { value: 'MO', label: 'MO - MACAO' },
-  { value: 'MP', label: 'MP - NORTHERN MARIANA ISLANDS' },
-  { value: 'MQ', label: 'MQ - MARTINIQUE' },
-  { value: 'MR', label: 'MR - MAURITANIA' },
-  { value: 'MS', label: 'MS - MONTSERRAT' },
-  { value: 'MT', label: 'MT - MALTA' },
-  { value: 'MU', label: 'MU - MAURITIUS' },
-  { value: 'MV', label: 'MV - MALDIVES' },
-  { value: 'MW', label: 'MW - MALAWI' },
-  { value: 'MX', label: 'MX - MEXICO' },
-  { value: 'MY', label: 'MY - MALAYSIA' },
-  { value: 'MZ', label: 'MZ - MOZAMBIQUE' },
-  { value: 'NA', label: 'NA - NAMIBIA' },
-  { value: 'NC', label: 'NC - NEW CALEDONIA' },
-  { value: 'NE', label: 'NE - NIGER' },
-  { value: 'NF', label: 'NF - NORFOLK ISLAND' },
-  { value: 'NG', label: 'NG - NIGERIA' },
-  { value: 'NI', label: 'NI - NICARAGUA' },
-  { value: 'NL', label: 'NL - NETHERLANDS' },
-  { value: 'NO', label: 'NO - NORWAY' },
-  { value: 'NP', label: 'NP - NEPAL' },
-  { value: 'NR', label: 'NR - NAURU' },
-  { value: 'NU', label: 'NU - NIUE' },
-  { value: 'NZ', label: 'NZ - NEW ZEALAND' },
-  { value: 'OM', label: 'OM - OMAN' },
-  { value: 'PA', label: 'PA - PANAMA' },
-  { value: 'PE', label: 'PE - PERU' },
-  { value: 'PF', label: 'PF - FRENCH POLYNESIA' },
-  { value: 'PG', label: 'PG - PAPUA NEW GUINEA' },
-  { value: 'PH', label: 'PH - PHILIPPINES' },
-  { value: 'PK', label: 'PK - PAKISTAN' },
-  { value: 'PL', label: 'PL - POLAND' },
-  { value: 'PM', label: 'PM - SAINT PIERRE AND MIQUELON' },
-  { value: 'PN', label: 'PN - PITCAIRN' },
-  { value: 'PR', label: 'PR - PUERTO RICO' },
-  { value: 'PS', label: 'PS - PALESTINE' },
-  { value: 'PT', label: 'PT - PORTUGAL' },
-  { value: 'PW', label: 'PW - PALAU' },
-  { value: 'PY', label: 'PY - PARAGUAY' },
-  { value: 'QA', label: 'QA - QATAR' },
-  { value: 'RE', label: 'RE - REUNION' },
-  { value: 'RO', label: 'RO - ROMANIA' },
-  { value: 'RS', label: 'RS - SERBIA' },
-  { value: 'RU', label: 'RU - RUSSIA' },
-  { value: 'RW', label: 'RW - RWANDA' },
-  { value: 'SA', label: 'SA - SAUDI ARABIA' },
-  { value: 'SB', label: 'SB - SOLOMON ISLANDS' },
-  { value: 'SC', label: 'SC - SEYCHELLES' },
-  { value: 'SD', label: 'SD - SUDAN' },
-  { value: 'SE', label: 'SE - SWEDEN' },
-  { value: 'SG', label: 'SG - SINGAPORE' },
-  { value: 'SH', label: 'SH - SAINT HELENA' },
-  { value: 'SI', label: 'SI - SLOVENIA' },
-  { value: 'SJ', label: 'SJ - SVALBARD AND JAN MAYEN' },
-  { value: 'SK', label: 'SK - SLOVAKIA' },
-  { value: 'SL', label: 'SL - SIERRA LEONE' },
-  { value: 'SM', label: 'SM - SAN MARINO' },
-  { value: 'SN', label: 'SN - SENEGAL' },
-  { value: 'SO', label: 'SO - SOMALIA' },
-  { value: 'SR', label: 'SR - SURINAME' },
-  { value: 'SS', label: 'SS - SOUTH SUDAN' },
-  { value: 'ST', label: 'ST - SAO TOME AND PRINCIPE' },
-  { value: 'SV', label: 'SV - EL SALVADOR' },
-  { value: 'SX', label: 'SX - SINT MAARTEN' },
-  { value: 'SY', label: 'SY - SYRIA' },
-  { value: 'SZ', label: 'SZ - SWAZILAND' },
-  { value: 'TC', label: 'TC - TURKS AND CAICOS ISLANDS' },
-  { value: 'TD', label: 'TD - CHAD' },
-  { value: 'TF', label: 'TF - FRENCH SOUTHERN TERRITORIES' },
-  { value: 'TG', label: 'TG - TOGO' },
-  { value: 'TH', label: 'TH - THAILAND' },
-  { value: 'TJ', label: 'TJ - TAJIKISTAN' },
-  { value: 'TK', label: 'TK - TOKELAU' },
-  { value: 'TL', label: 'TL - TIMOR-LESTE' },
-  { value: 'TM', label: 'TM - TURKMENISTAN' },
-  { value: 'TN', label: 'TN - TUNISIA' },
-  { value: 'TO', label: 'TO - TONGA' },
-  { value: 'TR', label: 'TR - TURKEY' },
-  { value: 'TT', label: 'TT - TRINIDAD AND TOBAGO' },
-  { value: 'TV', label: 'TV - TUVALU' },
-  { value: 'TW', label: 'TW - TAIWAN' },
-  { value: 'TZ', label: 'TZ - TANZANIA' },
-  { value: 'UA', label: 'UA - UKRAINE' },
-  { value: 'UG', label: 'UG - UGANDA' },
-  { value: 'UM', label: 'UM - UNITED STATES MINOR OUTLYING ISLANDS' },
-  { value: 'US', label: 'US - UNITED STATES' },
-  { value: 'UY', label: 'UY - URUGUAY' },
-  { value: 'UZ', label: 'UZ - UZBEKISTAN' },
-  { value: 'VA', label: 'VA - VATICAN CITY' },
-  { value: 'VC', label: 'VC - SAINT VINCENT AND THE GRENADINES' },
-  { value: 'VE', label: 'VE - VENEZUELA' },
-  { value: 'VG', label: 'VG - BRITISH VIRGIN ISLANDS' },
-  { value: 'VI', label: 'VI - US VIRGIN ISLANDS' },
-  { value: 'VN', label: 'VN - VIETNAM' },
-  { value: 'VU', label: 'VU - VANUATU' },
-  { value: 'WF', label: 'WF - WALLIS AND FUTUNA' },
-  { value: 'WS', label: 'WS - SAMOA' },
-  { value: 'YE', label: 'YE - YEMEN' },
-  { value: 'YT', label: 'YT - MAYOTTE' },
-  { value: 'ZA', label: 'ZA - SOUTH AFRICA' },
-  { value: 'ZM', label: 'ZM - ZAMBIA' },
-  { value: 'ZW', label: 'ZW - ZIMBABWE' },
+  { value: 'AFGHANISTAN', label: 'AFGHANISTAN' },
+  { value: 'ALBANIA', label: 'ALBANIA' },
+  { value: 'ALGERIA', label: 'ALGERIA' },
+  { value: 'AMERICAN SAMOA', label: 'AMERICAN SAMOA' },
+  { value: 'ANDORRA', label: 'ANDORRA' },
+  { value: 'ANGOLA', label: 'ANGOLA' },
+  { value: 'ANGUILLA', label: 'ANGUILLA' },
+  { value: 'ANTARCTICA', label: 'ANTARCTICA' },
+  { value: 'ANTIGUA AND BARBUDA', label: 'ANTIGUA AND BARBUDA' },
+  { value: 'ARGENTINA', label: 'ARGENTINA' },
+  { value: 'ARMENIA', label: 'ARMENIA' },
+  { value: 'ARUBA', label: 'ARUBA' },
+  { value: 'AUSTRALIA', label: 'AUSTRALIA' },
+  { value: 'AUSTRIA', label: 'AUSTRIA' },
+  { value: 'AZERBAIJAN', label: 'AZERBAIJAN' },
+  { value: 'BAHAMAS', label: 'BAHAMAS' },
+  { value: 'BAHRAIN', label: 'BAHRAIN' },
+  { value: 'BANGLADESH', label: 'BANGLADESH' },
+  { value: 'BARBADOS', label: 'BARBADOS' },
+  { value: 'BELARUS', label: 'BELARUS' },
+  { value: 'BELGIUM', label: 'BELGIUM' },
+  { value: 'BELIZE', label: 'BELIZE' },
+  { value: 'BENIN', label: 'BENIN' },
+  { value: 'BERMUDA', label: 'BERMUDA' },
+  { value: 'BHUTAN', label: 'BHUTAN' },
+  { value: 'BOLIVIA', label: 'BOLIVIA' },
+  { value: 'BONAIRE, SINT EUSTATIUS AND SABA', label: 'BONAIRE, SINT EUSTATIUS AND SABA' },
+  { value: 'BOSNIA AND HERZEGOVINA', label: 'BOSNIA AND HERZEGOVINA' },
+  { value: 'BOTSWANA', label: 'BOTSWANA' },
+  { value: 'BOUVET ISLAND', label: 'BOUVET ISLAND' },
+  { value: 'BRAZIL', label: 'BRAZIL' },
+  { value: 'BRITISH INDIAN OCEAN TERRITORY', label: 'BRITISH INDIAN OCEAN TERRITORY' },
+  { value: 'BRITISH VIRGIN ISLANDS', label: 'BRITISH VIRGIN ISLANDS' },
+  { value: 'BRUNEI DARUSSALAM', label: 'BRUNEI DARUSSALAM' },
+  { value: 'BULGARIA', label: 'BULGARIA' },
+  { value: 'BURKINA FASO', label: 'BURKINA FASO' },
+  { value: 'BURUNDI', label: 'BURUNDI' },
+  { value: 'CAMBODIA', label: 'CAMBODIA' },
+  { value: 'CAMEROON', label: 'CAMEROON' },
+  { value: 'CANADA', label: 'CANADA' },
+  { value: 'CAPE VERDE', label: 'CAPE VERDE' },
+  { value: 'CAYMAN ISLANDS', label: 'CAYMAN ISLANDS' },
+  { value: 'CENTRAL AFRICAN REPUBLIC', label: 'CENTRAL AFRICAN REPUBLIC' },
+  { value: 'CHAD', label: 'CHAD' },
+  { value: 'CHILE', label: 'CHILE' },
+  { value: 'CHINA', label: 'CHINA' },
+  { value: 'CHRISTMAS ISLAND', label: 'CHRISTMAS ISLAND' },
+  { value: 'COCOS (KEELING) ISLANDS', label: 'COCOS (KEELING) ISLANDS' },
+  { value: 'COLOMBIA', label: 'COLOMBIA' },
+  { value: 'COMOROS', label: 'COMOROS' },
+  { value: 'CONGO', label: 'CONGO' },
+  { value: 'CONGO, DEMOCRATIC REPUBLIC', label: 'CONGO, DEMOCRATIC REPUBLIC' },
+  { value: 'COOK ISLANDS', label: 'COOK ISLANDS' },
+  { value: 'COSTA RICA', label: 'COSTA RICA' },
+  { value: 'COTE D\'IVOIRE', label: 'COTE D\'IVOIRE' },
+  { value: 'CROATIA', label: 'CROATIA' },
+  { value: 'CUBA', label: 'CUBA' },
+  { value: 'CURACAO', label: 'CURACAO' },
+  { value: 'CYPRUS', label: 'CYPRUS' },
+  { value: 'CZECH REPUBLIC', label: 'CZECH REPUBLIC' },
+  { value: 'DENMARK', label: 'DENMARK' },
+  { value: 'DJIBOUTI', label: 'DJIBOUTI' },
+  { value: 'DOMINICA', label: 'DOMINICA' },
+  { value: 'DOMINICAN REPUBLIC', label: 'DOMINICAN REPUBLIC' },
+  { value: 'ECUADOR', label: 'ECUADOR' },
+  { value: 'EGYPT', label: 'EGYPT' },
+  { value: 'EL SALVADOR', label: 'EL SALVADOR' },
+  { value: 'EQUATORIAL GUINEA', label: 'EQUATORIAL GUINEA' },
+  { value: 'ERITREA', label: 'ERITREA' },
+  { value: 'ESTONIA', label: 'ESTONIA' },
+  { value: 'ETHIOPIA', label: 'ETHIOPIA' },
+  { value: 'FALKLAND ISLANDS', label: 'FALKLAND ISLANDS' },
+  { value: 'FAROE ISLANDS', label: 'FAROE ISLANDS' },
+  { value: 'FIJI', label: 'FIJI' },
+  { value: 'FINLAND', label: 'FINLAND' },
+  { value: 'FRANCE', label: 'FRANCE' },
+  { value: 'FRENCH GUIANA', label: 'FRENCH GUIANA' },
+  { value: 'FRENCH POLYNESIA', label: 'FRENCH POLYNESIA' },
+  { value: 'FRENCH SOUTHERN TERRITORIES', label: 'FRENCH SOUTHERN TERRITORIES' },
+  { value: 'GABON', label: 'GABON' },
+  { value: 'GAMBIA', label: 'GAMBIA' },
+  { value: 'GEORGIA', label: 'GEORGIA' },
+  { value: 'GERMANY', label: 'GERMANY' },
+  { value: 'GHANA', label: 'GHANA' },
+  { value: 'GIBRALTAR', label: 'GIBRALTAR' },
+  { value: 'GREECE', label: 'GREECE' },
+  { value: 'GREENLAND', label: 'GREENLAND' },
+  { value: 'GRENADA', label: 'GRENADA' },
+  { value: 'GUADELOUPE', label: 'GUADELOUPE' },
+  { value: 'GUAM', label: 'GUAM' },
+  { value: 'GUATEMALA', label: 'GUATEMALA' },
+  { value: 'GUERNSEY', label: 'GUERNSEY' },
+  { value: 'GUINEA', label: 'GUINEA' },
+  { value: 'GUINEA-BISSAU', label: 'GUINEA-BISSAU' },
+  { value: 'GUYANA', label: 'GUYANA' },
+  { value: 'HAITI', label: 'HAITI' },
+  { value: 'HEARD ISLAND AND MCDONALD ISLANDS', label: 'HEARD ISLAND AND MCDONALD ISLANDS' },
+  { value: 'HONDURAS', label: 'HONDURAS' },
+  { value: 'HONG KONG', label: 'HONG KONG' },
+  { value: 'HUNGARY', label: 'HUNGARY' },
+  { value: 'ICELAND', label: 'ICELAND' },
+  { value: 'INDIA', label: 'INDIA' },
+  { value: 'INDONESIA', label: 'INDONESIA' },
+  { value: 'IRAN', label: 'IRAN' },
+  { value: 'IRAQ', label: 'IRAQ' },
+  { value: 'IRELAND', label: 'IRELAND' },
+  { value: 'ISLE OF MAN', label: 'ISLE OF MAN' },
+  { value: 'ISRAEL', label: 'ISRAEL' },
+  { value: 'ITALY', label: 'ITALY' },
+  { value: 'JAMAICA', label: 'JAMAICA' },
+  { value: 'JAPAN', label: 'JAPAN' },
+  { value: 'JERSEY', label: 'JERSEY' },
+  { value: 'JORDAN', label: 'JORDAN' },
+  { value: 'KAZAKHSTAN', label: 'KAZAKHSTAN' },
+  { value: 'KENYA', label: 'KENYA' },
+  { value: 'KIRIBATI', label: 'KIRIBATI' },
+  { value: 'KOREA, NORTH', label: 'KOREA, NORTH' },
+  { value: 'KOREA, SOUTH', label: 'KOREA, SOUTH' },
+  { value: 'KUWAIT', label: 'KUWAIT' },
+  { value: 'KYRGYZSTAN', label: 'KYRGYZSTAN' },
+  { value: 'LAOS', label: 'LAOS' },
+  { value: 'LATVIA', label: 'LATVIA' },
+  { value: 'LEBANON', label: 'LEBANON' },
+  { value: 'LESOTHO', label: 'LESOTHO' },
+  { value: 'LIBERIA', label: 'LIBERIA' },
+  { value: 'LIBYA', label: 'LIBYA' },
+  { value: 'LIECHTENSTEIN', label: 'LIECHTENSTEIN' },
+  { value: 'LITHUANIA', label: 'LITHUANIA' },
+  { value: 'LUXEMBOURG', label: 'LUXEMBOURG' },
+  { value: 'MACAO', label: 'MACAO' },
+  { value: 'MACEDONIA', label: 'MACEDONIA' },
+  { value: 'MADAGASCAR', label: 'MADAGASCAR' },
+  { value: 'MALAWI', label: 'MALAWI' },
+  { value: 'MALAYSIA', label: 'MALAYSIA' },
+  { value: 'MALDIVES', label: 'MALDIVES' },
+  { value: 'MALI', label: 'MALI' },
+  { value: 'MALTA', label: 'MALTA' },
+  { value: 'MARSHALL ISLANDS', label: 'MARSHALL ISLANDS' },
+  { value: 'MARTINIQUE', label: 'MARTINIQUE' },
+  { value: 'MAURITANIA', label: 'MAURITANIA' },
+  { value: 'MAURITIUS', label: 'MAURITIUS' },
+  { value: 'MAYOTTE', label: 'MAYOTTE' },
+  { value: 'MEXICO', label: 'MEXICO' },
+  { value: 'MICRONESIA', label: 'MICRONESIA' },
+  { value: 'MOLDOVA', label: 'MOLDOVA' },
+  { value: 'MONACO', label: 'MONACO' },
+  { value: 'MONGOLIA', label: 'MONGOLIA' },
+  { value: 'MONTENEGRO', label: 'MONTENEGRO' },
+  { value: 'MONTSERRAT', label: 'MONTSERRAT' },
+  { value: 'MOROCCO', label: 'MOROCCO' },
+  { value: 'MOZAMBIQUE', label: 'MOZAMBIQUE' },
+  { value: 'MYANMAR', label: 'MYANMAR' },
+  { value: 'NAMIBIA', label: 'NAMIBIA' },
+  { value: 'NAURU', label: 'NAURU' },
+  { value: 'NEPAL', label: 'NEPAL' },
+  { value: 'NETHERLANDS', label: 'NETHERLANDS' },
+  { value: 'NEW CALEDONIA', label: 'NEW CALEDONIA' },
+  { value: 'NEW ZEALAND', label: 'NEW ZEALAND' },
+  { value: 'NICARAGUA', label: 'NICARAGUA' },
+  { value: 'NIGER', label: 'NIGER' },
+  { value: 'NIGERIA', label: 'NIGERIA' },
+  { value: 'NIUE', label: 'NIUE' },
+  { value: 'NORFOLK ISLAND', label: 'NORFOLK ISLAND' },
+  { value: 'NORTHERN MARIANA ISLANDS', label: 'NORTHERN MARIANA ISLANDS' },
+  { value: 'NORWAY', label: 'NORWAY' },
+  { value: 'OMAN', label: 'OMAN' },
+  { value: 'PAKISTAN', label: 'PAKISTAN' },
+  { value: 'PALAU', label: 'PALAU' },
+  { value: 'PALESTINE', label: 'PALESTINE' },
+  { value: 'PANAMA', label: 'PANAMA' },
+  { value: 'PAPUA NEW GUINEA', label: 'PAPUA NEW GUINEA' },
+  { value: 'PARAGUAY', label: 'PARAGUAY' },
+  { value: 'PERU', label: 'PERU' },
+  { value: 'PHILIPPINES', label: 'PHILIPPINES' },
+  { value: 'PITCAIRN', label: 'PITCAIRN' },
+  { value: 'POLAND', label: 'POLAND' },
+  { value: 'PORTUGAL', label: 'PORTUGAL' },
+  { value: 'PUERTO RICO', label: 'PUERTO RICO' },
+  { value: 'QATAR', label: 'QATAR' },
+  { value: 'REUNION', label: 'REUNION' },
+  { value: 'ROMANIA', label: 'ROMANIA' },
+  { value: 'RUSSIA', label: 'RUSSIA' },
+  { value: 'RWANDA', label: 'RWANDA' },
+  { value: 'SAINT HELENA', label: 'SAINT HELENA' },
+  { value: 'SAINT KITTS AND NEVIS', label: 'SAINT KITTS AND NEVIS' },
+  { value: 'SAINT LUCIA', label: 'SAINT LUCIA' },
+  { value: 'SAINT MARTIN', label: 'SAINT MARTIN' },
+  { value: 'SAINT PIERRE AND MIQUELON', label: 'SAINT PIERRE AND MIQUELON' },
+  { value: 'SAINT VINCENT AND THE GRENADINES', label: 'SAINT VINCENT AND THE GRENADINES' },
+  { value: 'SAMOA', label: 'SAMOA' },
+  { value: 'SAN MARINO', label: 'SAN MARINO' },
+  { value: 'SAO TOME AND PRINCIPE', label: 'SAO TOME AND PRINCIPE' },
+  { value: 'SAUDI ARABIA', label: 'SAUDI ARABIA' },
+  { value: 'SENEGAL', label: 'SENEGAL' },
+  { value: 'SERBIA', label: 'SERBIA' },
+  { value: 'SEYCHELLES', label: 'SEYCHELLES' },
+  { value: 'SIERRA LEONE', label: 'SIERRA LEONE' },
+  { value: 'SINGAPORE', label: 'SINGAPORE' },
+  { value: 'SINT MAARTEN', label: 'SINT MAARTEN' },
+  { value: 'SLOVAKIA', label: 'SLOVAKIA' },
+  { value: 'SLOVENIA', label: 'SLOVENIA' },
+  { value: 'SOLOMON ISLANDS', label: 'SOLOMON ISLANDS' },
+  { value: 'SOMALIA', label: 'SOMALIA' },
+  { value: 'SOUTH AFRICA', label: 'SOUTH AFRICA' },
+  { value: 'SOUTH GEORGIA AND SOUTH SANDWICH ISLANDS', label: 'SOUTH GEORGIA AND SOUTH SANDWICH ISLANDS' },
+  { value: 'SOUTH SUDAN', label: 'SOUTH SUDAN' },
+  { value: 'SPAIN', label: 'SPAIN' },
+  { value: 'SRI LANKA', label: 'SRI LANKA' },
+  { value: 'SUDAN', label: 'SUDAN' },
+  { value: 'SURINAME', label: 'SURINAME' },
+  { value: 'SVALBARD AND JAN MAYEN', label: 'SVALBARD AND JAN MAYEN' },
+  { value: 'SWAZILAND', label: 'SWAZILAND' },
+  { value: 'SWEDEN', label: 'SWEDEN' },
+  { value: 'SWITZERLAND', label: 'SWITZERLAND' },
+  { value: 'SYRIA', label: 'SYRIA' },
+  { value: 'TAIWAN', label: 'TAIWAN' },
+  { value: 'TAJIKISTAN', label: 'TAJIKISTAN' },
+  { value: 'TANZANIA', label: 'TANZANIA' },
+  { value: 'THAILAND', label: 'THAILAND' },
+  { value: 'TIMOR-LESTE', label: 'TIMOR-LESTE' },
+  { value: 'TOGO', label: 'TOGO' },
+  { value: 'TOKELAU', label: 'TOKELAU' },
+  { value: 'TONGA', label: 'TONGA' },
+  { value: 'TRINIDAD AND TOBAGO', label: 'TRINIDAD AND TOBAGO' },
+  { value: 'TUNISIA', label: 'TUNISIA' },
+  { value: 'TURKEY', label: 'TURKEY' },
+  { value: 'TURKMENISTAN', label: 'TURKMENISTAN' },
+  { value: 'TURKS AND CAICOS ISLANDS', label: 'TURKS AND CAICOS ISLANDS' },
+  { value: 'TUVALU', label: 'TUVALU' },
+  { value: 'UGANDA', label: 'UGANDA' },
+  { value: 'UKRAINE', label: 'UKRAINE' },
+  { value: 'UNITED ARAB EMIRATES', label: 'UNITED ARAB EMIRATES' },
+  { value: 'UNITED KINGDOM', label: 'UNITED KINGDOM' },
+  { value: 'UNITED STATES', label: 'UNITED STATES' },
+  { value: 'UNITED STATES MINOR OUTLYING ISLANDS', label: 'UNITED STATES MINOR OUTLYING ISLANDS' },
+  { value: 'URUGUAY', label: 'URUGUAY' },
+  { value: 'US VIRGIN ISLANDS', label: 'US VIRGIN ISLANDS' },
+  { value: 'UZBEKISTAN', label: 'UZBEKISTAN' },
+  { value: 'VANUATU', label: 'VANUATU' },
+  { value: 'VATICAN CITY', label: 'VATICAN CITY' },
+  { value: 'VENEZUELA', label: 'VENEZUELA' },
+  { value: 'VIETNAM', label: 'VIETNAM' },
+  { value: 'WALLIS AND FUTUNA', label: 'WALLIS AND FUTUNA' },
+  { value: 'WESTERN SAHARA', label: 'WESTERN SAHARA' },
+  { value: 'YEMEN', label: 'YEMEN' },
+  { value: 'ZAMBIA', label: 'ZAMBIA' },
+  { value: 'ZIMBABWE', label: 'ZIMBABWE' },
+];
+
+const airlines = [
+  { value: '3K - JETSTAR ASIA', label: '3K - JETSTAR ASIA' },
+  { value: '3U - SICHUAN AIRLINES', label: '3U - SICHUAN AIRLINES' },
+  { value: '4D - AIR ASIA X', label: '4D - AIR ASIA X' },
+  { value: '5J - CEBU PACIFIC AIR', label: '5J - CEBU PACIFIC AIR' },
+  { value: '6E - INDIGO', label: '6E - INDIGO' },
+  { value: '8M - MYANMAR AIRWAYS INTERNATIONAL', label: '8M - MYANMAR AIRWAYS INTERNATIONAL' },
+  { value: '9W - JET AIRWAYS', label: '9W - JET AIRWAYS' },
+  { value: 'AA - AMERICAN AIRLINES', label: 'AA - AMERICAN AIRLINES' },
+  { value: 'AC - AIR CANADA', label: 'AC - AIR CANADA' },
+  { value: 'AF - AIR FRANCE', label: 'AF - AIR FRANCE' },
+  { value: 'AI - AIR INDIA', label: 'AI - AIR INDIA' },
+  { value: 'AK - AIR ASIA', label: 'AK - AIR ASIA' },
+  { value: 'AM - AEROMEXICO', label: 'AM - AEROMEXICO' },
+  { value: 'AS - ALASKA AIRLINES', label: 'AS - ALASKA AIRLINES' },
+  { value: 'AZ - ALITALIA', label: 'AZ - ALITALIA' },
+  { value: 'B6 - JETBLUE AIRWAYS', label: 'B6 - JETBLUE AIRWAYS' },
+  { value: 'BA - BRITISH AIRWAYS', label: 'BA - BRITISH AIRWAYS' },
+  { value: 'BI - ROYAL BRUNEI AIRLINES', label: 'BI - ROYAL BRUNEI AIRLINES' },
+  { value: 'BR - EVA AIR', label: 'BR - EVA AIR' },
+  { value: 'BX - AIR BUSAN', label: 'BX - AIR BUSAN' },
+  { value: 'CA - AIR CHINA', label: 'CA - AIR CHINA' },
+  { value: 'CI - CHINA AIRLINES', label: 'CI - CHINA AIRLINES' },
+  { value: 'CX - CATHAY PACIFIC', label: 'CX - CATHAY PACIFIC' },
+  { value: 'CZ - CHINA SOUTHERN AIRLINES', label: 'CZ - CHINA SOUTHERN AIRLINES' },
+  { value: 'D7 - AIRASIA X', label: 'D7 - AIRASIA X' },
+  { value: 'DL - DELTA AIRLINES', label: 'DL - DELTA AIRLINES' },
+  { value: 'EK - EMIRATES', label: 'EK - EMIRATES' },
+  { value: 'ET - ETHIOPIAN AIRLINES', label: 'ET - ETHIOPIAN AIRLINES' },
+  { value: 'EY - ETIHAD AIRWAYS', label: 'EY - ETIHAD AIRWAYS' },
+  { value: 'FD - THAI AIRASIA', label: 'FD - THAI AIRASIA' },
+  { value: 'FJ - FIJI AIRWAYS', label: 'FJ - FIJI AIRWAYS' },
+  { value: 'FM - SHANGHAI AIRLINES', label: 'FM - SHANGHAI AIRLINES' },
+  { value: 'GA - GARUDA INDONESIA', label: 'GA - GARUDA INDONESIA' },
+  { value: 'GF - GULF AIR', label: 'GF - GULF AIR' },
+  { value: 'HA - HAWAIIAN AIRLINES', label: 'HA - HAWAIIAN AIRLINES' },
+  { value: 'HO - JUNEYAO AIRLINES', label: 'HO - JUNEYAO AIRLINES' },
+  { value: 'HU - HAINAN AIRLINES', label: 'HU - HAINAN AIRLINES' },
+  { value: 'HX - HONG KONG AIRLINES', label: 'HX - HONG KONG AIRLINES' },
+  { value: 'IB - IBERIA', label: 'IB - IBERIA' },
+  { value: 'ID - BATIK AIR', label: 'ID - BATIK AIR' },
+  { value: 'IN - NAM AIR', label: 'IN - NAM AIR' },
+  { value: 'IQ - CITILINK', label: 'IQ - CITILINK' },
+  { value: 'IX - AIR INDIA EXPRESS', label: 'IX - AIR INDIA EXPRESS' },
+  { value: 'JL - JAPAN AIRLINES', label: 'JL - JAPAN AIRLINES' },
+  { value: 'JQ - JETSTAR', label: 'JQ - JETSTAR' },
+  { value: 'JS - KORYO AIRWAYS', label: 'JS - KORYO AIRWAYS' },
+  { value: 'JT - LION AIR', label: 'JT - LION AIR' },
+  { value: 'JX - STARLUX AIRLINES', label: 'JX - STARLUX AIRLINES' },
+  { value: 'K6 - CAMBODIA ANGKOR AIR', label: 'K6 - CAMBODIA ANGKOR AIR' },
+  { value: 'KA - CATHAY DRAGON', label: 'KA - CATHAY DRAGON' },
+  { value: 'KC - AIR ASTANA', label: 'KC - AIR ASTANA' },
+  { value: 'KE - KOREAN AIR', label: 'KE - KOREAN AIR' },
+  { value: 'KL - KLM', label: 'KL - KLM' },
+  { value: 'KQ - KENYA AIRWAYS', label: 'KQ - KENYA AIRWAYS' },
+  { value: 'KU - KUWAIT AIRWAYS', label: 'KU - KUWAIT AIRWAYS' },
+  { value: 'LA - LATAM CHILE', label: 'LA - LATAM CHILE' },
+  { value: 'LH - LUFTHANSA', label: 'LH - LUFTHANSA' },
+  { value: 'LX - SWISS INTERNATIONAL AIR LINES', label: 'LX - SWISS INTERNATIONAL AIR LINES' },
+  { value: 'MF - XIAMEN AIR', label: 'MF - XIAMEN AIR' },
+  { value: 'MH - MALAYSIA AIRLINES', label: 'MH - MALAYSIA AIRLINES' },
+  { value: 'MI - SILKAIR', label: 'MI - SILKAIR' },
+  { value: 'MS - EGYPTAIR', label: 'MS - EGYPTAIR' },
+  { value: 'MU - CHINA EASTERN AIRLINES', label: 'MU - CHINA EASTERN AIRLINES' },
+  { value: 'NH - ALL NIPPON AIRWAYS', label: 'NH - ALL NIPPON AIRWAYS' },
+  { value: 'NQ - AIR KANSAI', label: 'NQ - AIR KANSAI' },
+  { value: 'NX - AIR MACAU', label: 'NX - AIR MACAU' },
+  { value: 'OD - BATIK AIR MALAYSIA', label: 'OD - BATIK AIR MALAYSIA' },
+  { value: 'OK - CZECH AIRLINES', label: 'OK - CZECH AIRLINES' },
+  { value: 'OM - MIAT MONGOLIAN AIRLINES', label: 'OM - MIAT MONGOLIAN AIRLINES' },
+  { value: 'OS - AUSTRIAN AIRLINES', label: 'OS - AUSTRIAN AIRLINES' },
+  { value: 'OZ - ASIANA AIRLINES', label: 'OZ - ASIANA AIRLINES' },
+  { value: 'PG - BANGKOK AIRWAYS', label: 'PG - BANGKOK AIRWAYS' },
+  { value: 'PR - PHILIPPINE AIRLINES', label: 'PR - PHILIPPINE AIRLINES' },
+  { value: 'PS - UKRAINE INTERNATIONAL AIRLINES', label: 'PS - UKRAINE INTERNATIONAL AIRLINES' },
+  { value: 'PX - AIR NIUGINI', label: 'PX - AIR NIUGINI' },
+  { value: 'QF - QANTAS', label: 'QF - QANTAS' },
+  { value: 'QG - CITILINK', label: 'QG - CITILINK' },
+  { value: 'QR - QATAR AIRWAYS', label: 'QR - QATAR AIRWAYS' },
+  { value: 'QZ - INDONESIA AIRASIA', label: 'QZ - INDONESIA AIRASIA' },
+  { value: 'RA - ROYAL NEPAL AIRLINES', label: 'RA - ROYAL NEPAL AIRLINES' },
+  { value: 'RJ - ROYAL JORDANIAN', label: 'RJ - ROYAL JORDANIAN' },
+  { value: 'SA - SOUTH AFRICAN AIRWAYS', label: 'SA - SOUTH AFRICAN AIRWAYS' },
+  { value: 'SJ - SRIWIJAYA AIR', label: 'SJ - SRIWIJAYA AIR' },
+  { value: 'SK - SAS SCANDINAVIAN AIRLINES', label: 'SK - SAS SCANDINAVIAN AIRLINES' },
+  { value: 'SL - THAI LION AIR', label: 'SL - THAI LION AIR' },
+  { value: 'SQ - SINGAPORE AIRLINES', label: 'SQ - SINGAPORE AIRLINES' },
+  { value: 'SV - SAUDIA', label: 'SV - SAUDIA' },
+  { value: 'TG - THAI AIRWAYS INTERNATIONAL', label: 'TG - THAI AIRWAYS INTERNATIONAL' },
+  { value: 'TK - TURKISH AIRLINES', label: 'TK - TURKISH AIRLINES' },
+  { value: 'TR - SCOOT', label: 'TR - SCOOT' },
+  { value: 'TW - T\'WAY AIR', label: 'TW - T\'WAY AIR' },
+  { value: 'UA - UNITED AIRLINES', label: 'UA - UNITED AIRLINES' },
+  { value: 'UL - SRILANKAN AIRLINES', label: 'UL - SRILANKAN AIRLINES' },
+  { value: 'UN - TRANSAERO AIRLINES', label: 'UN - TRANSAERO AIRLINES' },
+  { value: 'UO - HONG KONG EXPRESS AIRWAYS', label: 'UO - HONG KONG EXPRESS AIRWAYS' },
+  { value: 'VA - VIRGIN AUSTRALIA', label: 'VA - VIRGIN AUSTRALIA' },
+  { value: 'VF - VALUAIR', label: 'VF - VALUAIR' },
+  { value: 'VJ - VIETJET AIR', label: 'VJ - VIETJET AIR' },
+  { value: 'VN - VIETNAM AIRLINES', label: 'VN - VIETNAM AIRLINES' },
+  { value: 'VS - VIRGIN ATLANTIC', label: 'VS - VIRGIN ATLANTIC' },
+  { value: 'W6 - WIZZ AIR', label: 'W6 - WIZZ AIR' },
+  { value: 'WF - WIDEROE', label: 'WF - WIDEROE' },
+  { value: 'WN - SOUTHWEST AIRLINES', label: 'WN - SOUTHWEST AIRLINES' },
+  { value: 'X3 - TUIFLY', label: 'X3 - TUIFLY' },
+  { value: 'Y8 - SUPARNA AIRLINES', label: 'Y8 - SUPARNA AIRLINES' },
+  { value: 'Z2 - PHILIPPINES AIRASIA', label: 'Z2 - PHILIPPINES AIRASIA' },
+  { value: 'ZE - EASTAR JET', label: 'ZE - EASTAR JET' }
 ];
 
 const ports = [
@@ -302,6 +416,154 @@ const ports = [
   { value: 'BTH', label: 'BATAM (BTH) / HANG NADIM INTL. AIRPORT' },
   { value: 'NPN', label: 'ATAMBUA (NPN) / NAPAN' },
   { value: 'PLM', label: 'PALEMBANG (PLM) / SULTAN MAHMUD BADARUDDIN II' },
+];
+
+const seaPorts = [
+  { value: 'TTE - ACHMAD YANI PORT', label: 'TTE - ACHMAD YANI PORT' },
+  { value: 'AMA - AMAMAPARE PORT', label: 'AMA - AMAMAPARE PORT' },
+  { value: 'AGK - ANGGREK PORT', label: 'AGK - ANGGREK PORT' },
+  { value: 'BCP - BAGAN SIAPI API PORT', label: 'BCP - BAGAN SIAPI API PORT' },
+  { value: 'LAI - BANDAR BENTAN TELANI LAGOI PORT', label: 'LAI - BANDAR BENTAN TELANI LAGOI PORT' },
+  { value: 'BLS - BANDAR SRI SETIA RAJA PORT', label: 'BLS - BANDAR SRI SETIA RAJA PORT' },
+  { value: 'BCR - BATAM CENTRE FERRY TERMINAL', label: 'BCR - BATAM CENTRE FERRY TERMINAL' },
+  { value: 'BUR - BATU AMPAR PORT', label: 'BUR - BATU AMPAR PORT' },
+  { value: 'BPD - BELAKANG PADANG PORT', label: 'BPD - BELAKANG PADANG PORT' },
+  { value: 'BLW - BELAWAN PORT', label: 'BLW - BELAWAN PORT' },
+  { value: 'BEN - BENETE PORT', label: 'BEN - BENETE PORT' },
+  { value: 'BKG - BENGKONG PORT', label: 'BKG - BENGKONG PORT' },
+  { value: 'BOA - BENOA PORT', label: 'BOA - BENOA PORT' },
+  { value: 'BIA - BIAK PORT', label: 'BIA - BIAK PORT' },
+  { value: 'TKBJ - BIOMAS JAYA ABADI SPECIAL TERMINAL', label: 'TKBJ - BIOMAS JAYA ABADI SPECIAL TERMINAL' },
+  { value: 'PLO - BOOM BARU PORT', label: 'PLO - BOOM BARU PORT' },
+  { value: 'TKRB - BUATAN SPECIAL TERMINAL', label: 'TKRB - BUATAN SPECIAL TERMINAL' },
+  { value: 'PLCL - CALANG PORT', label: 'PLCL - CALANG PORT' },
+  { value: 'TKCI - CARGILL INDONESIA SPECIAL IMMIGRATION CHECKPOINT (TPI)', label: 'TKCI - CARGILL INDONESIA SPECIAL IMMIGRATION CHECKPOINT (TPI)' },
+  { value: 'CEB - CELUKAN BAWANG PORT', label: 'CEB - CELUKAN BAWANG PORT' },
+  { value: 'CRB - CIREBON PORT', label: 'CRB - CIREBON PORT' },
+  { value: 'CTT - CITRA TRITUNAS PORT (HARBOUR BAY)', label: 'CTT - CITRA TRITUNAS PORT (HARBOUR BAY)' },
+  { value: 'CIW - CIWANDAN PORT', label: 'CIW - CIWANDAN PORT' },
+  { value: 'DUM - DUMAI PORT', label: 'DUM - DUMAI PORT' },
+  { value: 'PNK - DWI KORA PORT', label: 'PNK - DWI KORA PORT' },
+  { value: 'TKRF - FUTONG SPECIAL TERMINAL', label: 'TKRF - FUTONG SPECIAL TERMINAL' },
+  { value: 'GNG - GARONGKONG PORT', label: 'GNG - GARONGKONG PORT' },
+  { value: 'GNS - GUNUNG SITOLI PORT', label: 'GNS - GUNUNG SITOLI PORT' },
+  { value: 'DJM - JAMBI PORT', label: 'DJM - JAMBI PORT' },
+  { value: 'DJY - JAYAPURA PORT', label: 'DJY - JAYAPURA PORT' },
+  { value: 'KAB - KABIL PORT', label: 'KAB - KABIL PORT' },
+  { value: 'TKFI - KALIMANTAN FERRO INDUSTRY SPECIAL TERMINAL', label: 'TKFI - KALIMANTAN FERRO INDUSTRY SPECIAL TERMINAL' },
+  { value: 'KDI - KENDARI PORT', label: 'KDI - KENDARI PORT' },
+  { value: 'TUA - KISAR ISLAND SPECIAL TERMINAL', label: 'TUA - KISAR ISLAND SPECIAL TERMINAL' },
+  { value: 'KBU - KOTA BARU PORT', label: 'KBU - KOTA BARU PORT' },
+  { value: 'ENO - KUALA ENOK PORT', label: 'ENO - KUALA ENOK PORT' },
+  { value: 'KUA - KUALA LANGSA PORT', label: 'KUA - KUALA LANGSA PORT' },
+  { value: 'KTJ - KUALA TANJUNG PORT', label: 'KTJ - KUALA TANJUNG PORT' },
+  { value: 'KTK - KUALA TUNGKAL PORT', label: 'KTK - KUALA TUNGKAL PORT' },
+  { value: 'KUM - KUMAI PORT', label: 'KUM - KUMAI PORT' },
+  { value: 'LBO - LABUAN BAJO PORT', label: 'LBO - LABUAN BAJO PORT' },
+  { value: 'PLLU - LABUAN UKI PORT', label: 'PLLU - LABUAN UKI PORT' },
+  { value: 'LSM - LAUREN SAY PORT', label: 'LSM - LAUREN SAY PORT' },
+  { value: 'LBR - LEMBAR PORT', label: 'LBR - LEMBAR PORT' },
+  { value: 'TUA - LETTI ISLAND SPECIAL TERMINAL', label: 'TUA - LETTI ISLAND SPECIAL TERMINAL' },
+  { value: 'KGH - LHOKSEUMAWE PORT', label: 'KGH - LHOKSEUMAWE PORT' },
+  { value: 'TUA - LIRANG ISLAND SPECIAL TERMINAL', label: 'TUA - LIRANG ISLAND SPECIAL TERMINAL' },
+  { value: 'MLH - MALAHAYATI PORT', label: 'MLH - MALAHAYATI PORT' },
+  { value: 'TRK - MALUNDUNG PORT', label: 'TRK - MALUNDUNG PORT' },
+  { value: 'MDO - MANADO PORT', label: 'MDO - MANADO PORT' },
+  { value: 'ACL - MARINA ANCOL PORT', label: 'ACL - MARINA ANCOL PORT' },
+  { value: 'TKMB - MEDANA BAY MARINA TOURISM SPECIAL TERMINAL', label: 'TKMB - MEDANA BAY MARINA TOURISM SPECIAL TERMINAL' },
+  { value: 'MKE - MERAUKE PORT', label: 'MKE - MERAUKE PORT' },
+  { value: 'TUA - MOA ISLAND SPECIAL TERMINAL', label: 'TUA - MOA ISLAND SPECIAL TERMINAL' },
+  { value: 'MSK - MUARA SABAK PORT', label: 'MSK - MUARA SABAK PORT' },
+  { value: 'NON - NONGSA BATAM PORT', label: 'NON - NONGSA BATAM PORT' },
+  { value: 'PAP - NUSANTARA PARE PARE PORT', label: 'PAP - NUSANTARA PARE PARE PORT' },
+  { value: 'THA - NUSANTARA PORT', label: 'THA - NUSANTARA PORT' },
+  { value: 'PBI - PADANG BAI SINGARAJA PORT', label: 'PBI - PADANG BAI SINGARAJA PORT' },
+  { value: 'PRN - PANARUKAN PORT', label: 'PRN - PANARUKAN PORT' },
+  { value: 'PGX - PANGKAL BALAM PORT', label: 'PGX - PANGKAL BALAM PORT' },
+  { value: 'PJG - PANJANG PORT', label: 'PJG - PANJANG PORT' },
+  { value: 'PTL - PANTOLOAN PORT', label: 'PTL - PANTOLOAN PORT' },
+  { value: 'PAZ - PASURUAN PORT', label: 'PAZ - PASURUAN PORT' },
+  { value: 'PMB - PATIMBAN PORT', label: 'PMB - PATIMBAN PORT' },
+  { value: 'TKPP - PRIMA COAL TBK SPECIAL TERMINAL', label: 'TKPP - PRIMA COAL TBK SPECIAL TERMINAL' },
+  { value: 'PRO - PROBOLINGGO PORT', label: 'PRO - PROBOLINGGO PORT' },
+  { value: 'TKSS - PT ANEKA SARANA SENTOSA BENGKONG SPECIAL TERMINAL', label: 'TKSS - PT ANEKA SARANA SENTOSA BENGKONG SPECIAL TERMINAL' },
+  { value: 'TKTL - PT BADAK NATURAL GAS LIQUEFACTION SPECIAL TERMINAL', label: 'TKTL - PT BADAK NATURAL GAS LIQUEFACTION SPECIAL TERMINAL' },
+  { value: 'TBDM - PT. BINTANGDELAPAN MINERAL SPECIAL TERMINAL', label: 'TBDM - PT. BINTANGDELAPAN MINERAL SPECIAL TERMINAL' },
+  { value: 'TBLR - PT BINTAN LAGOON RESORT SPECIAL TERMINAL', label: 'TBLR - PT BINTAN LAGOON RESORT SPECIAL TERMINAL' },
+  { value: 'TKCG - PT CEMINDO GEMILANG SPECIAL TERMINAL', label: 'TKCG - PT CEMINDO GEMILANG SPECIAL TERMINAL' },
+  { value: 'TCNS - PT CONCH NORTH SULAWESI CEMENT SPECIAL TERMINAL', label: 'TCNS - PT CONCH NORTH SULAWESI CEMENT SPECIAL TERMINAL' },
+  { value: 'TDSL - PT. DONGGI SENORO LNG SPECIAL TERMINAL', label: 'TDSL - PT. DONGGI SENORO LNG SPECIAL TERMINAL' },
+  { value: 'TKEU - PT. ENERGI UNGGUL PERSADA SPECIAL TERMINAL', label: 'TKEU - PT. ENERGI UNGGUL PERSADA SPECIAL TERMINAL' },
+  { value: 'TKHN - PT HUADI NICKEL ALLOY INDONESIA SPECIAL TERMINAL', label: 'TKHN - PT HUADI NICKEL ALLOY INDONESIA SPECIAL TERMINAL' },
+  { value: 'TKIK - PT. INDAH KIAT PULP AND PAPER SPECIAL TERMINAL', label: 'TKIK - PT. INDAH KIAT PULP AND PAPER SPECIAL TERMINAL' },
+  { value: 'TIDM - PT INDOMINCO MANDIRI SPECIAL TERMINAL', label: 'TIDM - PT INDOMINCO MANDIRI SPECIAL TERMINAL' },
+  { value: 'TKKM - PT KALTIM METHANOL INDUSTRI SPECIAL TERMINAL', label: 'TKKM - PT KALTIM METHANOL INDUSTRI SPECIAL TERMINAL' },
+  { value: 'TLTT - PT KALTIM PRIMA COAL LUBUK TUTUNG SPECIAL PORT', label: 'TLTT - PT KALTIM PRIMA COAL LUBUK TUTUNG SPECIAL PORT' },
+  { value: 'TTBA - PT KALTIM PRIMA COAL TANJUNG BARA SPECIAL PORT', label: 'TTBA - PT KALTIM PRIMA COAL TANJUNG BARA SPECIAL PORT' },
+  { value: 'TKJA - PT KIDECO JAYA AGUNG SPECIAL TERMINAL', label: 'TKJA - PT KIDECO JAYA AGUNG SPECIAL TERMINAL' },
+  { value: 'TKXX - PT KOBEXINDO CEMENT SPECIAL TERMINAL', label: 'TKXX - PT KOBEXINDO CEMENT SPECIAL TERMINAL' },
+  { value: 'TMBA - PT MIFA BERSAUDARA SPECIAL TERMINAL', label: 'TMBA - PT MIFA BERSAUDARA SPECIAL TERMINAL' },
+  { value: 'TKM - PT MULTI MINERAL INDONESIA PORT', label: 'TKM - PT MULTI MINERAL INDONESIA PORT' },
+  { value: 'TPAU - PT. PANCA AMARA UTAMA SPECIAL TERMINAL', label: 'TPAU - PT. PANCA AMARA UTAMA SPECIAL TERMINAL' },
+  { value: 'PMS - PT PELABUHAN MUARA SEMPARA SPECIAL TERMINAL', label: 'PMS - PT PELABUHAN MUARA SEMPARA SPECIAL TERMINAL' },
+  { value: 'KBB - PT PERTAMINA BAUBAU BBM SPECIAL TERMINAL', label: 'KBB - PT PERTAMINA BAUBAU BBM SPECIAL TERMINAL' },
+  { value: 'TPKT - PT PUPUK KALIMANTAN TIMUR SPECIAL TERMINAL', label: 'TPKT - PT PUPUK KALIMANTAN TIMUR SPECIAL TERMINAL' },
+  { value: 'TKSD - PT SDIC PAPUA CEMENT INDONESIA SPECIAL TERMINAL', label: 'TKSD - PT SDIC PAPUA CEMENT INDONESIA SPECIAL TERMINAL' },
+  { value: 'TKST - PT SEMEN TONASA SPECIAL TERMINAL', label: 'TKST - PT SEMEN TONASA SPECIAL TERMINAL' },
+  { value: 'TKSP - PT SINAR WIJAYA PLYWOOD INDUSTRY SPECIAL TERMINAL', label: 'TKSP - PT SINAR WIJAYA PLYWOOD INDUSTRY SPECIAL TERMINAL' },
+  { value: 'TKSW - PT. STEELINDO WAHANA PERKASA IMMIGRATION CHECKPOINT (TPIK)', label: 'TKSW - PT. STEELINDO WAHANA PERKASA IMMIGRATION CHECKPOINT (TPIK)' },
+  { value: 'TKSI - PT SUMBER INDAH PERKASA SPECIAL TERMINAL', label: 'TKSI - PT SUMBER INDAH PERKASA SPECIAL TERMINAL' },
+  { value: 'TTSL - PT TANJUNG SARANA LESTARI SPECIAL TERMINAL', label: 'TTSL - PT TANJUNG SARANA LESTARI SPECIAL TERMINAL' },
+  { value: 'TKTS - PT TRITUNAS SINAR BENUA SPECIAL TERMINAL', label: 'TKTS - PT TRITUNAS SINAR BENUA SPECIAL TERMINAL' },
+  { value: 'TKVI - PT VALE INDONESIA SPECIAL TERMINAL', label: 'TKVI - PT VALE INDONESIA SPECIAL TERMINAL' },
+  { value: 'TWHW - PT WELL HARVEST WINNING ALUMINA REFINERY SPECIAL TERMINAL', label: 'TWHW - PT WELL HARVEST WINNING ALUMINA REFINERY SPECIAL TERMINAL' },
+  { value: 'PBA - PULAU BAAI PORT', label: 'PBA - PULAU BAAI PORT' },
+  { value: 'SBA - SABANG PORT', label: 'SBA - SABANG PORT' },
+  { value: 'SRI - SAMARINDA PORT', label: 'SRI - SAMARINDA PORT' },
+  { value: 'SMQ - SAMPIT PORT', label: 'SMQ - SAMPIT PORT' },
+  { value: 'BIT - SAMUDERA BITUNG PORT', label: 'BIT - SAMUDERA BITUNG PORT' },
+  { value: 'SXK - SAUMLAKI PORT', label: 'SXK - SAUMLAKI PORT' },
+  { value: 'SKP - SEKUPANG PORT', label: 'SKP - SEKUPANG PORT' },
+  { value: 'STA - SELAT LAMPA PORT', label: 'STA - SELAT LAMPA PORT' },
+  { value: 'BPP - SEMAYANG PORT', label: 'BPP - SEMAYANG PORT' },
+  { value: 'LBM - SERI UDANA LOBAM PORT', label: 'LBM - SERI UDANA LOBAM PORT' },
+  { value: 'SSI - SIAK SRI INDRAPURA PORT', label: 'SSI - SIAK SRI INDRAPURA PORT' },
+  { value: 'SLG - SIBOLGA PORT', label: 'SLG - SIBOLGA PORT' },
+  { value: 'SNE - SINTETE PORT', label: 'SNE - SINTETE PORT' },
+  { value: 'MAK - SOEKARNO-HATTA PORT', label: 'MAK - SOEKARNO-HATTA PORT' },
+  { value: 'SOQ - SORONG PORT', label: 'SOQ - SORONG PORT' },
+  { value: 'TPN - SRI BAYINTAN PORT', label: 'TPN - SRI BAYINTAN PORT' },
+  { value: 'SBP - SRI BINTAN PURA PORT', label: 'SBP - SRI BINTAN PURA PORT' },
+  { value: 'SKL - SUNDA KELAPA PORT', label: 'SKL - SUNDA KELAPA PORT' },
+  { value: 'SUQ - SUNGAI GUNTUNG PORT', label: 'SUQ - SUNGAI GUNTUNG PORT' },
+  { value: 'SGP - SUNGAI PAKNING BENGKALIS PORT', label: 'SGP - SUNGAI PAKNING BENGKALIS PORT' },
+  { value: 'TAB - TABONEO PORT', label: 'TAB - TABONEO PORT' },
+  { value: 'TKBP - TANGGUH LNG SPECIAL TERMINAL', label: 'TKBP - TANGGUH LNG SPECIAL TERMINAL' },
+  { value: 'TBK - TANJUNG BALAI KARIMUN PORT', label: 'TBK - TANJUNG BALAI KARIMUN PORT' },
+  { value: 'PLBT - TANJUNG BUTON PORT', label: 'PLBT - TANJUNG BUTON PORT' },
+  { value: 'TES - TANJUNG EMAS PORT', label: 'TES - TANJUNG EMAS PORT' },
+  { value: 'BLN - TANJUNG GUDANG PORT', label: 'BLN - TANJUNG GUDANG PORT' },
+  { value: 'SPA - TANJUNG HARAPAN PORT', label: 'SPA - TANJUNG HARAPAN PORT' },
+  { value: 'CXP - TANJUNG INTAN PORT', label: 'CXP - TANJUNG INTAN PORT' },
+  { value: 'TGN - TANJUNG KALIAN PORT', label: 'TGN - TANJUNG KALIAN PORT' },
+  { value: 'TEN - TANJUNG LONTAR TENAU PORT', label: 'TEN - TANJUNG LONTAR TENAU PORT' },
+  { value: 'TMD - TANJUNG MEDANG BENGKALIS PORT', label: 'TMD - TANJUNG MEDANG BENGKALIS PORT' },
+  { value: 'TPD - TANJUNG PANDAN PORT', label: 'TPD - TANJUNG PANDAN PORT' },
+  { value: 'TJP - TANJUNG PERAK PORT', label: 'TJP - TANJUNG PERAK PORT' },
+  { value: 'JKT - TANJUNG PRIOK PORT', label: 'JKT - TANJUNG PRIOK PORT' },
+  { value: 'TAN - TANJUNG UBAN PORT', label: 'TAN - TANJUNG UBAN PORT' },
+  { value: 'BJU - TANJUNG WANGI PORT', label: 'BJU - TANJUNG WANGI PORT' },
+  { value: 'TMP - TAREMPA PORT', label: 'TMP - TAREMPA PORT' },
+  { value: 'TBR - TELUK BAYUR PORT', label: 'TBR - TELUK BAYUR PORT' },
+  { value: 'TSH - TELUK NIBUNG PORT', label: 'TSH - TELUK NIBUNG PORT' },
+  { value: 'SNB - TELUK SENIMBA MARINA PORT', label: 'SNB - TELUK SENIMBA MARINA PORT' },
+  { value: 'TBH - TEMBILAHAN PORT', label: 'TBH - TEMBILAHAN PORT' },
+  { value: 'TRI - TRI SAKTI PORT', label: 'TRI - TRI SAKTI PORT' },
+  { value: 'TKTT - TRI TUNAS UNGGUL TELUK', label: 'TKTT - TRI TUNAS UNGGUL TELUK' },
+  { value: 'TUA - TUAL PORT', label: 'TUA - TUAL PORT' },
+  { value: 'TUA - WETAR ISLAND SPECIAL TERMINAL', label: 'TUA - WETAR ISLAND SPECIAL TERMINAL' },
+  { value: 'AMB - YOS SUDARSO AMBON PORT', label: 'AMB - YOS SUDARSO AMBON PORT' },
+  { value: 'TKYN - YOUSHAN NICKEL INDONESIA SPECIAL IMMIGRATION CHECKPOINT (TPI)', label: 'TKYN - YOUSHAN NICKEL INDONESIA SPECIAL IMMIGRATION CHECKPOINT (TPI)' },
 ];
 
 export default function FormPage() {
@@ -365,9 +627,9 @@ export default function FormPage() {
 
   const nextStep = () => {
     if (validateCurrentStep()) {
-      if (formData.currentStep < 3) {
+      if (formData.currentStep < 5) {
         updateFormData('currentStep', formData.currentStep + 1);
-        trackUserJourney(`Step ${formData.currentStep + 1} Started`, formData.currentStep + 3);
+        trackUserJourney(`Step ${formData.currentStep + 1} Started`, formData.currentStep + 1);
       }
     }
   };
@@ -382,19 +644,36 @@ export default function FormPage() {
     const newErrors: Record<string, string> = {};
 
     if (formData.currentStep === 1) {
-      // Page 1: Declaration & Disclaimer validation - no validation required, just informational
-    } else if (formData.currentStep === 2) {
-      // Page 2: Arrival Information & Passenger Information validation
-      if (!formData.fullPassportName.trim()) {
-        const errorMsg = getTranslation('fullPassportNameRequired', language);
-        newErrors.fullPassportName = errorMsg;
-        trackFormValidationError('fullPassportName', errorMsg);
+      // Step 1: Citizenship Type Selection validation
+      if (!formData.citizenshipType) {
+        newErrors.citizenshipType = getTranslation('citizenshipTypeRequired', language);
+        trackFormValidationError('citizenshipType', 'Citizenship type not selected');
       }
+    } else if (formData.currentStep === 2) {
+      // Step 2: Personal Information validation
+      
+      // Passport Number
       if (!formData.passportNumber.trim()) {
         const errorMsg = getTranslation('passportNumberRequired', language);
         newErrors.passportNumber = errorMsg;
         trackFormValidationError('passportNumber', errorMsg);
       }
+      
+      // Full Passport Name
+      if (!formData.fullPassportName.trim()) {
+        const errorMsg = getTranslation('fullPassportNameRequired', language);
+        newErrors.fullPassportName = errorMsg;
+        trackFormValidationError('fullPassportName', errorMsg);
+      }
+      
+      // Nationality/Country/Region
+      if (!formData.nationality) {
+        const errorMsg = getTranslation('nationalityRequired', language);
+        newErrors.nationality = errorMsg;
+        trackFormValidationError('nationality', errorMsg);
+      }
+      
+      // Date of Birth
       if (!formData.dateOfBirth.trim()) {
         const errorMsg = getTranslation('dateOfBirthRequired', language);
         newErrors.dateOfBirth = errorMsg;
@@ -427,61 +706,312 @@ export default function FormPage() {
           }
         }
       }
-      if (!formData.flightVesselNumber.trim()) {
-        const errorMsg = getTranslation('flightVesselNumberRequired', language);
-        newErrors.flightVesselNumber = errorMsg;
-        trackFormValidationError('flightVesselNumber', errorMsg);
+      
+      // Country/Place of Birth
+      if (!formData.countryOfBirth) {
+        const errorMsg = getTranslation('countryOfBirthRequired', language);
+        newErrors.countryOfBirth = errorMsg;
+        trackFormValidationError('countryOfBirth', errorMsg);
       }
-      if (!formData.nationality) {
-        const errorMsg = getTranslation('nationalityRequired', language);
-        newErrors.nationality = errorMsg;
-        trackFormValidationError('nationality', errorMsg);
+      
+      // Gender
+      if (!formData.gender) {
+        const errorMsg = getTranslation('genderRequired', language);
+        newErrors.gender = errorMsg;
+        trackFormValidationError('gender', errorMsg);
       }
-      if (!formData.numberOfLuggage.trim()) {
-        const errorMsg = getTranslation('numberOfLuggageRequired', language);
-        newErrors.numberOfLuggage = errorMsg;
-        trackFormValidationError('numberOfLuggage', errorMsg);
-      } else if (parseInt(formData.numberOfLuggage) < 0) {
-        const errorMsg = getTranslation('numberOfLuggageInvalid', language);
-        newErrors.numberOfLuggage = errorMsg;
-        trackFormValidationError('numberOfLuggage', errorMsg);
+      
+      // Passport Expiry Date
+      if (!formData.passportExpiryDate.trim()) {
+        const errorMsg = getTranslation('passportExpiryDateRequired', language);
+        newErrors.passportExpiryDate = errorMsg;
+        trackFormValidationError('passportExpiryDate', errorMsg);
+      } else {
+        // Validate passport expiry date
+        const [year, month, day] = formData.passportExpiryDate.split('-');
+        if (year && month && day) {
+          const expiryDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+          const today = new Date();
+          today.setHours(0, 0, 0, 0); // Start of today
+          
+          // Check if the date is valid (handles invalid dates like Feb 30)
+          const isValidCalendarDate = 
+            expiryDate.getFullYear() === parseInt(year) &&
+            expiryDate.getMonth() === parseInt(month) - 1 &&
+            expiryDate.getDate() === parseInt(day);
+          
+          // Check if the date is in the future (passport should not be expired)
+          const isFuture = expiryDate > today;
+          
+          if (!isValidCalendarDate) {
+            const errorMsg = getTranslation('passportExpiryDateInvalid', language);
+            newErrors.passportExpiryDate = errorMsg;
+            trackFormValidationError('passportExpiryDate', errorMsg);
+          } else if (!isFuture) {
+            const errorMsg = getTranslation('passportExpiryDatePast', language);
+            newErrors.passportExpiryDate = errorMsg;
+            trackFormValidationError('passportExpiryDate', errorMsg);
+          }
+        }
       }
+      
+      // Mobile Number
+      if (!formData.mobileNumber.trim()) {
+        const errorMsg = getTranslation('mobileNumberRequired', language);
+        newErrors.mobileNumber = errorMsg;
+        trackFormValidationError('mobileNumber', errorMsg);
+      } else {
+        // Extract phone number part (without country code)
+        const phoneNumber = formData.mobileNumber.split(' ').slice(1).join(' ');
+        if (!phoneNumber.trim()) {
+          const errorMsg = getTranslation('mobileNumberRequired', language);
+          newErrors.mobileNumber = errorMsg;
+          trackFormValidationError('mobileNumber', errorMsg);
+        } else if (!/^\d+$/.test(phoneNumber.replace(/\s/g, ''))) {
+          const errorMsg = getTranslation('mobileNumberInvalid', language);
+          newErrors.mobileNumber = errorMsg;
+          trackFormValidationError('mobileNumber', errorMsg);
+        }
+      }
+      
+      // Email
+      if (!formData.email.trim()) {
+        const errorMsg = getTranslation('emailRequired', language);
+        newErrors.email = errorMsg;
+        trackFormValidationError('email', errorMsg);
+      } else {
+        // Basic email validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(formData.email)) {
+          const errorMsg = getTranslation('emailInvalid', language);
+          newErrors.email = errorMsg;
+          trackFormValidationError('email', errorMsg);
+        }
+      }
+      
+      // Additional Travellers Validation
+      formData.familyMembers.forEach((traveller, index) => {
+        const prefix = `${traveller.id}-`;
+        
+        // Passport Number
+        if (!traveller.passportNumber.trim()) {
+          const errorMsg = getTranslation('passportNumberRequired', language);
+          newErrors[`${prefix}passportNumber`] = errorMsg;
+          trackFormValidationError(`traveller${index+2}-passportNumber`, errorMsg);
+        }
+        
+        // Full Passport Name
+        if (!traveller.fullPassportName.trim()) {
+          const errorMsg = getTranslation('fullPassportNameRequired', language);
+          newErrors[`${prefix}fullPassportName`] = errorMsg;
+          trackFormValidationError(`traveller${index+2}-fullPassportName`, errorMsg);
+        }
+        
+        // Nationality
+        if (!traveller.nationality) {
+          const errorMsg = getTranslation('nationalityRequired', language);
+          newErrors[`${prefix}nationality`] = errorMsg;
+          trackFormValidationError(`traveller${index+2}-nationality`, errorMsg);
+        }
+        
+        // Date of Birth
+        if (!traveller.dateOfBirth.trim()) {
+          const errorMsg = getTranslation('dateOfBirthRequired', language);
+          newErrors[`${prefix}dateOfBirth`] = errorMsg;
+          trackFormValidationError(`traveller${index+2}-dateOfBirth`, errorMsg);
+        }
+        
+        // Country of Birth
+        if (!traveller.countryOfBirth) {
+          const errorMsg = getTranslation('countryOfBirthRequired', language);
+          newErrors[`${prefix}countryOfBirth`] = errorMsg;
+          trackFormValidationError(`traveller${index+2}-countryOfBirth`, errorMsg);
+        }
+        
+        // Gender
+        if (!traveller.gender) {
+          const errorMsg = getTranslation('genderRequired', language);
+          newErrors[`${prefix}gender`] = errorMsg;
+          trackFormValidationError(`traveller${index+2}-gender`, errorMsg);
+        }
+        
+        // Passport Expiry Date
+        if (!traveller.passportExpiryDate.trim()) {
+          const errorMsg = getTranslation('passportExpiryDateRequired', language);
+          newErrors[`${prefix}passportExpiryDate`] = errorMsg;
+          trackFormValidationError(`traveller${index+2}-passportExpiryDate`, errorMsg);
+        }
+        
+        // Mobile Number
+        if (!traveller.mobileNumber.trim()) {
+          const errorMsg = getTranslation('mobileNumberRequired', language);
+          newErrors[`${prefix}mobileNumber`] = errorMsg;
+          trackFormValidationError(`traveller${index+2}-mobileNumber`, errorMsg);
+        } else {
+          const phoneNumber = traveller.mobileNumber.split(' ').slice(1).join(' ');
+          if (!phoneNumber.trim()) {
+            const errorMsg = getTranslation('mobileNumberRequired', language);
+            newErrors[`${prefix}mobileNumber`] = errorMsg;
+            trackFormValidationError(`traveller${index+2}-mobileNumber`, errorMsg);
+          }
+        }
+        
+        // Email
+        if (!traveller.email.trim()) {
+          const errorMsg = getTranslation('emailRequired', language);
+          newErrors[`${prefix}email`] = errorMsg;
+          trackFormValidationError(`traveller${index+2}-email`, errorMsg);
+        } else {
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (!emailRegex.test(traveller.email)) {
+            const errorMsg = getTranslation('emailInvalid', language);
+            newErrors[`${prefix}email`] = errorMsg;
+            trackFormValidationError(`traveller${index+2}-email`, errorMsg);
+          }
+        }
+      });
+    } else if (formData.currentStep === 3) {
+      // Step 3: Travel Details validation
+      
+      // Check if user is Indonesian citizen (either from Step 1 or nationality from Step 2)
+      const isIndonesianCitizen = formData.citizenshipType === 'indonesian' || 
+                                 formData.nationality.toLowerCase() === 'indonesia';
+      
+      // Arrival Date (required for all)
+      if (!formData.arrivalDate.trim()) {
+        const errorMsg = getTranslation('arrivalDateRequired', language);
+        newErrors.arrivalDate = errorMsg;
+        trackFormValidationError('arrivalDate', errorMsg);
+      }
+      
+      // Departure Date (only required for foreign citizens)
+      if (!isIndonesianCitizen) {
+        if (!formData.departureDate.trim()) {
+          const errorMsg = getTranslation('departureDateRequired', language);
+          newErrors.departureDate = errorMsg;
+          trackFormValidationError('departureDate', errorMsg);
+        } else if (formData.arrivalDate.trim()) {
+          // Validate departure is after arrival
+          const arrivalDate = new Date(formData.arrivalDate);
+          const departureDate = new Date(formData.departureDate);
+          
+          if (departureDate <= arrivalDate) {
+            const errorMsg = getTranslation('departureDateMustBeAfterArrival', language);
+            newErrors.departureDate = errorMsg;
+            trackFormValidationError('departureDate', errorMsg);
+          }
+        }
+        
+        // Visa or KITAS/KITAP Question (only for foreign citizens)
+        if (formData.hasVisaOrKitas === null) {
+          const errorMsg = getTranslation('visaOrKitasRequired', language);
+          newErrors.hasVisaOrKitas = errorMsg;
+          trackFormValidationError('hasVisaOrKitas', errorMsg);
+        }
+        
+        // Visa/KITAS Number (if Yes is selected by foreign citizens)
+        if (formData.hasVisaOrKitas === true && !formData.visaOrKitasNumber.trim()) {
+          const errorMsg = getTranslation('visaOrKitasNumberRequired', language);
+          newErrors.visaOrKitasNumber = errorMsg;
+          trackFormValidationError('visaOrKitasNumber', errorMsg);
+        }
+      }
+    } else if (formData.currentStep === 4) {
+      // Step 4: Mode of Transportation and Address validation
+      
+      // Mode of Transport
+      if (!formData.modeOfTransport.trim()) {
+        const errorMsg = getTranslation('modeOfTransportRequired', language);
+        newErrors.modeOfTransport = errorMsg;
+        trackFormValidationError('modeOfTransport', errorMsg);
+      }
+      
+      // Purpose of Travel
+      if (!formData.purposeOfTravel.trim()) {
+        const errorMsg = getTranslation('purposeOfTravelRequired', language);
+        newErrors.purposeOfTravel = errorMsg;
+        trackFormValidationError('purposeOfTravel', errorMsg);
+      }
+      
+      // Conditional Air Transport validation
+      if (formData.modeOfTransport === 'AIR') {
+        // Place of Arrival
+        if (!formData.placeOfArrival.trim()) {
+          const errorMsg = getTranslation('placeOfArrivalRequired', language);
+          newErrors.placeOfArrival = errorMsg;
+          trackFormValidationError('placeOfArrival', errorMsg);
+        }
+        
+        // Type of Air Transport
+        if (!formData.typeOfAirTransport.trim()) {
+          const errorMsg = getTranslation('typeOfAirTransportRequired', language);
+          newErrors.typeOfAirTransport = errorMsg;
+          trackFormValidationError('typeOfAirTransport', errorMsg);
+        }
+        
+        // Flight Name
+        if (!formData.flightName.trim()) {
+          const errorMsg = getTranslation('flightNameRequired', language);
+          newErrors.flightName = errorMsg;
+          trackFormValidationError('flightName', errorMsg);
+        }
+        
+        // Flight Number
+        if (!formData.flightNumber.trim()) {
+          const errorMsg = getTranslation('flightNumberRequired', language);
+          newErrors.flightNumber = errorMsg;
+          trackFormValidationError('flightNumber', errorMsg);
+        }
+      }
+      
+      // Conditional Sea Transport validation
+      if (formData.modeOfTransport === 'SEA') {
+        // Place of Arrival
+        if (!formData.placeOfArrival.trim()) {
+          const errorMsg = getTranslation('placeOfArrivalRequired', language);
+          newErrors.placeOfArrival = errorMsg;
+          trackFormValidationError('placeOfArrival', errorMsg);
+        }
+        
+        // Type of Vessel
+        if (!formData.typeOfVessel.trim()) {
+          const errorMsg = getTranslation('typeOfVesselRequired', language);
+          newErrors.typeOfVessel = errorMsg;
+          trackFormValidationError('typeOfVessel', errorMsg);
+        }
+        
+        // Vessel Name
+        if (!formData.vesselName.trim()) {
+          const errorMsg = getTranslation('vesselNameRequired', language);
+          newErrors.vesselName = errorMsg;
+          trackFormValidationError('vesselName', errorMsg);
+        }
+      }
+      
+      // Address in Indonesia
       if (!formData.addressInIndonesia.trim()) {
         const errorMsg = getTranslation('addressInIndonesiaRequired', language);
         newErrors.addressInIndonesia = errorMsg;
         trackFormValidationError('addressInIndonesia', errorMsg);
       }
-      if (!formData.arrivalDate) {
-        const errorMsg = getTranslation('arrivalDateRequired', language);
-        newErrors.arrivalDate = errorMsg;
-        trackFormValidationError('arrivalDate', errorMsg);
-      } else {
-        // Validate date is one of the allowed options (today, +1 day, +2 days)
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        
-        const allowedDates = [];
-        for (let i = 0; i <= 2; i++) {
-          const allowedDate = new Date(today);
-          allowedDate.setDate(today.getDate() + i);
-          allowedDates.push(allowedDate.toISOString().split('T')[0]);
-        }
-        
-        if (!allowedDates.includes(formData.arrivalDate)) {
-          const errorMsg = getTranslation('arrivalDateInvalid', language);
-          newErrors.arrivalDate = errorMsg;
-          trackFormValidationError('arrivalDate', errorMsg);
-        }
-      }
-      if (!formData.portOfArrival) {
-        const errorMsg = getTranslation('portOfArrivalRequired', language);
-        newErrors.portOfArrival = errorMsg;
-        trackFormValidationError('portOfArrival', errorMsg);
-      }
-    } else if (formData.currentStep === 3) {
-      // Page 3: Customs Declaration validation
+    } else if (formData.currentStep === 5) {
+      // Step 5: Declaration validation
       
-      // Check if goods declaration is selected
+      // Health Declaration
+      if (formData.hasSymptoms === null || formData.hasSymptoms === undefined) {
+        const errorMsg = 'Please answer the health symptoms question';
+        newErrors.hasSymptoms = errorMsg;
+        trackFormValidationError('hasSymptoms', errorMsg);
+      }
+      
+      // Quarantine Declaration
+      if (formData.hasQuarantineItems === null || formData.hasQuarantineItems === undefined) {
+        const errorMsg = 'Please answer the quarantine items question';
+        newErrors.hasQuarantineItems = errorMsg;
+        trackFormValidationError('hasQuarantineItems', errorMsg);
+      }
+      
+      // Customs Declaration
       if (formData.hasGoodsToDeclarate === null || formData.hasGoodsToDeclarate === undefined) {
         const errorMsg = getTranslation('goodsDeclarationRequired', language);
         newErrors.hasGoodsToDeclarate = errorMsg;
@@ -532,14 +1062,25 @@ export default function FormPage() {
         });
       }
       
-      // Check if technology devices selection is made
+      // Technology Devices
       if (formData.hasTechnologyDevices === null || formData.hasTechnologyDevices === undefined) {
         const errorMsg = getTranslation('technologyDevicesRequired', language);
         newErrors.hasTechnologyDevices = errorMsg;
         trackFormValidationError('hasTechnologyDevices', errorMsg);
       }
       
-      // Check final consent
+      // Baggage Count
+      if (!formData.baggageCount || formData.baggageCount === '') {
+        const errorMsg = 'Please enter the number of baggage';
+        newErrors.baggageCount = errorMsg;
+        trackFormValidationError('baggageCount', errorMsg);
+      } else if (parseInt(formData.baggageCount) < 0) {
+        const errorMsg = 'Baggage count cannot be negative';
+        newErrors.baggageCount = errorMsg;
+        trackFormValidationError('baggageCount', errorMsg);
+      }
+      
+      // Final Consent
       if (!formData.consentAccurate) {
         const errorMsg = getTranslation('consentRequired', language);
         newErrors.consentAccurate = errorMsg;
@@ -645,464 +1186,1552 @@ export default function FormPage() {
 
 
 
-  // Render Page 1: Declaration & Disclaimer (Complete Official BC 2.2 Content)
-  const renderPage1 = () => (
+  // Render Step 1: Citizenship Type Selection
+  const renderStep1 = () => (
     <div className="space-y-6">
       {/* Title Section */}
       <div className="text-center">
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
-          {getTranslation('declarationTitle', language)}
+          {getTranslation('arrivalCardServiceTitle', language)}
         </h1>
-        <h2 className="text-xl sm:text-2xl font-semibold text-gray-800 mb-4">
-          {getTranslation('welcomeToIndonesia', language)}
-        </h2>
-        
-        {/* Display submission error */}
-        {errors.submission && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-            <div className="flex">
-              <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+        <p className="text-base text-gray-600 mb-8">
+          {getTranslation('arrivalCardServiceSubtitle', language)}
+        </p>
+      </div>
+
+      {/* Citizenship Selection Cards */}
+      <div className="grid md:grid-cols-2 gap-6">
+        {/* Indonesian Citizen Card */}
+        <button
+          type="button"
+          onClick={() => {
+            // Redirect Indonesian citizens to the Indonesian immigration website
+            window.location.href = 'https://allindonesia.imigrasi.go.id/';
+          }}
+          className={`p-6 border-2 rounded-lg text-left transition-all ${
+            formData.citizenshipType === 'indonesian'
+              ? 'border-blue-500 bg-blue-50'
+              : 'border-gray-200 hover:border-gray-300 bg-white'
+          }`}
+        >
+          <div className="flex items-start space-x-4">
+            <div className="flex-shrink-0">
+              <div className="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center">
+                <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                 </svg>
               </div>
-              <div className="ml-3">
-                <h3 className="text-sm font-medium text-red-800">
-                  Submission Error
-                </h3>
-                <div className="mt-2 text-sm text-red-700">
-                  {errors.submission}
-                </div>
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">{getTranslation('indonesianCitizenTitle', language)}</h3>
+              <p className="text-sm text-gray-600">
+                {getTranslation('indonesianCitizenDescription', language)}
+              </p>
+            </div>
+            <div className="flex-shrink-0">
+              <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+          </div>
+        </button>
+
+        {/* Foreign Visitor Card */}
+        <button
+          type="button"
+          onClick={() => {
+            updateFormData('citizenshipType', 'foreign');
+            // Auto-advance to next step after selection
+            setTimeout(() => {
+              updateFormData('currentStep', 2);
+              trackUserJourney('Step 2 Started', 2);
+            }, 500);
+          }}
+          className={`p-6 border-2 rounded-lg text-left transition-all ${
+            formData.citizenshipType === 'foreign'
+              ? 'border-blue-500 bg-blue-50'
+              : 'border-gray-200 hover:border-gray-300 bg-white'
+          }`}
+        >
+          <div className="flex items-start space-x-4">
+            <div className="flex-shrink-0">
+              <div className="w-16 h-16 bg-green-100 rounded-lg flex items-center justify-center">
+                <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                </svg>
               </div>
             </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">{getTranslation('foreignVisitorTitle', language)}</h3>
+              <p className="text-sm text-gray-600">
+                {getTranslation('foreignVisitorDescription', language)}
+              </p>
+            </div>
+            <div className="flex-shrink-0">
+              <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
           </div>
-        )}
-        
-        <p className="text-base text-gray-700 mb-6">
-          {getTranslation('pleaseReadInformation', language)}
-        </p>
+        </button>
       </div>
 
-      {/* Main Information Content */}
-      <div className="bg-white border border-gray-200 rounded-lg p-4 space-y-4">
-        <p className="text-sm text-gray-700 leading-relaxed">
-          {getTranslation('cooperationMessage', language)}
-        </p>
-
-        <div className="space-y-4 text-sm text-gray-700">
-          <p className="leading-relaxed">
-            {getTranslation('declarationRuleA', language)}
-          </p>
-          
-          <p className="leading-relaxed">
-            {getTranslation('declarationRuleB', language)}
-          </p>
-          
-          <p className="leading-relaxed">
-            {getTranslation('declarationRuleC', language)}
-          </p>
-
-          {/* Section D: Duty-Free Exemption Table */}
-          <div className="mt-4">
-            <p className="font-medium leading-relaxed mb-3">
-              {getTranslation('declarationRuleD', language)}
-            </p>
-            <div className="overflow-x-auto">
-              <table className="w-full border border-gray-300 text-sm">
-                <thead className="bg-gray-100">
-                  <tr>
-                    <th className="border border-gray-300 px-2 py-1 text-left">
-                      {getTranslation('subjectObject', language)}
-                    </th>
-                    <th className="border border-gray-300 px-2 py-1 text-left">
-                      {getTranslation('dutyFreeExemption', language)}
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td className="border border-gray-300 px-2 py-1">
-                      {getTranslation('generalPassengers', language)}
-                    </td>
-                    <td className="border border-gray-300 px-2 py-1">
-                      {getTranslation('upToUSD500', language)}
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="border border-gray-300 px-2 py-1">
-                      {getTranslation('hajjPassengers', language)}
-                    </td>
-                    <td className="border border-gray-300 px-2 py-1">
-                      {getTranslation('accordingToRegulations', language)}
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="border border-gray-300 px-2 py-1">
-                      {getTranslation('competitionGifts', language)}
-                    </td>
-                    <td className="border border-gray-300 px-2 py-1">
-                      {getTranslation('accordingToRegulations', language)}
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="border border-gray-300 px-2 py-1">
-                      {getTranslation('transportationCrew', language)}
-                    </td>
-                    <td className="border border-gray-300 px-2 py-1">
-                      {getTranslation('upToUSD50', language)}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* Section E: BKC Exemption Table */}
-          <div className="mt-4">
-            <p className="font-medium leading-relaxed mb-3">
-              {getTranslation('declarationRuleE', language)}
-            </p>
-            <div className="overflow-x-auto">
-              <table className="w-full border border-gray-300 text-sm">
-                <thead className="bg-gray-100">
-                  <tr>
-                    <th className="border border-gray-300 px-2 py-1 text-left">
-                      {getTranslation('bkcType', language)}
-                    </th>
-                    <th className="border border-gray-300 px-2 py-1 text-left">
-                      {getTranslation('perPassenger', language)}
-                    </th>
-                    <th className="border border-gray-300 px-2 py-1 text-left">
-                      {getTranslation('perCrewMember', language)}
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td className="border border-gray-300 px-2 py-1">
-                      {getTranslation('alcoholicBeverages', language)}
-                    </td>
-                    <td className="border border-gray-300 px-2 py-1">1 Liter</td>
-                    <td className="border border-gray-300 px-2 py-1">350 ml</td>
-                  </tr>
-                  <tr className="bg-gray-50">
-                    <td className="border border-gray-300 px-2 py-1 font-medium" colSpan={3}>
-                      {getTranslation('tobaccoProducts', language)}
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="border border-gray-300 px-2 py-1 pl-4">
-                      {getTranslation('cigarettes', language)}
-                    </td>
-                    <td className="border border-gray-300 px-2 py-1">200 batang</td>
-                    <td className="border border-gray-300 px-2 py-1">40 batang</td>
-                  </tr>
-                  <tr>
-                    <td className="border border-gray-300 px-2 py-1 pl-4">
-                      {getTranslation('cigars', language)}
-                    </td>
-                    <td className="border border-gray-300 px-2 py-1">25 batang</td>
-                    <td className="border border-gray-300 px-2 py-1">10 batang</td>
-                  </tr>
-                  <tr>
-                    <td className="border border-gray-300 px-2 py-1 pl-4">
-                      {getTranslation('cutTobacco', language)}
-                    </td>
-                    <td className="border border-gray-300 px-2 py-1">100 gr</td>
-                    <td className="border border-gray-300 px-2 py-1">40 gr</td>
-                  </tr>
-                  <tr>
-                    <td className="border border-gray-300 px-2 py-1 pl-4">
-                      {getTranslation('otherTobaccoProducts', language)}
-                    </td>
-                    <td className="border border-gray-300 px-2 py-1">100 gr atau setara</td>
-                    <td className="border border-gray-300 px-2 py-1">40 gr atau setara</td>
-                  </tr>
-                  <tr>
-                    <td className="border border-gray-300 px-2 py-1 pl-4">
-                      {getTranslation('solidElectronicCigarettes', language)}
-                    </td>
-                    <td className="border border-gray-300 px-2 py-1">140 batang atau 40 kapsul</td>
-                    <td className="border border-gray-300 px-2 py-1">20 batang atau 5 kapsul</td>
-                  </tr>
-                  <tr>
-                    <td className="border border-gray-300 px-2 py-1 pl-4">
-                      {getTranslation('openSystemElectronicCigarettes', language)}
-                    </td>
-                    <td className="border border-gray-300 px-2 py-1">30 ml</td>
-                    <td className="border border-gray-300 px-2 py-1">15 ml</td>
-                  </tr>
-                  <tr>
-                    <td className="border border-gray-300 px-2 py-1 pl-4">
-                      {getTranslation('closedSystemElectronicCigarettes', language)}
-                    </td>
-                    <td className="border border-gray-300 px-2 py-1">12 ml</td>
-                    <td className="border border-gray-300 px-2 py-1">6 ml</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-            
-            <div className="mt-3 space-y-1 text-sm text-gray-600">
-              <p>{getTranslation('bkcNote1', language)}</p>
-              <p>{getTranslation('bkcNote2', language)}</p>
-            </div>
-          </div>
-
-          {/* Sections F-J */}
-          <div className="space-y-3 mt-4">
-            <p className="leading-relaxed">
-              {getTranslation('declarationRuleF', language)}
-            </p>
-            
-            <p className="leading-relaxed">
-              {getTranslation('declarationRuleG', language)}
-            </p>
-            
-            <p className="leading-relaxed">
-              {getTranslation('declarationRuleH', language)}
-            </p>
-            
-            <p className="leading-relaxed">
-              {getTranslation('declarationRuleI', language)}
-            </p>
-            
-            <p className="leading-relaxed font-medium">
-              {getTranslation('declarationRuleJ', language)}
-            </p>
-          </div>
+      {/* Error message if citizenship type not selected */}
+      {errors.citizenshipType && (
+        <div className="mt-4 text-sm text-red-600">
+          {errors.citizenshipType}
         </div>
-      </div>
+      )}
 
     </div>
   );
 
-  // Render Page 2: Arrival Information & Passenger Information
-  const renderPage2 = () => (
-    <div className="space-y-6">
+  // Render Step 2: Personal Information
+  const renderStep2 = () => (
+    <div className="space-y-8">
       <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
-        {getTranslation('travelDataTitle', language)}
+        Personal Information
       </h2>
-      
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-        <FormInput
-          label={getTranslation('passportNumber', language)}
-          required
-          placeholder={getTranslation('passportNumberPlaceholder', language)}
-          value={formData.passportNumber}
-          onChange={(e) => updateFormData('passportNumber', e.target.value.toUpperCase())}
-          error={errors.passportNumber}
-        />
-        
-        <FormSelect
-          label={getTranslation('portOfArrival', language)}
-          required
-          options={ports}
-          value={formData.portOfArrival}
-          onChange={(e) => updateFormData('portOfArrival', e.target.value)}
-          error={errors.portOfArrival}
-        />
-        
-        <ArrivalDateSelect
-          label={getTranslation('arrivalDate', language)}
-          required
-          value={formData.arrivalDate}
-          onChange={(e) => updateFormData('arrivalDate', e.target.value)}
-          error={errors.arrivalDate}
-        />
-        
-        <div className="sm:col-span-2">
+
+      {/* Personal Data Section */}
+      <div className="space-y-6">
+        <div className="border-l-4 border-blue-500 bg-blue-50 p-4">
+          <h3 className="text-lg font-semibold text-blue-900 mb-2">
+            {getTranslation('personalData', language)}
+          </h3>
+          <p className="text-sm text-blue-800">
+            {getTranslation('personalDataDescription', language)}
+          </p>
+        </div>
+
+        {/* Warning Message */}
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex items-start gap-3">
+          <div className="flex-shrink-0 mt-0.5">
+            <div className="w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center">
+              <span className="text-white text-xs font-bold">!</span>
+            </div>
+          </div>
+          <p className="text-sm text-yellow-800">
+            Please use the same passport as for other immigration service applications
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+          <FormSelect
+            label={getTranslation('passportCountryRegion', language)}
+            required
+            options={countries}
+            value={formData.nationality}
+            onChange={(e) => updateFormData('nationality', e.target.value)}
+            error={errors.nationality}
+            placeholder="Select Passport/Country/Region"
+          />
+          
           <FormInput
             label={getTranslation('fullPassportName', language)}
             required
-            placeholder={getTranslation('fullPassportNamePlaceholder', language)}
+            placeholder="Enter Full Name"
             value={formData.fullPassportName}
             onChange={(e) => updateFormData('fullPassportName', e.target.value.toUpperCase())}
             error={errors.fullPassportName}
           />
+          
+          <DateInput
+            label={getTranslation('dateOfBirth', language)}
+            required
+            value={formData.dateOfBirth}
+            onChange={(e) => updateFormData('dateOfBirth', e.target.value)}
+            error={errors.dateOfBirth}
+            placeholder="DD/MM/YYYY"
+          />
+          
+          <FormSelect
+            label={getTranslation('countryPlaceOfBirth', language)}
+            required
+            options={countries}
+            value={formData.countryOfBirth}
+            onChange={(e) => updateFormData('countryOfBirth', e.target.value)}
+            error={errors.countryOfBirth}
+            placeholder="Select Country/Place of Birth"
+          />
+          
+          <div className="sm:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-3">
+              {getTranslation('gender', language)} <span className="text-red-500">*</span>
+            </label>
+            <div className="grid grid-cols-2 gap-4">
+              <label className={`flex items-center justify-center p-3 border-2 rounded-lg cursor-pointer transition-all ${
+                formData.gender === 'male' 
+                  ? 'border-blue-500 bg-blue-50' 
+                  : 'border-gray-300 hover:border-gray-400'
+              }`}>
+                <input
+                  type="radio"
+                  name="gender"
+                  value="male"
+                  checked={formData.gender === 'male'}
+                  onChange={() => updateFormData('gender', 'male')}
+                  className="sr-only"
+                />
+                <span className={`text-sm font-medium ${
+                  formData.gender === 'male' 
+                    ? 'text-blue-600' 
+                    : 'text-gray-700'
+                }`}>
+                  {getTranslation('male', language)}
+                </span>
+              </label>
+              <label className={`flex items-center justify-center p-3 border-2 rounded-lg cursor-pointer transition-all ${
+                formData.gender === 'female' 
+                  ? 'border-blue-500 bg-blue-50' 
+                  : 'border-gray-300 hover:border-gray-400'
+              }`}>
+                <input
+                  type="radio"
+                  name="gender"
+                  value="female"
+                  checked={formData.gender === 'female'}
+                  onChange={() => updateFormData('gender', 'female')}
+                  className="sr-only"
+                />
+                <span className={`text-sm font-medium ${
+                  formData.gender === 'female' 
+                    ? 'text-blue-600' 
+                    : 'text-gray-700'
+                }`}>
+                  {getTranslation('female', language)}
+                </span>
+              </label>
+            </div>
+            {errors.gender && (
+              <p className="mt-2 text-sm text-red-600">{errors.gender}</p>
+            )}
+          </div>
+          
+          <FormInput
+            label={getTranslation('passportNumber', language)}
+            required
+            placeholder="Enter Passport Number"
+            value={formData.passportNumber}
+            onChange={(e) => updateFormData('passportNumber', e.target.value.toUpperCase())}
+            error={errors.passportNumber}
+          />
+          
+          <DateInput
+            label={getTranslation('passportExpiryDate', language)}
+            required
+            value={formData.passportExpiryDate}
+            onChange={(e) => updateFormData('passportExpiryDate', e.target.value)}
+            error={errors.passportExpiryDate}
+            placeholder="DD/MM/YYYY"
+            allowFutureDate={true}
+          />
+        </div>
+      </div>
+
+      {/* Account Information Section */}
+      <div className="space-y-6">
+        <div className="border-l-4 border-blue-500 bg-blue-50 p-4">
+          <h3 className="text-lg font-semibold text-blue-900 mb-2">
+            {getTranslation('accountInformation', language)}
+          </h3>
+          <p className="text-sm text-blue-800">
+            {getTranslation('accountInformationDescription', language)}
+          </p>
+        </div>
+
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+          <div className="space-y-1">
+            <label className="block text-sm font-medium text-gray-700">
+              {getTranslation('mobileNumber', language)} <span className="text-red-500 ml-1">*</span>
+            </label>
+            <div className="flex gap-2 items-center">
+              <CountryCodeSelect
+                options={[
+                  { value: '+93', label: '+93 - AFGHANISTAN' },
+                  { value: '+355', label: '+355 - ALBANIA' },
+                  { value: '+213', label: '+213 - ALGERIA' },
+                  { value: '+1', label: '+1 - AMERICAN SAMOA' },
+                  { value: '+376', label: '+376 - ANDORRA' },
+                  { value: '+244', label: '+244 - ANGOLA' },
+                  { value: '+1264', label: '+1264 - ANGUILLA' },
+                  { value: '+672', label: '+672 - ANTARCTICA' },
+                  { value: '+1268', label: '+1268 - ANTIGUA AND BARBUDA' },
+                  { value: '+54', label: '+54 - ARGENTINA' },
+                  { value: '+374', label: '+374 - ARMENIA' },
+                  { value: '+297', label: '+297 - ARUBA' },
+                  { value: '+61', label: '+61 - AUSTRALIA' },
+                  { value: '+43', label: '+43 - AUSTRIA' },
+                  { value: '+994', label: '+994 - AZERBAIJAN' },
+                  { value: '+1242', label: '+1242 - BAHAMAS' },
+                  { value: '+973', label: '+973 - BAHRAIN' },
+                  { value: '+880', label: '+880 - BANGLADESH' },
+                  { value: '+1246', label: '+1246 - BARBADOS' },
+                  { value: '+375', label: '+375 - BELARUS' },
+                  { value: '+32', label: '+32 - BELGIUM' },
+                  { value: '+501', label: '+501 - BELIZE' },
+                  { value: '+229', label: '+229 - BENIN' },
+                  { value: '+1441', label: '+1441 - BERMUDA' },
+                  { value: '+975', label: '+975 - BHUTAN' },
+                  { value: '+591', label: '+591 - BOLIVIA' },
+                  { value: '+387', label: '+387 - BOSNIA AND HERZEGOVINA' },
+                  { value: '+267', label: '+267 - BOTSWANA' },
+                  { value: '+55', label: '+55 - BRAZIL' },
+                  { value: '+246', label: '+246 - BRITISH INDIAN OCEAN TERRITORY' },
+                  { value: '+673', label: '+673 - BRUNEI DARUSSALAM' },
+                  { value: '+359', label: '+359 - BULGARIA' },
+                  { value: '+226', label: '+226 - BURKINA FASO' },
+                  { value: '+257', label: '+257 - BURUNDI' },
+                  { value: '+855', label: '+855 - CAMBODIA' },
+                  { value: '+237', label: '+237 - CAMEROON' },
+                  { value: '+1', label: '+1 - CANADA' },
+                  { value: '+238', label: '+238 - CAPE VERDE' },
+                  { value: '+1345', label: '+1345 - CAYMAN ISLANDS' },
+                  { value: '+236', label: '+236 - CENTRAL AFRICAN REPUBLIC' },
+                  { value: '+235', label: '+235 - CHAD' },
+                  { value: '+56', label: '+56 - CHILE' },
+                  { value: '+86', label: '+86 - CHINA' },
+                  { value: '+61', label: '+61 - CHRISTMAS ISLAND' },
+                  { value: '+61', label: '+61 - COCOS (KEELING) ISLANDS' },
+                  { value: '+57', label: '+57 - COLOMBIA' },
+                  { value: '+269', label: '+269 - COMOROS' },
+                  { value: '+242', label: '+242 - CONGO' },
+                  { value: '+243', label: '+243 - CONGO, THE DEMOCRATIC REPUBLIC' },
+                  { value: '+682', label: '+682 - COOK ISLANDS' },
+                  { value: '+506', label: '+506 - COSTA RICA' },
+                  { value: '+225', label: '+225 - COTE D\'IVOIRE' },
+                  { value: '+385', label: '+385 - CROATIA' },
+                  { value: '+53', label: '+53 - CUBA' },
+                  { value: '+357', label: '+357 - CYPRUS' },
+                  { value: '+420', label: '+420 - CZECH REPUBLIC' },
+                  { value: '+45', label: '+45 - DENMARK' },
+                  { value: '+253', label: '+253 - DJIBOUTI' },
+                  { value: '+1767', label: '+1767 - DOMINICA' },
+                  { value: '+1809', label: '+1809 - DOMINICAN REPUBLIC' },
+                  { value: '+593', label: '+593 - ECUADOR' },
+                  { value: '+20', label: '+20 - EGYPT' },
+                  { value: '+503', label: '+503 - EL SALVADOR' },
+                  { value: '+240', label: '+240 - EQUATORIAL GUINEA' },
+                  { value: '+291', label: '+291 - ERITREA' },
+                  { value: '+372', label: '+372 - ESTONIA' },
+                  { value: '+251', label: '+251 - ETHIOPIA' },
+                  { value: '+500', label: '+500 - FALKLAND ISLANDS' },
+                  { value: '+298', label: '+298 - FAROE ISLANDS' },
+                  { value: '+679', label: '+679 - FIJI' },
+                  { value: '+358', label: '+358 - FINLAND' },
+                  { value: '+33', label: '+33 - FRANCE' },
+                  { value: '+594', label: '+594 - FRENCH GUIANA' },
+                  { value: '+689', label: '+689 - FRENCH POLYNESIA' },
+                  { value: '+262', label: '+262 - FRENCH SOUTHERN TERRITORIES' },
+                  { value: '+241', label: '+241 - GABON' },
+                  { value: '+220', label: '+220 - GAMBIA' },
+                  { value: '+995', label: '+995 - GEORGIA' },
+                  { value: '+49', label: '+49 - GERMANY' },
+                  { value: '+233', label: '+233 - GHANA' },
+                  { value: '+350', label: '+350 - GIBRALTAR' },
+                  { value: '+30', label: '+30 - GREECE' },
+                  { value: '+299', label: '+299 - GREENLAND' },
+                  { value: '+1473', label: '+1473 - GRENADA' },
+                  { value: '+590', label: '+590 - GUADELOUPE' },
+                  { value: '+1671', label: '+1671 - GUAM' },
+                  { value: '+502', label: '+502 - GUATEMALA' },
+                  { value: '+44', label: '+44 - GUERNSEY' },
+                  { value: '+224', label: '+224 - GUINEA' },
+                  { value: '+245', label: '+245 - GUINEA-BISSAU' },
+                  { value: '+592', label: '+592 - GUYANA' },
+                  { value: '+509', label: '+509 - HAITI' },
+                  { value: '+672', label: '+672 - HEARD ISLAND AND MCDONALD ISLANDS' },
+                  { value: '+39', label: '+39 - HOLY SEE (VATICAN CITY STATE)' },
+                  { value: '+504', label: '+504 - HONDURAS' },
+                  { value: '+852', label: '+852 - HONG KONG' },
+                  { value: '+36', label: '+36 - HUNGARY' },
+                  { value: '+354', label: '+354 - ICELAND' },
+                  { value: '+91', label: '+91 - INDIA' },
+                  { value: '+62', label: '+62 - INDONESIA' },
+                  { value: '+98', label: '+98 - IRAN, ISLAMIC REPUBLIC OF' },
+                  { value: '+964', label: '+964 - IRAQ' },
+                  { value: '+353', label: '+353 - IRELAND' },
+                  { value: '+44', label: '+44 - ISLE OF MAN' },
+                  { value: '+972', label: '+972 - ISRAEL' },
+                  { value: '+39', label: '+39 - ITALY' },
+                  { value: '+1876', label: '+1876 - JAMAICA' },
+                  { value: '+81', label: '+81 - JAPAN' },
+                  { value: '+44', label: '+44 - JERSEY' },
+                  { value: '+962', label: '+962 - JORDAN' },
+                  { value: '+7', label: '+7 - KAZAKHSTAN' },
+                  { value: '+254', label: '+254 - KENYA' },
+                  { value: '+686', label: '+686 - KIRIBATI' },
+                  { value: '+850', label: '+850 - KOREA, DEMOCRATIC PEOPLE\'S REPUBLIC OF' },
+                  { value: '+82', label: '+82 - KOREA, REPUBLIC OF' },
+                  { value: '+965', label: '+965 - KUWAIT' },
+                  { value: '+996', label: '+996 - KYRGYZSTAN' },
+                  { value: '+856', label: '+856 - LAO PEOPLE\'S DEMOCRATIC REPUBLIC' },
+                  { value: '+371', label: '+371 - LATVIA' },
+                  { value: '+961', label: '+961 - LEBANON' },
+                  { value: '+266', label: '+266 - LESOTHO' },
+                  { value: '+231', label: '+231 - LIBERIA' },
+                  { value: '+218', label: '+218 - LIBYAN ARAB JAMAHIRIYA' },
+                  { value: '+423', label: '+423 - LIECHTENSTEIN' },
+                  { value: '+370', label: '+370 - LITHUANIA' },
+                  { value: '+352', label: '+352 - LUXEMBOURG' },
+                  { value: '+853', label: '+853 - MACAO' },
+                  { value: '+389', label: '+389 - MACEDONIA' },
+                  { value: '+261', label: '+261 - MADAGASCAR' },
+                  { value: '+265', label: '+265 - MALAWI' },
+                  { value: '+60', label: '+60 - MALAYSIA' },
+                  { value: '+960', label: '+960 - MALDIVES' },
+                  { value: '+223', label: '+223 - MALI' },
+                  { value: '+356', label: '+356 - MALTA' },
+                  { value: '+692', label: '+692 - MARSHALL ISLANDS' },
+                  { value: '+596', label: '+596 - MARTINIQUE' },
+                  { value: '+222', label: '+222 - MAURITANIA' },
+                  { value: '+230', label: '+230 - MAURITIUS' },
+                  { value: '+262', label: '+262 - MAYOTTE' },
+                  { value: '+52', label: '+52 - MEXICO' },
+                  { value: '+691', label: '+691 - MICRONESIA, FEDERATED STATES OF' },
+                  { value: '+373', label: '+373 - MOLDOVA, REPUBLIC OF' },
+                  { value: '+377', label: '+377 - MONACO' },
+                  { value: '+976', label: '+976 - MONGOLIA' },
+                  { value: '+382', label: '+382 - MONTENEGRO' },
+                  { value: '+1664', label: '+1664 - MONTSERRAT' },
+                  { value: '+212', label: '+212 - MOROCCO' },
+                  { value: '+258', label: '+258 - MOZAMBIQUE' },
+                  { value: '+95', label: '+95 - MYANMAR' },
+                  { value: '+264', label: '+264 - NAMIBIA' },
+                  { value: '+674', label: '+674 - NAURU' },
+                  { value: '+977', label: '+977 - NEPAL' },
+                  { value: '+31', label: '+31 - NETHERLANDS' },
+                  { value: '+599', label: '+599 - NETHERLANDS ANTILLES' },
+                  { value: '+687', label: '+687 - NEW CALEDONIA' },
+                  { value: '+64', label: '+64 - NEW ZEALAND' },
+                  { value: '+505', label: '+505 - NICARAGUA' },
+                  { value: '+227', label: '+227 - NIGER' },
+                  { value: '+234', label: '+234 - NIGERIA' },
+                  { value: '+683', label: '+683 - NIUE' },
+                  { value: '+672', label: '+672 - NORFOLK ISLAND' },
+                  { value: '+1670', label: '+1670 - NORTHERN MARIANA ISLANDS' },
+                  { value: '+47', label: '+47 - NORWAY' },
+                  { value: '+968', label: '+968 - OMAN' },
+                  { value: '+92', label: '+92 - PAKISTAN' },
+                  { value: '+680', label: '+680 - PALAU' },
+                  { value: '+970', label: '+970 - PALESTINIAN TERRITORY, OCCUPIED' },
+                  { value: '+507', label: '+507 - PANAMA' },
+                  { value: '+675', label: '+675 - PAPUA NEW GUINEA' },
+                  { value: '+595', label: '+595 - PARAGUAY' },
+                  { value: '+51', label: '+51 - PERU' },
+                  { value: '+63', label: '+63 - PHILIPPINES' },
+                  { value: '+870', label: '+870 - PITCAIRN' },
+                  { value: '+48', label: '+48 - POLAND' },
+                  { value: '+351', label: '+351 - PORTUGAL' },
+                  { value: '+1787', label: '+1787 - PUERTO RICO' },
+                  { value: '+974', label: '+974 - QATAR' },
+                  { value: '+262', label: '+262 - REUNION' },
+                  { value: '+40', label: '+40 - ROMANIA' },
+                  { value: '+7', label: '+7 - RUSSIAN FEDERATION' },
+                  { value: '+250', label: '+250 - RWANDA' },
+                  { value: '+290', label: '+290 - SAINT HELENA' },
+                  { value: '+1869', label: '+1869 - SAINT KITTS AND NEVIS' },
+                  { value: '+1758', label: '+1758 - SAINT LUCIA' },
+                  { value: '+508', label: '+508 - SAINT PIERRE AND MIQUELON' },
+                  { value: '+1784', label: '+1784 - SAINT VINCENT AND THE GRENADINES' },
+                  { value: '+685', label: '+685 - SAMOA' },
+                  { value: '+378', label: '+378 - SAN MARINO' },
+                  { value: '+239', label: '+239 - SAO TOME AND PRINCIPE' },
+                  { value: '+966', label: '+966 - SAUDI ARABIA' },
+                  { value: '+221', label: '+221 - SENEGAL' },
+                  { value: '+381', label: '+381 - SERBIA' },
+                  { value: '+248', label: '+248 - SEYCHELLES' },
+                  { value: '+232', label: '+232 - SIERRA LEONE' },
+                  { value: '+65', label: '+65 - SINGAPORE' },
+                  { value: '+421', label: '+421 - SLOVAKIA' },
+                  { value: '+386', label: '+386 - SLOVENIA' },
+                  { value: '+677', label: '+677 - SOLOMON ISLANDS' },
+                  { value: '+252', label: '+252 - SOMALIA' },
+                  { value: '+27', label: '+27 - SOUTH AFRICA' },
+                  { value: '+500', label: '+500 - SOUTH GEORGIA AND THE SOUTH SANDWICH ISLANDS' },
+                  { value: '+34', label: '+34 - SPAIN' },
+                  { value: '+94', label: '+94 - SRI LANKA' },
+                  { value: '+249', label: '+249 - SUDAN' },
+                  { value: '+597', label: '+597 - SURINAME' },
+                  { value: '+47', label: '+47 - SVALBARD AND JAN MAYEN' },
+                  { value: '+268', label: '+268 - SWAZILAND' },
+                  { value: '+46', label: '+46 - SWEDEN' },
+                  { value: '+41', label: '+41 - SWITZERLAND' },
+                  { value: '+963', label: '+963 - SYRIAN ARAB REPUBLIC' },
+                  { value: '+886', label: '+886 - TAIWAN, PROVINCE OF CHINA' },
+                  { value: '+992', label: '+992 - TAJIKISTAN' },
+                  { value: '+255', label: '+255 - TANZANIA, UNITED REPUBLIC OF' },
+                  { value: '+66', label: '+66 - THAILAND' },
+                  { value: '+670', label: '+670 - TIMOR-LESTE' },
+                  { value: '+228', label: '+228 - TOGO' },
+                  { value: '+690', label: '+690 - TOKELAU' },
+                  { value: '+676', label: '+676 - TONGA' },
+                  { value: '+1868', label: '+1868 - TRINIDAD AND TOBAGO' },
+                  { value: '+216', label: '+216 - TUNISIA' },
+                  { value: '+90', label: '+90 - TURKEY' },
+                  { value: '+993', label: '+993 - TURKMENISTAN' },
+                  { value: '+1649', label: '+1649 - TURKS AND CAICOS ISLANDS' },
+                  { value: '+688', label: '+688 - TUVALU' },
+                  { value: '+256', label: '+256 - UGANDA' },
+                  { value: '+380', label: '+380 - UKRAINE' },
+                  { value: '+971', label: '+971 - UNITED ARAB EMIRATES' },
+                  { value: '+44', label: '+44 - UNITED KINGDOM' },
+                  { value: '+1', label: '+1 - UNITED STATES' },
+                  { value: '+1', label: '+1 - UNITED STATES MINOR OUTLYING ISLANDS' },
+                  { value: '+598', label: '+598 - URUGUAY' },
+                  { value: '+998', label: '+998 - UZBEKISTAN' },
+                  { value: '+678', label: '+678 - VANUATU' },
+                  { value: '+58', label: '+58 - VENEZUELA' },
+                  { value: '+84', label: '+84 - VIET NAM' },
+                  { value: '+1284', label: '+1284 - VIRGIN ISLANDS, BRITISH' },
+                  { value: '+1340', label: '+1340 - VIRGIN ISLANDS, U.S.' },
+                  { value: '+681', label: '+681 - WALLIS AND FUTUNA' },
+                  { value: '+212', label: '+212 - WESTERN SAHARA' },
+                  { value: '+967', label: '+967 - YEMEN' },
+                  { value: '+260', label: '+260 - ZAMBIA' },
+                  { value: '+263', label: '+263 - ZIMBABWE' },
+                ]}
+                value={formData.mobileNumber.split(' ')[0] || '+62'}
+                onChange={(countryCode) => {
+                  const phoneNumber = formData.mobileNumber.split(' ').slice(1).join(' ');
+                  updateFormData('mobileNumber', `${countryCode} ${phoneNumber}`);
+                }}
+                className="w-24 sm:w-28"
+                placeholder="Select"
+              />
+              <input
+                type="text"
+                placeholder="Enter Mobile Number"
+                value={formData.mobileNumber.split(' ').slice(1).join(' ') || ''}
+                onChange={(e) => {
+                  const countryCode = formData.mobileNumber.split(' ')[0] || '+62';
+                  updateFormData('mobileNumber', `${countryCode} ${e.target.value}`);
+                }}
+                className={`flex-1 h-[42px] px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 ${
+                  errors.mobileNumber ? 'border-red-500' : ''
+                }`}
+              />
+            </div>
+            {errors.mobileNumber && <p className="text-sm text-red-600">{errors.mobileNumber}</p>}
+          </div>
+          
+          <FormInput
+            label={getTranslation('email', language)}
+            type="email"
+            required
+            placeholder="Enter Email"
+            value={formData.email}
+            onChange={(e) => updateFormData('email', e.target.value)}
+            error={errors.email}
+          />
+        </div>
+
+        {/* Additional Travellers */}
+        <TravellerManager
+          travellers={formData.familyMembers}
+          onChange={(travellers) => updateFormData('familyMembers', travellers)}
+          countries={countries}
+          countryCodeOptions={[
+            { value: '+93', label: '+93 - AFGHANISTAN' },
+            { value: '+355', label: '+355 - ALBANIA' },
+            { value: '+213', label: '+213 - ALGERIA' },
+            { value: '+1', label: '+1 - AMERICAN SAMOA' },
+            { value: '+376', label: '+376 - ANDORRA' },
+            { value: '+244', label: '+244 - ANGOLA' },
+            { value: '+1264', label: '+1264 - ANGUILLA' },
+            { value: '+672', label: '+672 - ANTARCTICA' },
+            { value: '+1268', label: '+1268 - ANTIGUA AND BARBUDA' },
+            { value: '+54', label: '+54 - ARGENTINA' },
+            { value: '+374', label: '+374 - ARMENIA' },
+            { value: '+297', label: '+297 - ARUBA' },
+            { value: '+61', label: '+61 - AUSTRALIA' },
+            { value: '+43', label: '+43 - AUSTRIA' },
+            { value: '+994', label: '+994 - AZERBAIJAN' },
+            { value: '+1242', label: '+1242 - BAHAMAS' },
+            { value: '+973', label: '+973 - BAHRAIN' },
+            { value: '+880', label: '+880 - BANGLADESH' },
+            { value: '+1246', label: '+1246 - BARBADOS' },
+            { value: '+375', label: '+375 - BELARUS' },
+            { value: '+32', label: '+32 - BELGIUM' },
+            { value: '+501', label: '+501 - BELIZE' },
+            { value: '+229', label: '+229 - BENIN' },
+            { value: '+1441', label: '+1441 - BERMUDA' },
+            { value: '+975', label: '+975 - BHUTAN' },
+            { value: '+591', label: '+591 - BOLIVIA' },
+            { value: '+387', label: '+387 - BOSNIA AND HERZEGOVINA' },
+            { value: '+267', label: '+267 - BOTSWANA' },
+            { value: '+55', label: '+55 - BRAZIL' },
+            { value: '+246', label: '+246 - BRITISH INDIAN OCEAN TERRITORY' },
+            { value: '+673', label: '+673 - BRUNEI DARUSSALAM' },
+            { value: '+359', label: '+359 - BULGARIA' },
+            { value: '+226', label: '+226 - BURKINA FASO' },
+            { value: '+257', label: '+257 - BURUNDI' },
+            { value: '+855', label: '+855 - CAMBODIA' },
+            { value: '+237', label: '+237 - CAMEROON' },
+            { value: '+1', label: '+1 - CANADA' },
+            { value: '+238', label: '+238 - CAPE VERDE' },
+            { value: '+1345', label: '+1345 - CAYMAN ISLANDS' },
+            { value: '+236', label: '+236 - CENTRAL AFRICAN REPUBLIC' },
+            { value: '+235', label: '+235 - CHAD' },
+            { value: '+56', label: '+56 - CHILE' },
+            { value: '+86', label: '+86 - CHINA' },
+            { value: '+61', label: '+61 - CHRISTMAS ISLAND' },
+            { value: '+61', label: '+61 - COCOS (KEELING) ISLANDS' },
+            { value: '+57', label: '+57 - COLOMBIA' },
+            { value: '+269', label: '+269 - COMOROS' },
+            { value: '+242', label: '+242 - CONGO' },
+            { value: '+243', label: '+243 - CONGO, THE DEMOCRATIC REPUBLIC' },
+            { value: '+682', label: '+682 - COOK ISLANDS' },
+            { value: '+506', label: '+506 - COSTA RICA' },
+            { value: '+225', label: '+225 - COTE D\'IVOIRE' },
+            { value: '+385', label: '+385 - CROATIA' },
+            { value: '+53', label: '+53 - CUBA' },
+            { value: '+357', label: '+357 - CYPRUS' },
+            { value: '+420', label: '+420 - CZECH REPUBLIC' },
+            { value: '+45', label: '+45 - DENMARK' },
+            { value: '+253', label: '+253 - DJIBOUTI' },
+            { value: '+1767', label: '+1767 - DOMINICA' },
+            { value: '+1809', label: '+1809 - DOMINICAN REPUBLIC' },
+            { value: '+593', label: '+593 - ECUADOR' },
+            { value: '+20', label: '+20 - EGYPT' },
+            { value: '+503', label: '+503 - EL SALVADOR' },
+            { value: '+240', label: '+240 - EQUATORIAL GUINEA' },
+            { value: '+291', label: '+291 - ERITREA' },
+            { value: '+372', label: '+372 - ESTONIA' },
+            { value: '+251', label: '+251 - ETHIOPIA' },
+            { value: '+500', label: '+500 - FALKLAND ISLANDS' },
+            { value: '+298', label: '+298 - FAROE ISLANDS' },
+            { value: '+679', label: '+679 - FIJI' },
+            { value: '+358', label: '+358 - FINLAND' },
+            { value: '+33', label: '+33 - FRANCE' },
+            { value: '+594', label: '+594 - FRENCH GUIANA' },
+            { value: '+689', label: '+689 - FRENCH POLYNESIA' },
+            { value: '+262', label: '+262 - FRENCH SOUTHERN TERRITORIES' },
+            { value: '+241', label: '+241 - GABON' },
+            { value: '+220', label: '+220 - GAMBIA' },
+            { value: '+995', label: '+995 - GEORGIA' },
+            { value: '+49', label: '+49 - GERMANY' },
+            { value: '+233', label: '+233 - GHANA' },
+            { value: '+350', label: '+350 - GIBRALTAR' },
+            { value: '+30', label: '+30 - GREECE' },
+            { value: '+299', label: '+299 - GREENLAND' },
+            { value: '+1473', label: '+1473 - GRENADA' },
+            { value: '+590', label: '+590 - GUADELOUPE' },
+            { value: '+1671', label: '+1671 - GUAM' },
+            { value: '+502', label: '+502 - GUATEMALA' },
+            { value: '+44', label: '+44 - GUERNSEY' },
+            { value: '+224', label: '+224 - GUINEA' },
+            { value: '+245', label: '+245 - GUINEA-BISSAU' },
+            { value: '+592', label: '+592 - GUYANA' },
+            { value: '+509', label: '+509 - HAITI' },
+            { value: '+672', label: '+672 - HEARD ISLAND AND MCDONALD ISLANDS' },
+            { value: '+39', label: '+39 - HOLY SEE (VATICAN CITY STATE)' },
+            { value: '+504', label: '+504 - HONDURAS' },
+            { value: '+852', label: '+852 - HONG KONG' },
+            { value: '+36', label: '+36 - HUNGARY' },
+            { value: '+354', label: '+354 - ICELAND' },
+            { value: '+91', label: '+91 - INDIA' },
+            { value: '+62', label: '+62 - INDONESIA' },
+            { value: '+98', label: '+98 - IRAN, ISLAMIC REPUBLIC OF' },
+            { value: '+964', label: '+964 - IRAQ' },
+            { value: '+353', label: '+353 - IRELAND' },
+            { value: '+44', label: '+44 - ISLE OF MAN' },
+            { value: '+972', label: '+972 - ISRAEL' },
+            { value: '+39', label: '+39 - ITALY' },
+            { value: '+1876', label: '+1876 - JAMAICA' },
+            { value: '+81', label: '+81 - JAPAN' },
+            { value: '+44', label: '+44 - JERSEY' },
+            { value: '+962', label: '+962 - JORDAN' },
+            { value: '+7', label: '+7 - KAZAKHSTAN' },
+            { value: '+254', label: '+254 - KENYA' },
+            { value: '+686', label: '+686 - KIRIBATI' },
+            { value: '+850', label: '+850 - KOREA, DEMOCRATIC PEOPLE\'S REPUBLIC OF' },
+            { value: '+82', label: '+82 - KOREA, REPUBLIC OF' },
+            { value: '+965', label: '+965 - KUWAIT' },
+            { value: '+996', label: '+996 - KYRGYZSTAN' },
+            { value: '+856', label: '+856 - LAO PEOPLE\'S DEMOCRATIC REPUBLIC' },
+            { value: '+371', label: '+371 - LATVIA' },
+            { value: '+961', label: '+961 - LEBANON' },
+            { value: '+266', label: '+266 - LESOTHO' },
+            { value: '+231', label: '+231 - LIBERIA' },
+            { value: '+218', label: '+218 - LIBYAN ARAB JAMAHIRIYA' },
+            { value: '+423', label: '+423 - LIECHTENSTEIN' },
+            { value: '+370', label: '+370 - LITHUANIA' },
+            { value: '+352', label: '+352 - LUXEMBOURG' },
+            { value: '+853', label: '+853 - MACAO' },
+            { value: '+389', label: '+389 - MACEDONIA' },
+            { value: '+261', label: '+261 - MADAGASCAR' },
+            { value: '+265', label: '+265 - MALAWI' },
+            { value: '+60', label: '+60 - MALAYSIA' },
+            { value: '+960', label: '+960 - MALDIVES' },
+            { value: '+223', label: '+223 - MALI' },
+            { value: '+356', label: '+356 - MALTA' },
+            { value: '+692', label: '+692 - MARSHALL ISLANDS' },
+            { value: '+596', label: '+596 - MARTINIQUE' },
+            { value: '+222', label: '+222 - MAURITANIA' },
+            { value: '+230', label: '+230 - MAURITIUS' },
+            { value: '+262', label: '+262 - MAYOTTE' },
+            { value: '+52', label: '+52 - MEXICO' },
+            { value: '+691', label: '+691 - MICRONESIA, FEDERATED STATES OF' },
+            { value: '+373', label: '+373 - MOLDOVA, REPUBLIC OF' },
+            { value: '+377', label: '+377 - MONACO' },
+            { value: '+976', label: '+976 - MONGOLIA' },
+            { value: '+382', label: '+382 - MONTENEGRO' },
+            { value: '+1664', label: '+1664 - MONTSERRAT' },
+            { value: '+212', label: '+212 - MOROCCO' },
+            { value: '+258', label: '+258 - MOZAMBIQUE' },
+            { value: '+95', label: '+95 - MYANMAR' },
+            { value: '+264', label: '+264 - NAMIBIA' },
+            { value: '+674', label: '+674 - NAURU' },
+            { value: '+977', label: '+977 - NEPAL' },
+            { value: '+31', label: '+31 - NETHERLANDS' },
+            { value: '+599', label: '+599 - NETHERLANDS ANTILLES' },
+            { value: '+687', label: '+687 - NEW CALEDONIA' },
+            { value: '+64', label: '+64 - NEW ZEALAND' },
+            { value: '+505', label: '+505 - NICARAGUA' },
+            { value: '+227', label: '+227 - NIGER' },
+            { value: '+234', label: '+234 - NIGERIA' },
+            { value: '+683', label: '+683 - NIUE' },
+            { value: '+672', label: '+672 - NORFOLK ISLAND' },
+            { value: '+1670', label: '+1670 - NORTHERN MARIANA ISLANDS' },
+            { value: '+47', label: '+47 - NORWAY' },
+            { value: '+968', label: '+968 - OMAN' },
+            { value: '+92', label: '+92 - PAKISTAN' },
+            { value: '+680', label: '+680 - PALAU' },
+            { value: '+970', label: '+970 - PALESTINIAN TERRITORY, OCCUPIED' },
+            { value: '+507', label: '+507 - PANAMA' },
+            { value: '+675', label: '+675 - PAPUA NEW GUINEA' },
+            { value: '+595', label: '+595 - PARAGUAY' },
+            { value: '+51', label: '+51 - PERU' },
+            { value: '+63', label: '+63 - PHILIPPINES' },
+            { value: '+870', label: '+870 - PITCAIRN' },
+            { value: '+48', label: '+48 - POLAND' },
+            { value: '+351', label: '+351 - PORTUGAL' },
+            { value: '+1787', label: '+1787 - PUERTO RICO' },
+            { value: '+974', label: '+974 - QATAR' },
+            { value: '+262', label: '+262 - REUNION' },
+            { value: '+40', label: '+40 - ROMANIA' },
+            { value: '+7', label: '+7 - RUSSIAN FEDERATION' },
+            { value: '+250', label: '+250 - RWANDA' },
+            { value: '+290', label: '+290 - SAINT HELENA' },
+            { value: '+1869', label: '+1869 - SAINT KITTS AND NEVIS' },
+            { value: '+1758', label: '+1758 - SAINT LUCIA' },
+            { value: '+508', label: '+508 - SAINT PIERRE AND MIQUELON' },
+            { value: '+1784', label: '+1784 - SAINT VINCENT AND THE GRENADINES' },
+            { value: '+685', label: '+685 - SAMOA' },
+            { value: '+378', label: '+378 - SAN MARINO' },
+            { value: '+239', label: '+239 - SAO TOME AND PRINCIPE' },
+            { value: '+966', label: '+966 - SAUDI ARABIA' },
+            { value: '+221', label: '+221 - SENEGAL' },
+            { value: '+381', label: '+381 - SERBIA' },
+            { value: '+248', label: '+248 - SEYCHELLES' },
+            { value: '+232', label: '+232 - SIERRA LEONE' },
+            { value: '+65', label: '+65 - SINGAPORE' },
+            { value: '+421', label: '+421 - SLOVAKIA' },
+            { value: '+386', label: '+386 - SLOVENIA' },
+            { value: '+677', label: '+677 - SOLOMON ISLANDS' },
+            { value: '+252', label: '+252 - SOMALIA' },
+            { value: '+27', label: '+27 - SOUTH AFRICA' },
+            { value: '+500', label: '+500 - SOUTH GEORGIA AND THE SOUTH SANDWICH ISLANDS' },
+            { value: '+34', label: '+34 - SPAIN' },
+            { value: '+94', label: '+94 - SRI LANKA' },
+            { value: '+249', label: '+249 - SUDAN' },
+            { value: '+597', label: '+597 - SURINAME' },
+            { value: '+47', label: '+47 - SVALBARD AND JAN MAYEN' },
+            { value: '+268', label: '+268 - SWAZILAND' },
+            { value: '+46', label: '+46 - SWEDEN' },
+            { value: '+41', label: '+41 - SWITZERLAND' },
+            { value: '+963', label: '+963 - SYRIAN ARAB REPUBLIC' },
+            { value: '+886', label: '+886 - TAIWAN, PROVINCE OF CHINA' },
+            { value: '+992', label: '+992 - TAJIKISTAN' },
+            { value: '+255', label: '+255 - TANZANIA, UNITED REPUBLIC OF' },
+            { value: '+66', label: '+66 - THAILAND' },
+            { value: '+670', label: '+670 - TIMOR-LESTE' },
+            { value: '+228', label: '+228 - TOGO' },
+            { value: '+690', label: '+690 - TOKELAU' },
+            { value: '+676', label: '+676 - TONGA' },
+            { value: '+1868', label: '+1868 - TRINIDAD AND TOBAGO' },
+            { value: '+216', label: '+216 - TUNISIA' },
+            { value: '+90', label: '+90 - TURKEY' },
+            { value: '+993', label: '+993 - TURKMENISTAN' },
+            { value: '+1649', label: '+1649 - TURKS AND CAICOS ISLANDS' },
+            { value: '+688', label: '+688 - TUVALU' },
+            { value: '+256', label: '+256 - UGANDA' },
+            { value: '+380', label: '+380 - UKRAINE' },
+            { value: '+971', label: '+971 - UNITED ARAB EMIRATES' },
+            { value: '+44', label: '+44 - UNITED KINGDOM' },
+            { value: '+1', label: '+1 - UNITED STATES' },
+            { value: '+1', label: '+1 - UNITED STATES MINOR OUTLYING ISLANDS' },
+            { value: '+598', label: '+598 - URUGUAY' },
+            { value: '+998', label: '+998 - UZBEKISTAN' },
+            { value: '+678', label: '+678 - VANUATU' },
+            { value: '+58', label: '+58 - VENEZUELA' },
+            { value: '+84', label: '+84 - VIET NAM' },
+            { value: '+1284', label: '+1284 - VIRGIN ISLANDS, BRITISH' },
+            { value: '+1340', label: '+1340 - VIRGIN ISLANDS, U.S.' },
+            { value: '+681', label: '+681 - WALLIS AND FUTUNA' },
+            { value: '+212', label: '+212 - WESTERN SAHARA' },
+            { value: '+967', label: '+967 - YEMEN' },
+            { value: '+260', label: '+260 - ZAMBIA' },
+            { value: '+263', label: '+263 - ZIMBABWE' },
+          ]}
+          labels={{
+            addTraveller: getTranslation('addTraveller', language),
+            removeTraveller: getTranslation('removeTraveller', language),
+            passportNumber: getTranslation('passportNumber', language),
+            fullPassportName: getTranslation('fullPassportName', language),
+            nationality: getTranslation('nationality', language),
+            dateOfBirth: getTranslation('dateOfBirth', language),
+            countryOfBirth: getTranslation('countryOfBirth', language),
+            gender: getTranslation('gender', language),
+            male: getTranslation('male', language),
+            female: getTranslation('female', language),
+            passportExpiryDate: getTranslation('passportExpiryDate', language),
+            mobileNumber: getTranslation('mobileNumber', language),
+            email: getTranslation('email', language),
+          }}
+        />
+      </div>
+    </div>
+  );
+
+  // Render Step 3: Travel Details
+  const renderStep3 = () => {
+    // Check if user is Indonesian citizen (either from Step 1 or nationality from Step 2)
+    const isIndonesianCitizen = formData.citizenshipType === 'indonesian' || 
+                               formData.nationality.toLowerCase() === 'indonesia';
+    
+    return (
+      <div className="space-y-6">
+        <div className="border-l-4 border-blue-500 pl-4">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
+            {getTranslation('travelDetails', language)}
+          </h2>
+          <p className="text-gray-600 mt-2">
+            Please complete your Arrival Card before entering Indonesia by filling out the required information.
+          </p>
         </div>
         
-        <DateOfBirthSelect
-          label={getTranslation('dateOfBirth', language)}
-          required
-          value={formData.dateOfBirth}
-          onChange={(value) => updateFormData('dateOfBirth', value)}
-          error={errors.dateOfBirth}
-        />
+        {/* Arrival Date - Always shown */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+          <DateInput
+            label={getTranslation('arrivalDateToIndonesia', language)}
+            required
+            value={formData.arrivalDate}
+            onChange={(e) => updateFormData('arrivalDate', e.target.value)}
+            error={errors.arrivalDate}
+            allowedDaysFromToday={3}
+            placeholder="DD/MM/YYYY"
+          />
+          
+          {/* Departure Date - Only for Foreign citizens */}
+          {!isIndonesianCitizen && (
+            <DateInput
+              label={getTranslation('departureDateFromIndonesia', language)}
+              required
+              value={formData.departureDate}
+              onChange={(e) => updateFormData('departureDate', e.target.value)}
+              error={errors.departureDate}
+              allowFutureDate={true}
+              placeholder="DD/MM/YYYY"
+            />
+          )}
+        </div>
+
+        {/* Visa or KITAS/KITAP Question - Only for Foreign citizens */}
+        {!isIndonesianCitizen && (
+          <div className="space-y-4">
+            <label className="block text-sm font-medium text-gray-700">
+              {getTranslation('hasVisaOrKitas', language)} <span className="text-red-500">*</span>
+            </label>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <label className={`flex items-center justify-center p-3 border-2 rounded-lg cursor-pointer transition-all ${
+                formData.hasVisaOrKitas === true 
+                  ? 'border-blue-500 bg-blue-50' 
+                  : 'border-gray-300 hover:border-gray-400'
+              }`}>
+                <input
+                  type="radio"
+                  name="hasVisaOrKitas"
+                  value="true"
+                  checked={formData.hasVisaOrKitas === true}
+                  onChange={() => updateFormData('hasVisaOrKitas', true)}
+                  className="sr-only"
+                />
+                <span className={`text-sm font-medium ${
+                  formData.hasVisaOrKitas === true 
+                    ? 'text-blue-600' 
+                    : 'text-gray-700'
+                }`}>
+                  {getTranslation('yes', language)}
+                </span>
+              </label>
+              
+              <label className={`flex items-center justify-center p-3 border-2 rounded-lg cursor-pointer transition-all ${
+                formData.hasVisaOrKitas === false 
+                  ? 'border-blue-500 bg-blue-50' 
+                  : 'border-gray-300 hover:border-gray-400'
+              }`}>
+                <input
+                  type="radio"
+                  name="hasVisaOrKitas"
+                  value="false"
+                  checked={formData.hasVisaOrKitas === false}
+                  onChange={() => {
+                    updateFormData('hasVisaOrKitas', false);
+                    updateFormData('visaOrKitasNumber', ''); // Clear visa number when No is selected
+                  }}
+                  className="sr-only"
+                />
+                <span className={`text-sm font-medium ${
+                  formData.hasVisaOrKitas === false 
+                    ? 'text-blue-600' 
+                    : 'text-gray-700'
+                }`}>
+                  {getTranslation('no', language)}
+                </span>
+              </label>
+            </div>
+            {errors.hasVisaOrKitas && (
+              <p className="text-sm text-red-600">{errors.hasVisaOrKitas}</p>
+            )}
+          </div>
+        )}
+
+        {/* Conditional Visa/KITAS Number Field - Only for Foreign citizens who answered Yes */}
+        {!isIndonesianCitizen && formData.hasVisaOrKitas === true && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+            <FormInput
+              label={getTranslation('visaOrKitasNumber', language)}
+              required
+              placeholder="Enter Visa or KITAS/KITAP Number"
+              value={formData.visaOrKitasNumber}
+              onChange={(e) => updateFormData('visaOrKitasNumber', e.target.value.toUpperCase())}
+              error={errors.visaOrKitasNumber}
+            />
+          </div>
+        )}
+      </div>
+    );
+  };
+
+
+  // Render Step 4: Mode of Transportation and Address
+  const renderStep4 = () => (
+    <div className="space-y-6">
+      <div className="border-l-4 border-blue-500 pl-4">
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
+          {getTranslation('modeOfTransportAndAddress', language)}
+        </h2>
+        <p className="text-gray-600 mt-2">
+          Please select the method of transport you will use to enter Indonesia.
+        </p>
+      </div>
+
+      {/* Mode of Transport Section */}
+      <div className="border-l-4 border-blue-500 pl-4 space-y-4">
+        <h3 className="text-lg font-medium text-gray-900">
+          {getTranslation('modeOfTransport', language)}
+        </h3>
         
-        <FormInput
-          label={getTranslation('flightVesselNumber', language)}
-          required
-          placeholder={getTranslation('flightVesselNumberPlaceholder', language)}
-          value={formData.flightVesselNumber}
-          onChange={(e) => updateFormData('flightVesselNumber', e.target.value.toUpperCase())}
-          error={errors.flightVesselNumber}
-        />
-        
-        <FormSelect
-          label={getTranslation('nationality', language)}
-          required
-          options={countries}
-          value={formData.nationality}
-          onChange={(e) => updateFormData('nationality', e.target.value)}
-          error={errors.nationality}
-        />
-        
-        <FormInput
-          label={getTranslation('numberOfLuggage', language)}
-          type="number"
-          min="0"
-          max="99"
-          required
-          placeholder={getTranslation('numberOfLuggagePlaceholder', language)}
-          value={formData.numberOfLuggage}
-          onChange={(e) => {
-            // Only allow numbers
-            const value = e.target.value.replace(/[^0-9]/g, '');
-            updateFormData('numberOfLuggage', value);
-          }}
-          onKeyPress={(e) => {
-            // Prevent non-numeric characters from being entered
-            if (!/[0-9]/.test(e.key)) {
-              e.preventDefault();
-            }
-          }}
-          error={errors.numberOfLuggage}
-        />
-        
-        <FormInput
-          label={getTranslation('addressInIndonesia', language)}
-          required
-          placeholder={getTranslation('addressInIndonesiaPlaceholder', language)}
-          value={formData.addressInIndonesia}
-          onChange={(e) => updateFormData('addressInIndonesia', e.target.value)}
-          error={errors.addressInIndonesia}
-        />
-        
-        <div className="sm:col-span-2">
-          <FamilyMemberManager
-            familyMembers={formData.familyMembers}
-            onChange={(familyMembers) => updateFormData('familyMembers', familyMembers)}
-            countries={countries}
-            labels={{
-              title: getTranslation('familyMembers', language),
-              passportNumber: getTranslation('passportNumber', language),
-              name: getTranslation('fullPassportName', language),
-              nationality: getTranslation('nationality', language),
-              addMember: getTranslation('addFamilyMember', language),
-              removeMember: getTranslation('removeFamilyMember', language),
-              maxMembersReached: getTranslation('maxFamilyMembers', language)
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+          <FormSelect
+            label={getTranslation('modeOfTransport', language)}
+            required
+            options={[
+              { value: 'AIR', label: 'AIR' },
+              { value: 'SEA', label: 'SEA' }
+            ]}
+            value={formData.modeOfTransport}
+            onChange={(e) => {
+              updateFormData('modeOfTransport', e.target.value);
+              // Clear all transport-specific fields when changing mode
+              updateFormData('placeOfArrival', '');
+              updateFormData('typeOfAirTransport', '');
+              updateFormData('flightName', '');
+              updateFormData('flightNumber', '');
+              updateFormData('typeOfVessel', '');
+              updateFormData('vesselName', '');
             }}
+            error={errors.modeOfTransport}
+          />
+          
+          <FormSelect
+            label={getTranslation('purposeOfTravel', language)}
+            required
+            options={[
+              { value: '1-DAY TRANSIT', label: '1-DAY TRANSIT' },
+              { value: 'BUSINESS/MEETING/CONFERENCE/CONVENTION/EXHIBITION', label: 'BUSINESS/MEETING/CONFERENCE/CONVENTION/EXHIBITION' },
+              { value: 'CREW', label: 'CREW' },
+              { value: 'EDUCATION/TRAINING', label: 'EDUCATION/TRAINING' },
+              { value: 'EMPLOYMENT', label: 'EMPLOYMENT' },
+              { value: 'HOLIDAY/SIGHTSEEING/LEISURE', label: 'HOLIDAY/SIGHTSEEING/LEISURE' },
+              { value: 'MEDICAL CARE', label: 'MEDICAL CARE' },
+              { value: 'OFFICIAL/GOVERNMENT VISIT', label: 'OFFICIAL/GOVERNMENT VISIT' },
+              { value: 'RELIGION', label: 'RELIGION' },
+              { value: 'SPORT EVENT', label: 'SPORT EVENT' },
+              { value: 'VISITING FRIENDS/RELATIVES', label: 'VISITING FRIENDS/RELATIVES' },
+              { value: 'OTHERS', label: 'OTHERS' }
+            ]}
+            value={formData.purposeOfTravel}
+            onChange={(e) => updateFormData('purposeOfTravel', e.target.value)}
+            error={errors.purposeOfTravel}
+          />
+        </div>
+
+        {/* Conditional Air Transport Fields */}
+        {formData.modeOfTransport === 'AIR' && (
+          <div className="mt-6 space-y-4">
+            <p className="text-sm text-gray-600">
+              The fields in this section are based on the selected "AIR" transport mode above.
+            </p>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+              <FormSelect
+                label={getTranslation('placeOfArrival', language)}
+                required
+                options={[
+                  { value: 'CGK - SOEKARNO-HATTA AIRPORT', label: 'CGK - SOEKARNO-HATTA AIRPORT' },
+                  { value: 'DPS - I GUSTI NGURAH RAI AIRPORT', label: 'DPS - I GUSTI NGURAH RAI AIRPORT' },
+                  { value: 'SUB - JUANDA AIRPORT', label: 'SUB - JUANDA AIRPORT' },
+                  { value: 'KNO - KUALANAMU AIRPORT', label: 'KNO - KUALANAMU AIRPORT' },
+                  { value: 'SRG - AHMAD YANI AIRPORT', label: 'SRG - AHMAD YANI AIRPORT' },
+                  { value: 'HLP - HALIM PERDANAKUSUMA AIRPORT', label: 'HLP - HALIM PERDANAKUSUMA AIRPORT' },
+                  { value: 'BTH - HANG NADIM AIRPORT', label: 'BTH - HANG NADIM AIRPORT' },
+                  { value: 'TJQ - H.A.S. HANANDJOEDDIN AIRPORT', label: 'TJQ - H.A.S. HANANDJOEDDIN AIRPORT' },
+                  { value: 'KJT - KERTAJATI AIRPORT', label: 'KJT - KERTAJATI AIRPORT' },
+                  { value: 'KMD - KOMODO AIRPORT', label: 'KMD - KOMODO AIRPORT' },
+                  { value: 'YIA - KULON PROGO AIRPORT', label: 'YIA - KULON PROGO AIRPORT' },
+                  { value: 'PDG - MINANGKABAU AIRPORT', label: 'PDG - MINANGKABAU AIRPORT' },
+                  { value: 'MDC - SAM RATULANGI AIRPORT', label: 'MDC - SAM RATULANGI AIRPORT' },
+                  { value: 'DJJ - SENTANI AIRPORT', label: 'DJJ - SENTANI AIRPORT' },
+                  { value: 'BPN - SULTAN AJI MUHAMMAD SULAIMAN AIRPORT', label: 'BPN - SULTAN AJI MUHAMMAD SULAIMAN AIRPORT' },
+                  { value: 'UPG - SULTAN HASANUDDIN AIRPORT', label: 'UPG - SULTAN HASANUDDIN AIRPORT' },
+                  { value: 'BTJ - SULTAN ISKANDAR MUDA AIRPORT', label: 'BTJ - SULTAN ISKANDAR MUDA AIRPORT' },
+                  { value: 'PLM - SULTAN MAHMUD BADARUDDIN II AIRPORT', label: 'PLM - SULTAN MAHMUD BADARUDDIN II AIRPORT' },
+                  { value: 'PKU - SULTAN SYARIF KASIM II AIRPORT', label: 'PKU - SULTAN SYARIF KASIM II AIRPORT' },
+                  { value: 'PNK - SUPADIO AIRPORT', label: 'PNK - SUPADIO AIRPORT' },
+                  { value: 'BDJ - SYAMSUDIN NOOR AIRPORT', label: 'BDJ - SYAMSUDIN NOOR AIRPORT' },
+                  { value: 'LOP - ZAINUDDIN ABDUL MAJID AIRPORT', label: 'LOP - ZAINUDDIN ABDUL MAJID AIRPORT' }
+                ]}
+                value={formData.placeOfArrival}
+                onChange={(e) => updateFormData('placeOfArrival', e.target.value)}
+                error={errors.placeOfArrival}
+              />
+              
+              <FormSelect
+                label={getTranslation('typeOfAirTransport', language)}
+                required
+                options={[
+                  { value: 'COMMERCIAL FLIGHT', label: 'COMMERCIAL FLIGHT' },
+                  { value: 'GOVERNMENT FLIGHT', label: 'GOVERNMENT FLIGHT' },
+                  { value: 'CHARTER FLIGHT', label: 'CHARTER FLIGHT' }
+                ]}
+                value={formData.typeOfAirTransport}
+                onChange={(e) => updateFormData('typeOfAirTransport', e.target.value)}
+                error={errors.typeOfAirTransport}
+              />
+              
+              <div className="space-y-1">
+                <label className="block text-sm font-medium text-gray-700">
+                  {getTranslation('flightName', language)} <span className="text-red-500 ml-1">*</span>
+                </label>
+                <AirlineSelect
+                  options={airlines}
+                  value={formData.flightName}
+                  onChange={(value) => {
+                    updateFormData('flightName', value);
+                    // Extract airline code from selected value (e.g., "AK" from "AK - AIR ASIA")
+                    const airlineCode = value.split(' - ')[0] || '';
+                    // Clear the flight number when airline changes
+                    updateFormData('flightNumber', '');
+                  }}
+                  placeholder="Select airline..."
+                  className={errors.flightName ? 'border-red-500' : ''}
+                />
+                {errors.flightName && <p className="text-sm text-red-600">{errors.flightName}</p>}
+              </div>
+              
+              <div className="space-y-1">
+                <label className="block text-sm font-medium text-gray-700">
+                  {getTranslation('flightNumber', language)} <span className="text-red-500 ml-1">*</span>
+                </label>
+                <div className="flex items-center gap-2">
+                  <span className="px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-sm text-gray-700 min-w-[50px] text-center">
+                    {formData.flightName ? formData.flightName.split(' - ')[0] : 'XXX'}
+                  </span>
+                  <input
+                    type="text"
+                    placeholder="Enter Flight Number"
+                    value={formData.flightNumber}
+                    onChange={(e) => updateFormData('flightNumber', e.target.value.toUpperCase())}
+                    className={`flex-1 h-[42px] px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 ${
+                      errors.flightNumber ? 'border-red-500' : ''
+                    }`}
+                  />
+                </div>
+                {errors.flightNumber && <p className="text-sm text-red-600">{errors.flightNumber}</p>}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Conditional Sea Transport Fields */}
+        {formData.modeOfTransport === 'SEA' && (
+          <div className="mt-6 space-y-4">
+            <p className="text-sm text-gray-600">
+              The fields in this section are based on the selected "SEA" transport mode above.
+            </p>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+              <FormSelect
+                label={getTranslation('placeOfArrival', language)}
+                required
+                options={seaPorts}
+                value={formData.placeOfArrival}
+                onChange={(e) => updateFormData('placeOfArrival', e.target.value)}
+                error={errors.placeOfArrival}
+              />
+              
+              <FormSelect
+                label={getTranslation('typeOfVessel', language)}
+                required
+                options={[
+                  { value: 'YACHT', label: 'YACHT' },
+                  { value: 'FERRY', label: 'FERRY' },
+                  { value: 'CRUISE', label: 'CRUISE' },
+                  { value: 'CARGO / TANKER', label: 'CARGO / TANKER' }
+                ]}
+                value={formData.typeOfVessel}
+                onChange={(e) => updateFormData('typeOfVessel', e.target.value)}
+                error={errors.typeOfVessel}
+              />
+              
+              <FormInput
+                label={getTranslation('vesselName', language)}
+                required
+                placeholder="Enter Vessel Name"
+                value={formData.vesselName}
+                onChange={(e) => updateFormData('vesselName', e.target.value)}
+                error={errors.vesselName}
+              />
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Address in Indonesia Section */}
+      <div className="border-l-4 border-blue-500 pl-4 space-y-4">
+        <h3 className="text-lg font-medium text-gray-900">
+          {getTranslation('addressInIndonesia', language)}
+        </h3>
+        <p className="text-gray-600">
+          Please provide the address where you will be staying in Indonesia
+        </p>
+        
+        <div className="space-y-4">
+          <FormInput
+            label={getTranslation('addressInIndonesia', language)}
+            required
+            placeholder="Enter your address in Indonesia"
+            value={formData.addressInIndonesia}
+            onChange={(e) => updateFormData('addressInIndonesia', e.target.value)}
+            error={errors.addressInIndonesia}
           />
         </div>
       </div>
     </div>
   );
 
-  // Render Page 3: Customs Declaration (Official Indonesian Form)
-  const renderPage3 = () => (
+  // Render Step 5: Declaration
+  const renderStep5 = () => (
     <div className="space-y-8">
       <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
-        {getTranslation('customsDeclarationTitle', language)}
+        Declaration
       </h2>
       
-      {/* Section 1: Main Goods Declaration */}
-      <div className="space-y-6">
+      {/* Health Declaration */}
+      <div className="border-l-4 border-blue-500 pl-4 space-y-4">
         <h3 className="text-lg font-semibold text-gray-800">
-          {getTranslation('goodsDeclarationQuestion', language)}
+          Health Declaration
         </h3>
-        
-        {/* 8 Categories of Goods */}
-        <div className="space-y-4">
-          {[1, 2, 3, 4, 5, 6, 7, 8].map(num => (
-            <div key={num} className="flex gap-3">
-              <span className="text-sm font-medium text-gray-700 mt-1 min-w-[20px]">
-                {num}.
-              </span>
-              <p className="text-sm text-gray-700 leading-tight">
-                {getTranslation(`goodsCategory${num}`, language)}
-              </p>
-            </div>
-          ))}
-        </div>
-        
-        {/* Selection Instructions */}
-        <p className="text-sm text-gray-600 italic">
-          {getTranslation('selectYesIfBringing', language)}
+        <p className="text-sm text-gray-600">
+          In accordance with Indonesia's national health protocols, please complete the health declaration form to support public health monitoring and prevent the spread of infectious diseases.
         </p>
         
-        {/* Yes/No Radio Buttons */}
-        <div className="flex flex-col sm:flex-row gap-4 p-4 bg-gray-50 rounded-lg">
-          <label className="flex items-center gap-2 cursor-pointer">
+        {/* Symptoms Question */}
+        <div className="space-y-2">
+          <p className="text-sm font-medium text-gray-700">
+            Do you have any of the following symptoms: fever, cough, runny nose, shortness of breath, sore throat, or skin lesions/rashes?
+          </p>
+          <div className="flex gap-4">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="radio"
+                name="hasSymptoms"
+                value="true"
+                checked={formData.hasSymptoms === true}
+                onChange={() => {
+                  updateFormData('hasSymptoms', true);
+                }}
+                className="w-4 h-4 text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-sm font-medium text-gray-700">Yes</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="radio"
+                name="hasSymptoms"
+                value="false"
+                checked={formData.hasSymptoms === false}
+                onChange={() => {
+                  updateFormData('hasSymptoms', false);
+                  updateFormData('selectedSymptoms', []); // Clear symptoms when selecting "No"
+                }}
+                className="w-4 h-4 text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-sm font-medium text-gray-700">No</span>
+            </label>
+          </div>
+          {errors.hasSymptoms && (
+            <p className="text-sm text-red-600">{errors.hasSymptoms}</p>
+          )}
+        </div>
+        
+        {/* Symptom Selection - Only shown when hasSymptoms is true */}
+        {formData.hasSymptoms === true && (
+          <div className="space-y-2 pl-4 border-l-4 border-blue-500">
+            <p className="text-sm text-gray-600">
+              Select your symptoms (Can select more than one)
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {[
+                'COUGH',
+                'FEVER', 
+                'RUNNY NOSE',
+                'SHORTNESS OF BREATH',
+                'SKIN LESIONS / RASHES / PATCHES',
+                'SORE THROAT'
+              ].map((symptom) => (
+                <label key={symptom} className="flex items-center gap-2 cursor-pointer p-2 border rounded-md hover:bg-gray-50">
+                  <input
+                    type="checkbox"
+                    checked={formData.selectedSymptoms.includes(symptom)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        updateFormData('selectedSymptoms', [...formData.selectedSymptoms, symptom]);
+                      } else {
+                        updateFormData('selectedSymptoms', formData.selectedSymptoms.filter(s => s !== symptom));
+                      }
+                    }}
+                    className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                  />
+                  <span className="text-sm text-gray-700">{symptom}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        )}
+        
+        {/* Countries Visited */}
+        <div className="space-y-2">
+          <p className="text-sm font-medium text-gray-700">
+            Countries of origin departure, transit and other countries that you visited within 21 days before departure to Indonesia (Can select more than one)
+          </p>
+          <FormSelect
+            options={[
+              { value: '', label: 'Select countries visited' },
+              ...countries
+            ]}
+            value=""
+            onChange={(e) => {
+              if (e.target.value && !formData.countriesVisited.includes(e.target.value)) {
+                updateFormData('countriesVisited', [...formData.countriesVisited, e.target.value]);
+              }
+            }}
+          />
+          {formData.countriesVisited.length > 0 && (
+            <div className="flex flex-wrap gap-2 mt-2">
+              {formData.countriesVisited.map((country, index) => (
+                <span key={index} className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm flex items-center gap-1">
+                  {country}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      updateFormData('countriesVisited', formData.countriesVisited.filter((_, i) => i !== index));
+                    }}
+                    className="ml-1 hover:text-red-600"
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Quarantine Declaration */}
+      <div className="border-l-4 border-blue-500 pl-4 space-y-4">
+        <h3 className="text-lg font-semibold text-gray-800">
+          Quarantine Declaration
+        </h3>
+        <p className="text-sm text-gray-600">
+          Please fill out the quarantine declaration according to your current condition, which will later be verified by quarantine officers.
+        </p>
+        
+        <div className="space-y-2">
+          <p className="text-sm font-medium text-gray-700">
+            Are you carrying any animals, fish, plants, and/or their processed products?
+          </p>
+          <div className="flex gap-4">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="radio"
+                name="hasQuarantineItems"
+                value="true"
+                checked={formData.hasQuarantineItems === true}
+                onChange={() => updateFormData('hasQuarantineItems', true)}
+                className="w-4 h-4 text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-sm font-medium text-gray-700">Yes</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="radio"
+                name="hasQuarantineItems"
+                value="false"
+                checked={formData.hasQuarantineItems === false}
+                onChange={() => updateFormData('hasQuarantineItems', false)}
+                className="w-4 h-4 text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-sm font-medium text-gray-700">No</span>
+            </label>
+          </div>
+          {errors.hasQuarantineItems && (
+            <p className="text-sm text-red-600">{errors.hasQuarantineItems}</p>
+          )}
+        </div>
+      </div>
+
+      {/* Customs Declaration (BC 2.2) - Collapsible */}
+      <div className="border-l-4 border-blue-500 pl-4 space-y-4">
+        <h3 className="text-lg font-semibold text-gray-800">
+          Customs Declaration (BC 2.2) - Customs Declaration of Goods Carried by Passenger & Crew Members
+        </h3>
+        <p className="text-sm text-gray-600">
+          This page is the section to declare your belongings to be submitted to Customs Officers.
+        </p>
+
+        {/* Collapsible Details Section */}
+        <CollapsibleSection 
+          title="Please press this button to read the following information before answers the question below:"
+        >
+          <div className="space-y-4">
+            <div className="text-sm text-gray-600 space-y-2">
+              <p>Thank you for your cooperation in complying with Indonesian laws and regulations during the customs clearance process. You may declare your family belongings in a joint declaration.</p>
+              <p className="font-medium">Your family belongings may be exempt from Import Duties and Taxes subject to the following conditions:</p>
+            </div>
+            
+            {/* Exemption Table */}
+            <div className="overflow-x-auto">
+              <table className="min-w-full border border-gray-200 text-sm">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-2 text-left border-b">Subject/Object</th>
+                    <th className="px-4 py-2 text-center border-b">Import Duties Exemption (per Arrival per Person/Categories)</th>
+                    <th className="px-4 py-2 text-center border-b">per Passenger</th>
+                    <th className="px-4 py-2 text-center border-b">per Crew Member</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="border-b">
+                    <td className="px-4 py-2">Passengers</td>
+                    <td className="px-4 py-2">Up to FOR USD500.00</td>
+                    <td className="px-4 py-2 text-center">All personal goods</td>
+                    <td className="px-4 py-2 text-center">-</td>
+                  </tr>
+                  <tr className="border-b">
+                    <td className="px-4 py-2">Regular Bag Regime</td>
+                    <td className="px-4 py-2">Up to FOR USD1,500.00</td>
+                    <td className="px-4 py-2 text-center">All personal goods, as long as comply with the applicable terms and conditions</td>
+                    <td className="px-4 py-2 text-center">-</td>
+                  </tr>
+                  <tr className="border-b">
+                    <td className="px-4 py-2">Exclusive Bag Regime</td>
+                    <td className="px-4 py-2">Up to FOR USD500.00</td>
+                    <td className="px-4 py-2 text-center">All personal goods</td>
+                    <td className="px-4 py-2 text-center">-</td>
+                  </tr>
+                  <tr className="border-b">
+                    <td className="px-4 py-2">Competition/Award Prize Items</td>
+                    <td className="px-4 py-2">Up to FOR USD5,000.00</td>
+                    <td className="px-4 py-2 text-center">All prizes, as long as comply with the applicable terms and conditions</td>
+                    <td className="px-4 py-2 text-center">-</td>
+                  </tr>
+                  <tr className="border-b">
+                    <td className="px-4 py-2">Crew Members</td>
+                    <td className="px-4 py-2">Up to FOR USD500.00</td>
+                    <td className="px-4 py-2 text-center">-</td>
+                    <td className="px-4 py-2 text-center">25 sticks or 5 capsules</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            {/* Type of Excise Goods Table */}
+            <div className="overflow-x-auto mt-4">
+              <table className="min-w-full border border-gray-200 text-sm">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-2 text-left border-b">Type of Excise Goods</th>
+                    <th className="px-4 py-2 text-center border-b">per Passenger</th>
+                    <th className="px-4 py-2 text-center border-b">per Crew Member</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="border-b">
+                    <td className="px-4 py-2">Alcoholic Beverage</td>
+                    <td className="px-4 py-2 text-center">1 Litre</td>
+                    <td className="px-4 py-2 text-center">350 ml</td>
+                  </tr>
+                  <tr className="border-b">
+                    <td className="px-4 py-2">Tobacco Products/Cigarettes</td>
+                    <td className="px-4 py-2 text-center">200 sticks</td>
+                    <td className="px-4 py-2 text-center">40 sticks</td>
+                  </tr>
+                  <tr className="border-b">
+                    <td className="px-4 py-2">Cigars</td>
+                    <td className="px-4 py-2 text-center">25 sticks</td>
+                    <td className="px-4 py-2 text-center">10 sticks</td>
+                  </tr>
+                  <tr className="border-b">
+                    <td className="px-4 py-2">Sliced Tobacco</td>
+                    <td className="px-4 py-2 text-center">100 grams</td>
+                    <td className="px-4 py-2 text-center">40 grams</td>
+                  </tr>
+                  <tr className="border-b">
+                    <td className="px-4 py-2">Other Tobacco Products</td>
+                    <td className="px-4 py-2 text-center">100 grams or equivalent</td>
+                    <td className="px-4 py-2 text-center">40 grams or equivalent</td>
+                  </tr>
+                  <tr className="border-b">
+                    <td className="px-4 py-2">Closed System Liquid Electronic Cigarettes</td>
+                    <td className="px-4 py-2 text-center">100 sticks or 40 capsules</td>
+                    <td className="px-4 py-2 text-center">25 sticks or 5 capsules</td>
+                  </tr>
+                  <tr className="border-b">
+                    <td className="px-4 py-2">Open System Liquid Electronic Cigarettes</td>
+                    <td className="px-4 py-2 text-center">20 ml</td>
+                    <td className="px-4 py-2 text-center">15 ml</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div className="text-sm text-gray-600 space-y-2 mt-4">
+              <ul className="list-disc pl-5 space-y-1">
+                <li>If you are carrying more than 3 unit type of excise tobacco product, the duty exemption will be granted proportionally.</li>
+                <li>Excise goods (alcohol, liquor and/or tobacco) exceeding the allowable limits will be destroyed by Customs Officers.</li>
+                <li>If you are carrying important goods that are not for personal use (an unreasonable quantity for personal use/consumption, commercial goods, or goods intended for business, others, institutions, or donations), import duties and taxes will be applied, and you must comply with import restrictions.</li>
+                <li>Import duty exemptions exclude goods whose imports are prohibited or restricted in accordance with applicable laws and regulations.</li>
+                <li>Personal effects purchased or obtained abroad s value exceeding the duty-free limit (check information page above).</li>
+                <li>Any medicine/drug is subject to permit and control in accordance with applicable laws and regulations.</li>
+                <li>Goods originating from Indonesia that are brought back into the country (re-imported), which were previously declared to the Customs Officers upon departure.</li>
+                <li>Goods from abroad for temporary used in Indonesia that will be brought back (temporary admission).</li>
+              </ul>
+            </div>
+          </div>
+        </CollapsibleSection>
+      </div>
+
+      {/* Number of Baggage */}
+      <div className="space-y-2">
+        <label className="block text-sm font-medium text-gray-700">
+          Number of Baggage Arriving with You
+        </label>
+        <input
+          type="number"
+          min="0"
+          placeholder="Enter number of baggage"
+          value={formData.baggageCount}
+          onChange={(e) => updateFormData('baggageCount', e.target.value)}
+          className={`w-full h-[42px] px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 ${
+            errors.baggageCount ? 'border-red-500' : ''
+          }`}
+        />
+        {errors.baggageCount && (
+          <p className="text-sm text-red-600">{errors.baggageCount}</p>
+        )}
+      </div>
+
+      {/* Additional Goods Declaration */}
+      <div className="space-y-4">
+        <p className="text-sm font-medium text-gray-700">
+          Are You bringing any goods that need to declare to Customs?
+        </p>
+        
+        {/* Expandable list of goods that need declaration */}
+        <CollapsibleSection 
+          title="Please press this button to know list of goods that need to declare."
+          className="mb-4"
+        >
+          <div className="space-y-2 text-sm text-gray-600">
+            <p><strong>A.</strong> Narcotics, psycotropic substances, precursors, drugs, firearms, air guns, sharp weapons, ammunition, explosives, and pornographic items/publications.</p>
+            <p><strong>B.</strong> Currency and/or bearer negotiable instruments in Rupiah or other foreign currencies equivalent to the amount to 100 million Rupiah or more.</p>
+            <p><strong>C.</strong> Excise Goods, such as alcoholic beverages, cigarettes/cigars, sliced tobacco, other tobacco products, or electronic cigarettes, with an amount exceeding the excise exemption limit (check information page above).</p>
+            <p><strong>D.</strong> Personal effects purchased or obtained abroad a value exceeding the duty-free limit (check information page above).</p>
+            <p><strong>E.</strong> Non-personal effects purchased or obtained abroad (including commercial goods).</p>
+            <p><strong>F.</strong> Goods originating from Indonesia that are brought back into the country (re-imported), which were previously declared to the Customs Officers upon departure.</p>
+            <p><strong>G.</strong> Goods from abroad for temporary used in Indonesia that will be brought back (temporary admission).</p>
+          </div>
+        </CollapsibleSection>
+        
+        {/* Yes/No for additional goods */}
+        <div className="flex gap-6">
+          <label className={`flex items-center gap-2 cursor-pointer px-6 py-2 border rounded-lg hover:bg-gray-50 ${
+            formData.hasGoodsToDeclarate === true ? 'bg-blue-50 border-blue-500' : ''
+          }`}>
             <input
               type="radio"
-              name="hasGoodsToDeclarate"
+              name="hasAdditionalGoods"
               value="true"
               checked={formData.hasGoodsToDeclarate === true}
               onChange={() => updateFormData('hasGoodsToDeclarate', true)}
               className="w-4 h-4 text-blue-600 focus:ring-blue-500"
             />
-            <span className="text-sm font-medium text-gray-700">
-              {getTranslation('yes', language)}
-            </span>
+            <span className="text-sm font-medium text-gray-700">Yes</span>
           </label>
-          
-          <label className="flex items-center gap-2 cursor-pointer">
+          <label className={`flex items-center gap-2 cursor-pointer px-6 py-2 border rounded-lg hover:bg-gray-50 ${
+            formData.hasGoodsToDeclarate === false ? 'bg-blue-50 border-blue-500' : ''
+          }`}>
             <input
               type="radio"
-              name="hasGoodsToDeclarate"
+              name="hasAdditionalGoods"
               value="false"
               checked={formData.hasGoodsToDeclarate === false}
               onChange={() => updateFormData('hasGoodsToDeclarate', false)}
               className="w-4 h-4 text-blue-600 focus:ring-blue-500"
             />
-            <span className="text-sm font-medium text-gray-700">
-              {getTranslation('no', language)}
-            </span>
+            <span className="text-sm font-medium text-gray-700">No</span>
           </label>
         </div>
-        
         {errors.hasGoodsToDeclarate && (
           <p className="text-sm text-red-600">{errors.hasGoodsToDeclarate}</p>
         )}
       </div>
 
-      {/* Section 2: Goods Declaration Table (conditional) */}
-      {formData.hasGoodsToDeclarate && (
-        <div className="space-y-4">
-          <GoodsDeclarationTable
-            goods={formData.declaredGoods}
-            onChange={(goods) => updateFormData('declaredGoods', goods)}
-            labels={{
-              title: getTranslation('goodsDeclarationTableTitle', language),
-              description: getTranslation('goodsDescription', language),
-              quantity: getTranslation('quantity', language),
-              value: getTranslation('value', language),
-              currency: getTranslation('currencyType', language),
-              addItem: getTranslation('addItem', language),
-              removeItem: getTranslation('removeItem', language),
-              noData: getTranslation('noData', language)
-            }}
-          />
-          
-          {errors.declaredGoods && (
-            <p className="text-sm text-red-600">{errors.declaredGoods}</p>
-          )}
-        </div>
-      )}
-
-      {/* Section 3: Technology Devices Question */}
-      <div className="space-y-4 border-t pt-6">
-        <div className="flex gap-3">
-          <span className="text-sm font-medium text-gray-700 mt-1 min-w-[20px]">
-            9.
-          </span>
-          <p className="text-sm text-gray-700 leading-tight">
-            {getTranslation('technologyDevicesQuestion', language)}
-          </p>
-        </div>
-        
-        <div className="flex flex-col sm:flex-row gap-4 p-4 bg-gray-50 rounded-lg ml-6">
+      {/* Technology Devices (IMEI Registration) */}
+      <div className="space-y-2">
+        <p className="text-sm font-medium text-gray-700">
+          Mobile Phones, Handheld Computers, and Cellular-based Tablet Computers
+        </p>
+        <p className="text-xs text-gray-500">
+          purchased or obtained abroad and will be used in Indonesia with the Indonesian cellular network? (IMEI Registration)
+        </p>
+        <div className="flex gap-4">
           <label className="flex items-center gap-2 cursor-pointer">
             <input
               type="radio"
@@ -1112,11 +2741,8 @@ export default function FormPage() {
               onChange={() => updateFormData('hasTechnologyDevices', true)}
               className="w-4 h-4 text-blue-600 focus:ring-blue-500"
             />
-            <span className="text-sm font-medium text-gray-700">
-              {getTranslation('yes', language)}
-            </span>
+            <span className="text-sm font-medium text-gray-700">Yes</span>
           </label>
-          
           <label className="flex items-center gap-2 cursor-pointer">
             <input
               type="radio"
@@ -1126,21 +2752,18 @@ export default function FormPage() {
               onChange={() => updateFormData('hasTechnologyDevices', false)}
               className="w-4 h-4 text-blue-600 focus:ring-blue-500"
             />
-            <span className="text-sm font-medium text-gray-700">
-              {getTranslation('no', language)}
-            </span>
+            <span className="text-sm font-medium text-gray-700">No</span>
           </label>
         </div>
-        
         {errors.hasTechnologyDevices && (
           <p className="text-sm text-red-600">{errors.hasTechnologyDevices}</p>
         )}
       </div>
 
-      {/* Section 4: Final Consent */}
+      {/* Final Consent */}
       <div className="space-y-4 border-t pt-6">
         <FormCheckbox
-          label={getTranslation('finalConsentStatement', language)}
+          label="I, the Applicant hereby certify that I understand and agree on the information and Declaration in this application"
           checked={formData.consentAccurate}
           onChange={(e) => updateFormData('consentAccurate', e.target.checked)}
           error={errors.consentAccurate}
@@ -1167,34 +2790,37 @@ export default function FormPage() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
           <div className="bg-white rounded-lg shadow-lg p-4 sm:p-8">
             {/* Render current step */}
-            {formData.currentStep === 1 && renderPage1()}
-            {formData.currentStep === 2 && renderPage2()}
-            {formData.currentStep === 3 && renderPage3()}
+            {formData.currentStep === 1 && renderStep1()}
+            {formData.currentStep === 2 && renderStep2()}
+            {formData.currentStep === 3 && renderStep3()}
+            {formData.currentStep === 4 && renderStep4()}
+            {formData.currentStep === 5 && renderStep5()}
 
-            {/* Navigation buttons */}
-            <div className="mt-8">
-              <div className="flex justify-between gap-4">
-                <div>
-                  {formData.currentStep > 1 && (
-                    <button
-                      type="button"
-                      onClick={previousStep}
-                      className="px-4 sm:px-6 py-3 sm:py-3 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 text-base"
-                    >
-                      {getTranslation('previousStep', language)}
-                    </button>
-                  )}
-                </div>
-                
-                <div>
-                  {formData.currentStep < 3 ? (
-                    <button
-                      onClick={nextStep}
-                      className="px-8 sm:px-8 py-4 sm:py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 text-base"
-                    >
-                      {getTranslation('nextStep', language)}
-                    </button>
-                  ) : (
+            {/* Navigation buttons - Hide for Step 1 since it auto-advances */}
+            {formData.currentStep > 1 && (
+              <div className="mt-8">
+                <div className="flex justify-between gap-4">
+                  <div>
+                    {formData.currentStep > 1 && (
+                      <button
+                        type="button"
+                        onClick={previousStep}
+                        className="px-4 sm:px-6 py-3 sm:py-3 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 text-base"
+                      >
+                        {getTranslation('previousStep', language)}
+                      </button>
+                    )}
+                  </div>
+                  
+                  <div>
+                    {formData.currentStep < 5 ? (
+                      <button
+                        onClick={nextStep}
+                        className="px-8 sm:px-8 py-4 sm:py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 text-base"
+                      >
+                        {getTranslation('nextStep', language)}
+                      </button>
+                    ) : (
                     <button
                       onClick={handleSubmit}
                       disabled={isSubmitting}
@@ -1216,10 +2842,11 @@ export default function FormPage() {
                         getTranslation('submitDeclaration', language)
                       )}
                     </button>
-                  )}
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       </div>
