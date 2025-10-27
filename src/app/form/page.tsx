@@ -30,7 +30,7 @@ import {
   trackUserJourney,
   trackAutomationFailure
 } from '@/lib/mixpanel';
-import { hasValidStoredQR, getStoredQR, StoredQRData } from '@/lib/qr-storage';
+import { hasValidStoredQR, getStoredQR, StoredQRData, saveCompletedQR } from '@/lib/qr-storage';
 import QRCodeModal from '@/components/QRCodeModal';
 import QRNotificationBanner from '@/components/QRNotificationBanner';
 
@@ -89,7 +89,7 @@ const countries = [
   { value: 'CONGO, DEMOCRATIC REPUBLIC', label: 'CONGO, DEMOCRATIC REPUBLIC' },
   { value: 'COOK ISLANDS', label: 'COOK ISLANDS' },
   { value: 'COSTA RICA', label: 'COSTA RICA' },
-  { value: 'COTE D\'IVOIRE', label: 'COTE D\'IVOIRE' },
+  { value: 'COTE D&apos;IVOIRE', label: 'COTE D&apos;IVOIRE' },
   { value: 'CROATIA', label: 'CROATIA' },
   { value: 'CUBA', label: 'CUBA' },
   { value: 'CURACAO', label: 'CURACAO' },
@@ -285,114 +285,425 @@ const countries = [
 ];
 
 const airlines = [
-  { value: '3K - JETSTAR ASIA', label: '3K - JETSTAR ASIA' },
-  { value: '3U - SICHUAN AIRLINES', label: '3U - SICHUAN AIRLINES' },
-  { value: '4D - AIR ASIA X', label: '4D - AIR ASIA X' },
-  { value: '5J - CEBU PACIFIC AIR', label: '5J - CEBU PACIFIC AIR' },
-  { value: '6E - INDIGO', label: '6E - INDIGO' },
-  { value: '8M - MYANMAR AIRWAYS INTERNATIONAL', label: '8M - MYANMAR AIRWAYS INTERNATIONAL' },
-  { value: '9W - JET AIRWAYS', label: '9W - JET AIRWAYS' },
-  { value: 'AA - AMERICAN AIRLINES', label: 'AA - AMERICAN AIRLINES' },
-  { value: 'AC - AIR CANADA', label: 'AC - AIR CANADA' },
-  { value: 'AF - AIR FRANCE', label: 'AF - AIR FRANCE' },
-  { value: 'AI - AIR INDIA', label: 'AI - AIR INDIA' },
-  { value: 'AK - AIR ASIA', label: 'AK - AIR ASIA' },
-  { value: 'AM - AEROMEXICO', label: 'AM - AEROMEXICO' },
-  { value: 'AS - ALASKA AIRLINES', label: 'AS - ALASKA AIRLINES' },
-  { value: 'AZ - ALITALIA', label: 'AZ - ALITALIA' },
-  { value: 'B6 - JETBLUE AIRWAYS', label: 'B6 - JETBLUE AIRWAYS' },
-  { value: 'BA - BRITISH AIRWAYS', label: 'BA - BRITISH AIRWAYS' },
-  { value: 'BI - ROYAL BRUNEI AIRLINES', label: 'BI - ROYAL BRUNEI AIRLINES' },
-  { value: 'BR - EVA AIR', label: 'BR - EVA AIR' },
-  { value: 'BX - AIR BUSAN', label: 'BX - AIR BUSAN' },
-  { value: 'CA - AIR CHINA', label: 'CA - AIR CHINA' },
-  { value: 'CI - CHINA AIRLINES', label: 'CI - CHINA AIRLINES' },
-  { value: 'CX - CATHAY PACIFIC', label: 'CX - CATHAY PACIFIC' },
-  { value: 'CZ - CHINA SOUTHERN AIRLINES', label: 'CZ - CHINA SOUTHERN AIRLINES' },
-  { value: 'D7 - AIRASIA X', label: 'D7 - AIRASIA X' },
-  { value: 'DL - DELTA AIRLINES', label: 'DL - DELTA AIRLINES' },
-  { value: 'EK - EMIRATES', label: 'EK - EMIRATES' },
-  { value: 'ET - ETHIOPIAN AIRLINES', label: 'ET - ETHIOPIAN AIRLINES' },
-  { value: 'EY - ETIHAD AIRWAYS', label: 'EY - ETIHAD AIRWAYS' },
-  { value: 'FD - THAI AIRASIA', label: 'FD - THAI AIRASIA' },
-  { value: 'FJ - FIJI AIRWAYS', label: 'FJ - FIJI AIRWAYS' },
-  { value: 'FM - SHANGHAI AIRLINES', label: 'FM - SHANGHAI AIRLINES' },
-  { value: 'GA - GARUDA INDONESIA', label: 'GA - GARUDA INDONESIA' },
-  { value: 'GF - GULF AIR', label: 'GF - GULF AIR' },
-  { value: 'HA - HAWAIIAN AIRLINES', label: 'HA - HAWAIIAN AIRLINES' },
-  { value: 'HO - JUNEYAO AIRLINES', label: 'HO - JUNEYAO AIRLINES' },
-  { value: 'HU - HAINAN AIRLINES', label: 'HU - HAINAN AIRLINES' },
-  { value: 'HX - HONG KONG AIRLINES', label: 'HX - HONG KONG AIRLINES' },
-  { value: 'IB - IBERIA', label: 'IB - IBERIA' },
-  { value: 'ID - BATIK AIR', label: 'ID - BATIK AIR' },
-  { value: 'IN - NAM AIR', label: 'IN - NAM AIR' },
-  { value: 'IQ - CITILINK', label: 'IQ - CITILINK' },
-  { value: 'IX - AIR INDIA EXPRESS', label: 'IX - AIR INDIA EXPRESS' },
-  { value: 'JL - JAPAN AIRLINES', label: 'JL - JAPAN AIRLINES' },
-  { value: 'JQ - JETSTAR', label: 'JQ - JETSTAR' },
-  { value: 'JS - KORYO AIRWAYS', label: 'JS - KORYO AIRWAYS' },
-  { value: 'JT - LION AIR', label: 'JT - LION AIR' },
-  { value: 'JX - STARLUX AIRLINES', label: 'JX - STARLUX AIRLINES' },
-  { value: 'K6 - CAMBODIA ANGKOR AIR', label: 'K6 - CAMBODIA ANGKOR AIR' },
-  { value: 'KA - CATHAY DRAGON', label: 'KA - CATHAY DRAGON' },
-  { value: 'KC - AIR ASTANA', label: 'KC - AIR ASTANA' },
-  { value: 'KE - KOREAN AIR', label: 'KE - KOREAN AIR' },
-  { value: 'KL - KLM', label: 'KL - KLM' },
-  { value: 'KQ - KENYA AIRWAYS', label: 'KQ - KENYA AIRWAYS' },
-  { value: 'KU - KUWAIT AIRWAYS', label: 'KU - KUWAIT AIRWAYS' },
-  { value: 'LA - LATAM CHILE', label: 'LA - LATAM CHILE' },
-  { value: 'LH - LUFTHANSA', label: 'LH - LUFTHANSA' },
-  { value: 'LX - SWISS INTERNATIONAL AIR LINES', label: 'LX - SWISS INTERNATIONAL AIR LINES' },
-  { value: 'MF - XIAMEN AIR', label: 'MF - XIAMEN AIR' },
-  { value: 'MH - MALAYSIA AIRLINES', label: 'MH - MALAYSIA AIRLINES' },
-  { value: 'MI - SILKAIR', label: 'MI - SILKAIR' },
-  { value: 'MS - EGYPTAIR', label: 'MS - EGYPTAIR' },
-  { value: 'MU - CHINA EASTERN AIRLINES', label: 'MU - CHINA EASTERN AIRLINES' },
-  { value: 'NH - ALL NIPPON AIRWAYS', label: 'NH - ALL NIPPON AIRWAYS' },
-  { value: 'NQ - AIR KANSAI', label: 'NQ - AIR KANSAI' },
-  { value: 'NX - AIR MACAU', label: 'NX - AIR MACAU' },
-  { value: 'OD - BATIK AIR MALAYSIA', label: 'OD - BATIK AIR MALAYSIA' },
-  { value: 'OK - CZECH AIRLINES', label: 'OK - CZECH AIRLINES' },
-  { value: 'OM - MIAT MONGOLIAN AIRLINES', label: 'OM - MIAT MONGOLIAN AIRLINES' },
-  { value: 'OS - AUSTRIAN AIRLINES', label: 'OS - AUSTRIAN AIRLINES' },
-  { value: 'OZ - ASIANA AIRLINES', label: 'OZ - ASIANA AIRLINES' },
-  { value: 'PG - BANGKOK AIRWAYS', label: 'PG - BANGKOK AIRWAYS' },
-  { value: 'PR - PHILIPPINE AIRLINES', label: 'PR - PHILIPPINE AIRLINES' },
-  { value: 'PS - UKRAINE INTERNATIONAL AIRLINES', label: 'PS - UKRAINE INTERNATIONAL AIRLINES' },
-  { value: 'PX - AIR NIUGINI', label: 'PX - AIR NIUGINI' },
-  { value: 'QF - QANTAS', label: 'QF - QANTAS' },
-  { value: 'QG - CITILINK', label: 'QG - CITILINK' },
-  { value: 'QR - QATAR AIRWAYS', label: 'QR - QATAR AIRWAYS' },
-  { value: 'QZ - INDONESIA AIRASIA', label: 'QZ - INDONESIA AIRASIA' },
-  { value: 'RA - ROYAL NEPAL AIRLINES', label: 'RA - ROYAL NEPAL AIRLINES' },
-  { value: 'RJ - ROYAL JORDANIAN', label: 'RJ - ROYAL JORDANIAN' },
-  { value: 'SA - SOUTH AFRICAN AIRWAYS', label: 'SA - SOUTH AFRICAN AIRWAYS' },
-  { value: 'SJ - SRIWIJAYA AIR', label: 'SJ - SRIWIJAYA AIR' },
-  { value: 'SK - SAS SCANDINAVIAN AIRLINES', label: 'SK - SAS SCANDINAVIAN AIRLINES' },
-  { value: 'SL - THAI LION AIR', label: 'SL - THAI LION AIR' },
-  { value: 'SQ - SINGAPORE AIRLINES', label: 'SQ - SINGAPORE AIRLINES' },
-  { value: 'SV - SAUDIA', label: 'SV - SAUDIA' },
-  { value: 'TG - THAI AIRWAYS INTERNATIONAL', label: 'TG - THAI AIRWAYS INTERNATIONAL' },
-  { value: 'TK - TURKISH AIRLINES', label: 'TK - TURKISH AIRLINES' },
-  { value: 'TR - SCOOT', label: 'TR - SCOOT' },
-  { value: 'TW - T\'WAY AIR', label: 'TW - T\'WAY AIR' },
-  { value: 'UA - UNITED AIRLINES', label: 'UA - UNITED AIRLINES' },
-  { value: 'UL - SRILANKAN AIRLINES', label: 'UL - SRILANKAN AIRLINES' },
-  { value: 'UN - TRANSAERO AIRLINES', label: 'UN - TRANSAERO AIRLINES' },
-  { value: 'UO - HONG KONG EXPRESS AIRWAYS', label: 'UO - HONG KONG EXPRESS AIRWAYS' },
-  { value: 'VA - VIRGIN AUSTRALIA', label: 'VA - VIRGIN AUSTRALIA' },
-  { value: 'VF - VALUAIR', label: 'VF - VALUAIR' },
-  { value: 'VJ - VIETJET AIR', label: 'VJ - VIETJET AIR' },
-  { value: 'VN - VIETNAM AIRLINES', label: 'VN - VIETNAM AIRLINES' },
-  { value: 'VS - VIRGIN ATLANTIC', label: 'VS - VIRGIN ATLANTIC' },
-  { value: 'W6 - WIZZ AIR', label: 'W6 - WIZZ AIR' },
-  { value: 'WF - WIDEROE', label: 'WF - WIDEROE' },
-  { value: 'WN - SOUTHWEST AIRLINES', label: 'WN - SOUTHWEST AIRLINES' },
-  { value: 'X3 - TUIFLY', label: 'X3 - TUIFLY' },
-  { value: 'Y8 - SUPARNA AIRLINES', label: 'Y8 - SUPARNA AIRLINES' },
-  { value: 'Z2 - PHILIPPINES AIRASIA', label: 'Z2 - PHILIPPINES AIRASIA' },
-  { value: 'ZE - EASTAR JET', label: 'ZE - EASTAR JET' }
+  { value: 'AERO DILI', label: 'AERO DILI' },
+  { value: 'AEROFLOT', label: 'AEROFLOT' },
+  { value: 'AERO INTERNATIONAL', label: 'AERO INTERNATIONAL' },
+  { value: 'AEROLINEAS ARGENTINAS', label: 'AEROLINEAS ARGENTINAS' },
+  { value: 'AEROMEXICO', label: 'AEROMEXICO' },
+  { value: 'AEROSTAN', label: 'AEROSTAN' },
+  { value: 'AEROTRANSCARGO', label: 'AEROTRANSCARGO' },
+  { value: 'AIR ALLIANCE', label: 'AIR ALLIANCE' },
+  { value: 'AIR ARABIA', label: 'AIR ARABIA' },
+  { value: 'AIRASIA BERHAD', label: 'AIRASIA BERHAD' },
+  { value: 'AIRASIA X', label: 'AIRASIA X' },
+  { value: 'AIR BALTIC', label: 'AIR BALTIC' },
+  { value: 'AIR BELGIUM (HONGYUAN GROUP LIVERY)', label: 'AIR BELGIUM (HONGYUAN GROUP LIVERY)' },
+  { value: 'AIR BUSAN', label: 'AIR BUSAN' },
+  { value: 'AIR CALEDONIE', label: 'AIR CALEDONIE' },
+  { value: 'AIR CANADA', label: 'AIR CANADA' },
+  { value: 'AIR CHINA', label: 'AIR CHINA' },
+  { value: 'AIR FRANCE', label: 'AIR FRANCE' },
+  { value: 'AIR HAMBURG', label: 'AIR HAMBURG' },
+  { value: 'AIRHUB AIRLINES MAOKA', label: 'AIRHUB AIRLINES MAOKA' },
+  { value: 'AIR INDIA', label: 'AIR INDIA' },
+  { value: 'AIR MACAU', label: 'AIR MACAU' },
+  { value: 'AIR MAURITIUS', label: 'AIR MAURITIUS' },
+  { value: 'AIR NEW ZEALAND', label: 'AIR NEW ZEALAND' },
+  { value: 'AIR NIUGINI', label: 'AIR NIUGINI' },
+  { value: 'AIRNORTH', label: 'AIRNORTH' },
+  { value: 'AIR SIAL', label: 'AIR SIAL' },
+  { value: 'AIR TAHITI', label: 'AIR TAHITI' },
+  { value: 'ALASKA AIRLINES', label: 'ALASKA AIRLINES' },
+  { value: 'ALEXANDRIA AIRLINES', label: 'ALEXANDRIA AIRLINES' },
+  { value: 'ALLIANCE AIRLINES', label: 'ALLIANCE AIRLINES' },
+  { value: 'ALL NIPPON AIRWAYS', label: 'ALL NIPPON AIRWAYS' },
+  { value: 'AMERICAN AIRLINES', label: 'AMERICAN AIRLINES' },
+  { value: 'ASG BUSINESS AVIATION', label: 'ASG BUSINESS AVIATION' },
+  { value: 'ASIANA AIRLINES', label: 'ASIANA AIRLINES' },
+  { value: 'ASL AIRLINES', label: 'ASL AIRLINES' },
+  { value: 'ASTRAL AVIATION', label: 'ASTRAL AVIATION' },
+  { value: 'ATLAS AIR', label: 'ATLAS AIR' },
+  { value: 'BAMBOO AIRWAYS', label: 'BAMBOO AIRWAYS' },
+  { value: 'BANGKOK AIRWAYS', label: 'BANGKOK AIRWAYS' },
+  { value: 'BATIK AIR', label: 'BATIK AIR' },
+  { value: 'BATIK AIR MALAYSIA', label: 'BATIK AIR MALAYSIA' },
+  { value: 'BBN AIRLINES INDONESIA', label: 'BBN AIRLINES INDONESIA' },
+  { value: 'BESTFLY', label: 'BESTFLY' },
+  { value: 'BIMAN BANGLADESH AIRLINES', label: 'BIMAN BANGLADESH AIRLINES' },
+  { value: 'BLUEBIRD NORDIC', label: 'BLUEBIRD NORDIC' },
+  { value: 'BLUORBIT', label: 'BLUORBIT' },
+  { value: 'BRITISH AIRWAYS', label: 'BRITISH AIRWAYS' },
+  { value: 'CAMBODIA AIRWAYS', label: 'CAMBODIA AIRWAYS' },
+  { value: 'CAPITAL AIRLINES', label: 'CAPITAL AIRLINES' },
+  { value: 'CAREFLIGHT', label: 'CAREFLIGHT' },
+  { value: 'CARGOLUX', label: 'CARGOLUX' },
+  { value: 'CATHAY PACIFIC AIRWAYS', label: 'CATHAY PACIFIC AIRWAYS' },
+  { value: 'CEBU PACIFIC AIR', label: 'CEBU PACIFIC AIR' },
+  { value: 'CENTRAL AIRLINES', label: 'CENTRAL AIRLINES' },
+  { value: 'CHINA AIR CARGO', label: 'CHINA AIR CARGO' },
+  { value: 'CHINA AIRLINES', label: 'CHINA AIRLINES' },
+  { value: 'CHINA CARGO AIRLINES', label: 'CHINA CARGO AIRLINES' },
+  { value: 'CHINA CENTRAL LONGHAO AIRLINES', label: 'CHINA CENTRAL LONGHAO AIRLINES' },
+  { value: 'CHINA EASTERN AIRLINES', label: 'CHINA EASTERN AIRLINES' },
+  { value: 'CHINA SOUTHERN AIRLINES', label: 'CHINA SOUTHERN AIRLINES' },
+  { value: 'CITILINK', label: 'CITILINK' },
+  { value: 'COMPANIA NATIONALA DE TRANSPORTUEU AERIENE', label: 'COMPANIA NATIONALA DE TRANSPORTUEU AERIENE' },
+  { value: 'DELTA AIR LINES', label: 'DELTA AIR LINES' },
+  { value: 'DHL AIR', label: 'DHL AIR' },
+  { value: 'EASY CHARTER', label: 'EASY CHARTER' },
+  { value: 'EGYPTAIR', label: 'EGYPTAIR' },
+  { value: 'EMIRATES', label: 'EMIRATES' },
+  { value: 'ETHIOPIAN AIRLINES', label: 'ETHIOPIAN AIRLINES' },
+  { value: 'ETIHAD AIRWAYS', label: 'ETIHAD AIRWAYS' },
+  { value: 'EVA AIR', label: 'EVA AIR' },
+  { value: 'FEDERAL EXPRESS CORPORATION', label: 'FEDERAL EXPRESS CORPORATION' },
+  { value: 'FIJI AIRWAYS', label: 'FIJI AIRWAYS' },
+  { value: 'FIREFLY', label: 'FIREFLY' },
+  { value: 'FLEXFLIGHT', label: 'FLEXFLIGHT' },
+  { value: 'FLY BAGHDAD', label: 'FLY BAGHDAD' },
+  { value: 'FLYDUBAI', label: 'FLYDUBAI' },
+  { value: 'FLYNAS', label: 'FLYNAS' },
+  { value: 'GARUDA INDONESIA', label: 'GARUDA INDONESIA' },
+  { value: 'GO FIRST', label: 'GO FIRST' },
+  { value: 'GULF AIR', label: 'GULF AIR' },
+  { value: 'HAINAN AIRLINES', label: 'HAINAN AIRLINES' },
+  { value: 'HARMONY JETS', label: 'HARMONY JETS' },
+  { value: 'HAWAIIAN AIRLINES', label: 'HAWAIIAN AIRLINES' },
+  { value: 'HIMALAYA AIRLINES', label: 'HIMALAYA AIRLINES' },
+  { value: 'HONG KONG AIRLINES', label: 'HONG KONG AIRLINES' },
+  { value: 'IBERIA', label: 'IBERIA' },
+  { value: 'ICELANDAIR', label: 'ICELANDAIR' },
+  { value: 'INDIGO', label: 'INDIGO' },
+  { value: 'INDONESIA AIRASIA', label: 'INDONESIA AIRASIA' },
+  { value: 'JAPAN AIRLINES', label: 'JAPAN AIRLINES' },
+  { value: 'JEJU AIR', label: 'JEJU AIR' },
+  { value: 'JETBLUE AIRWAYS', label: 'JETBLUE AIRWAYS' },
+  { value: 'JET EDGE', label: 'JET EDGE' },
+  { value: 'JETSMART AIRLINES', label: 'JETSMART AIRLINES' },
+  { value: 'JETSTAR AIRWAYS', label: 'JETSTAR AIRWAYS' },
+  { value: 'JETSTAR ASIA AIRWAYS', label: 'JETSTAR ASIA AIRWAYS' },
+  { value: 'JIN AIR', label: 'JIN AIR' },
+  { value: 'JUNEYAO AIRLINES', label: 'JUNEYAO AIRLINES' },
+  { value: 'KARGO XPRESS', label: 'KARGO XPRESS' },
+  { value: 'KLM', label: 'KLM' },
+  { value: 'K-MILE AIR', label: 'K-MILE AIR' },
+  { value: 'KOREAN AIR', label: 'KOREAN AIR' },
+  { value: 'KUWAIT AIRWAYS', label: 'KUWAIT AIRWAYS' },
+  { value: 'LAO AIRLINES', label: 'LAO AIRLINES' },
+  { value: 'LION AIR', label: 'LION AIR' },
+  { value: 'LUCKY AIR', label: 'LUCKY AIR' },
+  { value: 'LUFTHANSA', label: 'LUFTHANSA' },
+  { value: 'LYNDEN AIR CARGO', label: 'LYNDEN AIR CARGO' },
+  { value: 'MALAYSIA AIRLINES', label: 'MALAYSIA AIRLINES' },
+  { value: 'MALINDO AIR', label: 'MALINDO AIR' },
+  { value: 'MANDARIN AIRLINES', label: 'MANDARIN AIRLINES' },
+  { value: 'MASWINGS SDN BHD', label: 'MASWINGS SDN BHD' },
+  { value: 'MAXIMUS AIRLINES', label: 'MAXIMUS AIRLINES' },
+  { value: 'MESK AIR', label: 'MESK AIR' },
+  { value: 'MOTOR SICH AIRLINES', label: 'MOTOR SICH AIRLINES' },
+  { value: 'MYAIRLINE', label: 'MYAIRLINE' },
+  { value: 'MYANMAR AIRWAYS INTERNATIONAL', label: 'MYANMAR AIRWAYS INTERNATIONAL' },
+  { value: 'MY FREIGHTER', label: 'MY FREIGHTER' },
+  { value: 'MY INDO AIRLINES', label: 'MY INDO AIRLINES' },
+  { value: 'MY JET XPRESS', label: 'MY JET XPRESS' },
+  { value: 'NAM AIR', label: 'NAM AIR' },
+  { value: 'NANSHAN JET', label: 'NANSHAN JET' },
+  { value: 'NATIONAL AIRLINES', label: 'NATIONAL AIRLINES' },
+  { value: 'NAURU AIRLINES', label: 'NAURU AIRLINES' },
+  { value: 'NEPAL AIRLINES', label: 'NEPAL AIRLINES' },
+  { value: 'NETJETS', label: 'NETJETS' },
+  { value: 'NETWORK AVIATION', label: 'NETWORK AVIATION' },
+  { value: 'NOTHERN AIR CARGO', label: 'NOTHERN AIR CARGO' },
+  { value: 'OMAN AIR', label: 'OMAN AIR' },
+  { value: 'OMNI AIR INTERNATIONAL', label: 'OMNI AIR INTERNATIONAL' },
+  { value: 'PAKISTAN INTERNATIONAL AIRLINES', label: 'PAKISTAN INTERNATIONAL AIRLINES' },
+  { value: 'PEGASUS ELITE AVIATION', label: 'PEGASUS ELITE AVIATION' },
+  { value: 'PELITA AIR', label: 'PELITA AIR' },
+  { value: 'PHILIPPINE AIRLINES', label: 'PHILIPPINE AIRLINES' },
+  { value: 'PHILIPPINES AIRASIA', label: 'PHILIPPINES AIRASIA' },
+  { value: 'PRIVATE OWNER', label: 'PRIVATE OWNER' },
+  { value: 'PROPAIR INC', label: 'PROPAIR INC' },
+  { value: 'QANTAS AIRWAYS', label: 'QANTAS AIRWAYS' },
+  { value: 'QANTASLINK', label: 'QANTASLINK' },
+  { value: 'QATAR AIRWAYS', label: 'QATAR AIRWAYS' },
+  { value: 'QATAR EXECUTIVE', label: 'QATAR EXECUTIVE' },
+  { value: 'RAYA AIRWAYS', label: 'RAYA AIRWAYS' },
+  { value: 'REDSTAR AVIATION', label: 'REDSTAR AVIATION' },
+  { value: 'RGA-BLACK STONE AIRLINES', label: 'RGA-BLACK STONE AIRLINES' },
+  { value: 'RIMBUN AIR', label: 'RIMBUN AIR' },
+  { value: 'ROYAL AIRWAYS', label: 'ROYAL AIRWAYS' },
+  { value: 'ROYAL BRUNEI AIRLINES', label: 'ROYAL BRUNEI AIRLINES' },
+  { value: 'SAINT BARTH COMMUTER', label: 'SAINT BARTH COMMUTER' },
+  { value: 'SALAMAIR', label: 'SALAMAIR' },
+  { value: 'SAUDIA', label: 'SAUDIA' },
+  { value: 'SCANDINAVIAN AIRLINES SYSTEM', label: 'SCANDINAVIAN AIRLINES SYSTEM' },
+  { value: 'SCOOT', label: 'SCOOT' },
+  { value: 'SERVIZI AEREI', label: 'SERVIZI AEREI' },
+  { value: 'SF AIRLINES', label: 'SF AIRLINES' },
+  { value: 'SHANDONG AIRLINES', label: 'SHANDONG AIRLINES' },
+  { value: 'SHENZEN AIRLINES', label: 'SHENZEN AIRLINES' },
+  { value: 'SICHUAN AIRLINES', label: 'SICHUAN AIRLINES' },
+  { value: 'SILK WAY AIRLINES', label: 'SILK WAY AIRLINES' },
+  { value: 'SILK WAY WEST AIRLINES', label: 'SILK WAY WEST AIRLINES' },
+  { value: 'SINGAPORE - AIR FORCE', label: 'SINGAPORE - AIR FORCE' },
+  { value: 'SINGAPORE AIRLINES', label: 'SINGAPORE AIRLINES' },
+  { value: 'SKY ANGKOR AIRLINES', label: 'SKY ANGKOR AIRLINES' },
+  { value: 'SMARTLYNX AIRLINES', label: 'SMARTLYNX AIRLINES' },
+  { value: 'SOLOMON AIRLINES', label: 'SOLOMON AIRLINES' },
+  { value: 'SPICEJET', label: 'SPICEJET' },
+  { value: 'SRILANKAN AIRLINES', label: 'SRILANKAN AIRLINES' },
+  { value: 'SRIWIJAYA AIR', label: 'SRIWIJAYA AIR' },
+  { value: 'STARLUX AIRLINES', label: 'STARLUX AIRLINES' },
+  { value: 'STP AIRWAYS', label: 'STP AIRWAYS' },
+  { value: 'SUNEXPRESS', label: 'SUNEXPRESS' },
+  { value: 'SUPER AIR JET', label: 'SUPER AIR JET' },
+  { value: 'SWISS', label: 'SWISS' },
+  { value: 'TACA INTERNATIONAL AIRLINES', label: 'TACA INTERNATIONAL AIRLINES' },
+  { value: 'TAG AVIATION MALTA', label: 'TAG AVIATION MALTA' },
+  { value: 'TAP AIR PORTUGAL', label: 'TAP AIR PORTUGAL' },
+  { value: 'THAI AIRASIA', label: 'THAI AIRASIA' },
+  { value: 'THAI AIRWAYS', label: 'THAI AIRWAYS' },
+  { value: 'THAI LION AIR', label: 'THAI LION AIR' },
+  { value: 'THAI SMILE', label: 'THAI SMILE' },
+  { value: 'TIANJIN AIR CARGO', label: 'TIANJIN AIR CARGO' },
+  { value: 'TITAN AIRWAYS (TCS WORLD TRAVEL LIVERY)', label: 'TITAN AIRWAYS (TCS WORLD TRAVEL LIVERY)' },
+  { value: 'TRANSNUSA', label: 'TRANSNUSA' },
+  { value: 'TRAVYA', label: 'TRAVYA' },
+  { value: 'TRIGANA AIR', label: 'TRIGANA AIR' },
+  { value: 'TRI-MG INTRA ASIA AIRLINES', label: 'TRI-MG INTRA ASIA AIRLINES' },
+  { value: 'TURKISH AIRLINES', label: 'TURKISH AIRLINES' },
+  { value: 'TURKMENISTAN AIRLINES', label: 'TURKMENISTAN AIRLINES' },
+  { value: 'TWAY AIR', label: 'TWAY AIR' },
+  { value: 'UNITED AIRLINES', label: 'UNITED AIRLINES' },
+  { value: 'UNITED NIGERIA AIRLINES', label: 'UNITED NIGERIA AIRLINES' },
+  { value: 'UNITED STATES - US AIR FORCE (USAF)', label: 'UNITED STATES - US AIR FORCE (USAF)' },
+  { value: 'UPS AIRLINES', label: 'UPS AIRLINES' },
+  { value: 'UZBEKISTAN AIRWAYS', label: 'UZBEKISTAN AIRWAYS' },
+  { value: 'VIETJET', label: 'VIETJET' },
+  { value: 'VIETNAM AIRLINES', label: 'VIETNAM AIRLINES' },
+  { value: 'VIRGIN AUSTRALIA', label: 'VIRGIN AUSTRALIA' },
+  { value: 'VISTAJET', label: 'VISTAJET' },
+  { value: 'VISTARA', label: 'VISTARA' },
+  { value: 'VOLUXIS', label: 'VOLUXIS' },
+  { value: 'WAMOS AIR', label: 'WAMOS AIR' },
+  { value: 'WINGS AIR', label: 'WINGS AIR' },
+  { value: 'WORLD CARGO AIRLINES', label: 'WORLD CARGO AIRLINES' },
+  { value: 'XIAMEN AIRLINES', label: 'XIAMEN AIRLINES' },
+  { value: 'YTO CARGO AIRLINES', label: 'YTO CARGO AIRLINES' },
+  { value: 'ZETAVIA', label: 'ZETAVIA' },
+  { value: 'ZHEZIANG LOONG AIRLINES', label: 'ZHEZIANG LOONG AIRLINES' }
 ];
+
+// Mapping from airline names to IATA codes (based on API response)
+const airlineToIataMap: Record<string, string> = {
+  'AERO DILI': '8G',
+  'AEROFLOT': 'SU',
+  'AERO INTERNATIONAL': 'AX',
+  'AEROLINEAS ARGENTINAS': 'AR',
+  'AEROMEXICO': 'AM',
+  'AEROSTAN': 'BS',
+  'AEROTRANSCARGO': 'F5',
+  'AIR ALLIANCE': 'AY',
+  'AIR ARABIA': 'G9',
+  'AIRASIA BERHAD': 'AK',
+  'AIRASIA X': 'XJ',
+  'AIR BALTIC': 'BT',
+  'AIR BELGIUM (HONGYUAN GROUP LIVERY)': 'KF',
+  'AIR BUSAN': 'BX',
+  'AIR CALEDONIE': 'TY',
+  'AIR CANADA': 'AC',
+  'AIR CHINA': 'CA',
+  'AIR FRANCE': 'AF',
+  'AIR HAMBURG': 'AH',
+  'AIRHUB AIRLINES MAOKA': 'RE',
+  'AIR INDIA': 'AI',
+  'AIR MACAU': 'NX',
+  'AIR MAURITIUS': 'MK',
+  'AIR NEW ZEALAND': 'NZ',
+  'AIR NIUGINI': 'PX',
+  'AIRNORTH': 'TL',
+  'AIR SIAL': 'PF',
+  'AIR TAHITI': 'VT',
+  'ALASKA AIRLINES': 'AS',
+  'ALEXANDRIA AIRLINES': 'DQ',
+  'ALLIANCE AIRLINES': 'QQ',
+  'ALL NIPPON AIRWAYS': 'NH',
+  'AMERICAN AIRLINES': 'AA',
+  'ASG BUSINESS AVIATION': 'ES',
+  'ASIANA AIRLINES': 'OZ',
+  'ASL AIRLINES': 'SX',
+  'ASTRAL AVIATION': '8V',
+  'ATLAS AIR': '5Y',
+  'BAMBOO AIRWAYS': 'QH',
+  'BANGKOK AIRWAYS': 'PG',
+  'BATIK AIR': 'ID',
+  'BATIK AIR MALAYSIA': 'OD',
+  'BBN AIRLINES INDONESIA': '7B',
+  'BESTFLY': 'XB',
+  'BIMAN BANGLADESH AIRLINES': 'BG',
+  'BLUEBIRD NORDIC': 'BO',
+  'BLUORBIT': 'BD',
+  'BRITISH AIRWAYS': 'BA',
+  'CAMBODIA AIRWAYS': 'KR',
+  'CAPITAL AIRLINES': 'JD',
+  'CAREFLIGHT': 'CF',
+  'CARGOLUX': 'CV',
+  'CATHAY PACIFIC AIRWAYS': 'CX',
+  'CEBU PACIFIC AIR': '5J',
+  'CENTRAL AIRLINES': 'I9',
+  'CHINA AIR CARGO': 'ZY',
+  'CHINA AIRLINES': 'CI',
+  'CHINA CARGO AIRLINES': 'CK',
+  'CHINA CENTRAL LONGHAO AIRLINES': 'GI',
+  'CHINA EASTERN AIRLINES': 'MU',
+  'CHINA SOUTHERN AIRLINES': 'CZ',
+  'CITILINK': 'QG',
+  'COMPANIA NATIONALA DE TRANSPORTUEU AERIENE': 'RO',
+  'DELTA AIR LINES': 'DL',
+  'DHL AIR': 'D0',
+  'EASY CHARTER': 'RD',
+  'EGYPTAIR': 'MS',
+  'EMIRATES': 'EK',
+  'ETHIOPIAN AIRLINES': 'ET',
+  'ETIHAD AIRWAYS': 'EY',
+  'EVA AIR': 'BR',
+  'FEDERAL EXPRESS CORPORATION': 'FX',
+  'FIJI AIRWAYS': 'FJ',
+  'FIREFLY': 'FM',
+  'FLEXFLIGHT': 'W2',
+  'FLY BAGHDAD': 'IF',
+  'FLYDUBAI': 'FZ',
+  'FLYNAS': 'XY',
+  'GARUDA INDONESIA': 'GA',
+  'GO FIRST': 'G8',
+  'GULF AIR': 'GF',
+  'HAINAN AIRLINES': 'HU',
+  'HARMONY JETS': 'HM',
+  'HAWAIIAN AIRLINES': 'HA',
+  'HIMALAYA AIRLINES': 'H9',
+  'HONG KONG AIRLINES': 'HX',
+  'IBERIA': 'IB',
+  'ICELANDAIR': 'FI',
+  'INDIGO': '6E',
+  'INDONESIA AIRASIA': 'QZ',
+  'JAPAN AIRLINES': 'JL',
+  'JEJU AIR': '7C',
+  'JETBLUE AIRWAYS': 'B6',
+  'JET EDGE': 'ED',
+  'JETSMART AIRLINES': 'JA',
+  'JETSTAR AIRWAYS': 'JQ',
+  'JETSTAR ASIA AIRWAYS': '3K',
+  'JIN AIR': 'LJ',
+  'JUNEYAO AIRLINES': 'HO',
+  'KARGO XPRESS': 'WW',
+  'KLM': 'KL',
+  'K-MILE AIR': '8K',
+  'KOREAN AIR': 'KE',
+  'KUWAIT AIRWAYS': 'KU',
+  'LAO AIRLINES': 'QV',
+  'LION AIR': 'JT',
+  'LUCKY AIR': '8L',
+  'LUFTHANSA': 'LH',
+  'LYNDEN AIR CARGO': 'L2',
+  'MALAYSIA AIRLINES': 'MH',
+  'MALINDO AIR': 'OD',
+  'MANDARIN AIRLINES': 'AE',
+  'MASWINGS SDN BHD': 'MY',
+  'MAXIMUS AIRLINES': '6M',
+  'MESK AIR': 'MA',
+  'MOTOR SICH AIRLINES': 'M9',
+  'MYAIRLINE': 'Z9',
+  'MYANMAR AIRWAYS INTERNATIONAL': '8M',
+  'MY FREIGHTER': 'C6',
+  'MY INDO AIRLINES': '2Y',
+  'MY JET XPRESS': 'N7',
+  'NAM AIR': 'IN',
+  'NANSHAN JET': 'B5',
+  'NATIONAL AIRLINES': 'N8',
+  'NAURU AIRLINES': 'ON',
+  'NEPAL AIRLINES': 'RA',
+  'NETJETS': '1I',
+  'NETWORK AVIATION': 'ZF',
+  'NOTHERN AIR CARGO': 'NC',
+  'OMAN AIR': 'WY',
+  'OMNI AIR INTERNATIONAL': 'OY',
+  'PAKISTAN INTERNATIONAL AIRLINES': 'PK',
+  'PEGASUS ELITE AVIATION': 'PE',
+  'PELITA AIR': 'IP',
+  'PHILIPPINE AIRLINES': 'PR',
+  'PHILIPPINES AIRASIA': 'Z2',
+  'PRIVATE OWNER': 'B3',
+  'PROPAIR INC': 'PP',
+  'QANTAS AIRWAYS': 'QF',
+  'QANTASLINK': 'NW',
+  'QATAR AIRWAYS': 'QR',
+  'QATAR EXECUTIVE': 'QE',
+  'RAYA AIRWAYS': 'TH',
+  'REDSTAR AVIATION': 'RH',
+  'RGA-BLACK STONE AIRLINES': 'RG',
+  'RIMBUN AIR': 'RI',
+  'ROYAL AIRWAYS': 'CH',
+  'ROYAL BRUNEI AIRLINES': 'BI',
+  'SAINT BARTH COMMUTER': 'PV',
+  'SALAMAIR': 'OV',
+  'SAUDIA': 'SV',
+  'SCANDINAVIAN AIRLINES SYSTEM': 'SK',
+  'SCOOT': 'TR',
+  'SERVIZI AEREI': 'SN',
+  'SF AIRLINES': 'O3',
+  'SHANDONG AIRLINES': 'SC',
+  'SHENZEN AIRLINES': 'ZH',
+  'SICHUAN AIRLINES': '3U',
+  'SILK WAY AIRLINES': 'ZP',
+  'SILK WAY WEST AIRLINES': '7L',
+  'SINGAPORE - AIR FORCE': 'SA',
+  'SINGAPORE AIRLINES': 'SQ',
+  'SKY ANGKOR AIRLINES': 'ZA',
+  'SMARTLYNX AIRLINES': '6Y',
+  'SOLOMON AIRLINES': 'SB',
+  'SPICEJET': 'SG',
+  'SRILANKAN AIRLINES': 'UL',
+  'SRIWIJAYA AIR': 'SJ',
+  'STARLUX AIRLINES': 'JX',
+  'STP AIRWAYS': '8F',
+  'SUNEXPRESS': 'XQ',
+  'SUPER AIR JET': 'IU',
+  'SWISS': 'LX',
+  'TACA INTERNATIONAL AIRLINES': 'TA',
+  'TAG AVIATION MALTA': 'TE',
+  'TAP AIR PORTUGAL': 'TP',
+  'THAI AIRASIA': 'FD',
+  'THAI AIRWAYS': 'TG',
+  'THAI LION AIR': 'SL',
+  'THAI SMILE': 'WE',
+  'TIANJIN AIR CARGO': 'HT',
+  'TITAN AIRWAYS (TCS WORLD TRAVEL LIVERY)': 'ZT',
+  'TRANSNUSA': '8B',
+  'TRAVYA': 'CE',
+  'TRIGANA AIR': 'IL',
+  'TRI-MG INTRA ASIA AIRLINES': 'GM',
+  'TURKISH AIRLINES': 'TK',
+  'TURKMENISTAN AIRLINES': 'T5',
+  'TWAY AIR': 'TW',
+  'UNITED AIRLINES': 'UA',
+  'UNITED NIGERIA AIRLINES': 'UN',
+  'UNITED STATES - US AIR FORCE (USAF)': 'RC',
+  'UPS AIRLINES': '5X',
+  'UZBEKISTAN AIRWAYS': 'HY',
+  'VIETJET': 'VJ',
+  'VIETNAM AIRLINES': 'VN',
+  'VIRGIN AUSTRALIA': 'VA',
+  'VISTAJET': '5V',
+  'VISTARA': 'UK',
+  'VOLUXIS': 'VX',
+  'WAMOS AIR': 'EB',
+  'WINGS AIR': 'IW',
+  'WORLD CARGO AIRLINES': '3G',
+  'XIAMEN AIRLINES': 'MF',
+  'YTO CARGO AIRLINES': 'YG',
+  'ZETAVIA': 'ZK',
+  'ZHEZIANG LOONG AIRLINES': 'GJ'
+};
 
 const ports = [
   { value: 'CGK', label: 'JAKARTA (CGK) / SOEKARNO HATTA' },
@@ -576,7 +887,15 @@ export default function FormPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formStarted, setFormStarted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  // Removed submissionResult and showQRModal states as we're using checkout flow now
+  // Re-added submissionResult and showQRModal for direct QR display (payment step temporarily disabled)
+  const [submissionResult, setSubmissionResult] = useState<{
+    qrCode?: { imageData?: string };
+    submissionDetails?: { 
+      submissionId?: string;
+      arrivalCardNumber?: string;
+      passengerDetails?: Record<string, unknown>;
+    };
+  } | null>(null);
 
   // Track form start when component mounts
   useEffect(() => {
@@ -891,11 +1210,11 @@ export default function FormPage() {
           newErrors.departureDate = errorMsg;
           trackFormValidationError('departureDate', errorMsg);
         } else if (formData.arrivalDate.trim()) {
-          // Validate departure is after arrival
+          // Validate departure is on or after arrival (allow same-day transit)
           const arrivalDate = new Date(formData.arrivalDate);
           const departureDate = new Date(formData.departureDate);
           
-          if (departureDate <= arrivalDate) {
+          if (departureDate < arrivalDate) {
             const errorMsg = getTranslation('departureDateMustBeAfterArrival', language);
             newErrors.departureDate = errorMsg;
             trackFormValidationError('departureDate', errorMsg);
@@ -914,6 +1233,27 @@ export default function FormPage() {
           const errorMsg = getTranslation('visaOrKitasNumberRequired', language);
           newErrors.visaOrKitasNumber = errorMsg;
           trackFormValidationError('visaOrKitasNumber', errorMsg);
+        }
+
+        // Family Members Visa Validation (only for foreign citizens with family members)
+        if (formData.familyMembers && formData.familyMembers.length > 0) {
+          formData.familyMembers.forEach((member, index) => {
+            const memberPrefix = `familyMember-${member.id}`;
+            
+            // Visa or KITAS/KITAP Question for each family member
+            if (member.hasVisaOrKitas === null) {
+              const errorMsg = getTranslation('visaOrKitasRequired', language);
+              newErrors[`${memberPrefix}-hasVisaOrKitas`] = errorMsg;
+              trackFormValidationError(`${memberPrefix}-hasVisaOrKitas`, errorMsg);
+            }
+            
+            // Visa/KITAS Number for family member (if Yes is selected)
+            if (member.hasVisaOrKitas === true && !member.visaOrKitasNumber.trim()) {
+              const errorMsg = getTranslation('visaOrKitasNumberRequired', language);
+              newErrors[`${memberPrefix}-visaOrKitasNumber`] = errorMsg;
+              trackFormValidationError(`${memberPrefix}-visaOrKitasNumber`, errorMsg);
+            }
+          });
         }
       }
     } else if (formData.currentStep === 4) {
@@ -1002,6 +1342,13 @@ export default function FormPage() {
         const errorMsg = 'Please answer the health symptoms question';
         newErrors.hasSymptoms = errorMsg;
         trackFormValidationError('hasSymptoms', errorMsg);
+      }
+      
+      // Countries Visited (Required)
+      if (!formData.countriesVisited || formData.countriesVisited.length === 0) {
+        const errorMsg = 'Please select at least one country of origin, departure, transit or other countries visited within 21 days';
+        newErrors.countriesVisited = errorMsg;
+        trackFormValidationError('countriesVisited', errorMsg);
       }
       
       // Quarantine Declaration
@@ -1127,11 +1474,15 @@ export default function FormPage() {
           trackMixpanelFormSubmission();
           trackUserJourney('Form Submitted Successfully', 5);
           
-          // Store QR data securely for checkout
-          sessionStorage.setItem('pendingQR', JSON.stringify(result));
+          // PAYMENT STEP TEMPORARILY DISABLED - Show QR code directly
+          // Store QR data and show modal immediately (skip payment flow)
+          setSubmissionResult(result);
+          saveCompletedQR(result); // Save without payment requirement
+          setShowQRModal(true);
           
-          // Redirect to checkout page
-          router.push('/checkout');
+          // COMMENTED OUT - Payment flow for future re-enabling:
+          // sessionStorage.setItem('pendingQR', JSON.stringify(result));
+          // router.push('/checkout');
         } else {
           // Track automation failure in Mixpanel
           trackAutomationFailure(
@@ -1151,7 +1502,7 @@ export default function FormPage() {
           
           // Auto-redirect to official customs website after brief delay
           setTimeout(() => {
-            window.location.href = 'https://ecd.beacukai.go.id/';
+            window.location.href = 'https://allindonesia.imigrasi.go.id/';
           }, 2000);
         }
       } catch (error) {
@@ -1176,7 +1527,7 @@ export default function FormPage() {
         
         // Auto-redirect to official customs website after brief delay
         setTimeout(() => {
-          window.location.href = 'https://ecd.beacukai.go.id/';
+          window.location.href = 'https://allindonesia.imigrasi.go.id/';
         }, 2000);
       } finally {
         setIsSubmitting(false);
@@ -1990,6 +2341,10 @@ export default function FormPage() {
             passportExpiryDate: getTranslation('passportExpiryDate', language),
             mobileNumber: getTranslation('mobileNumber', language),
             email: getTranslation('email', language),
+            hasVisaOrKitas: getTranslation('hasVisaOrKitas', language),
+            visaOrKitasNumber: getTranslation('visaOrKitasNumber', language),
+            yes: getTranslation('yes', language),
+            no: getTranslation('no', language),
           }}
         />
       </div>
@@ -2113,6 +2468,118 @@ export default function FormPage() {
             />
           </div>
         )}
+
+        {/* Visa Information for Additional Travelers */}
+        {!isIndonesianCitizen && formData.familyMembers && formData.familyMembers.length > 0 && (
+          <div className="space-y-6">
+            <div className="border-l-4 border-orange-500 pl-4">
+              <h3 className="text-lg font-bold text-gray-900">
+                Visa Information for Additional Travelers
+              </h3>
+              <p className="text-gray-600 mt-2">
+                Please provide visa information for each additional traveler.
+              </p>
+            </div>
+
+            {formData.familyMembers.map((member, index) => (
+              <div key={member.id} className="border border-gray-200 rounded-lg p-6 space-y-6 bg-gray-50">
+                <div className="border-b border-gray-200 pb-4">
+                  <h4 className="text-base font-medium text-gray-900">
+                    Traveler {index + 2}: {member.fullPassportName || 'Unnamed Traveler'}
+                  </h4>
+                  <p className="text-sm text-gray-600">
+                    Passport: {member.passportNumber || 'Not specified'}
+                  </p>
+                </div>
+
+                {/* Visa/KITAS Question for this family member */}
+                <div className="space-y-4">
+                  <label className="block text-sm font-medium text-gray-700">
+                    {getTranslation('hasVisaOrKitas', language)} <span className="text-red-500">*</span>
+                  </label>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <label className={`flex items-center justify-center p-3 border-2 rounded-lg cursor-pointer transition-all ${
+                      member.hasVisaOrKitas === true 
+                        ? 'border-blue-500 bg-blue-50' 
+                        : 'border-gray-300 hover:border-gray-400'
+                    }`}>
+                      <input
+                        type="radio"
+                        name={`familyMemberVisa-${member.id}`}
+                        value="true"
+                        checked={member.hasVisaOrKitas === true}
+                        onChange={() => {
+                          const updatedMembers = formData.familyMembers.map(m => 
+                            m.id === member.id ? { ...m, hasVisaOrKitas: true } : m
+                          );
+                          updateFormData('familyMembers', updatedMembers);
+                        }}
+                        className="sr-only"
+                      />
+                      <span className={`text-sm font-medium ${
+                        member.hasVisaOrKitas === true 
+                          ? 'text-blue-600' 
+                          : 'text-gray-700'
+                      }`}>
+                        {getTranslation('yes', language)}
+                      </span>
+                    </label>
+                    
+                    <label className={`flex items-center justify-center p-3 border-2 rounded-lg cursor-pointer transition-all ${
+                      member.hasVisaOrKitas === false 
+                        ? 'border-blue-500 bg-blue-50' 
+                        : 'border-gray-300 hover:border-gray-400'
+                    }`}>
+                      <input
+                        type="radio"
+                        name={`familyMemberVisa-${member.id}`}
+                        value="false"
+                        checked={member.hasVisaOrKitas === false}
+                        onChange={() => {
+                          const updatedMembers = formData.familyMembers.map(m => 
+                            m.id === member.id ? { ...m, hasVisaOrKitas: false, visaOrKitasNumber: '' } : m
+                          );
+                          updateFormData('familyMembers', updatedMembers);
+                        }}
+                        className="sr-only"
+                      />
+                      <span className={`text-sm font-medium ${
+                        member.hasVisaOrKitas === false 
+                          ? 'text-blue-600' 
+                          : 'text-gray-700'
+                      }`}>
+                        {getTranslation('no', language)}
+                      </span>
+                    </label>
+                  </div>
+                  {errors[`familyMember-${member.id}-hasVisaOrKitas`] && (
+                    <p className="text-sm text-red-600">{errors[`familyMember-${member.id}-hasVisaOrKitas`]}</p>
+                  )}
+                </div>
+
+                {/* Conditional Visa Number Field for this family member */}
+                {member.hasVisaOrKitas === true && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                    <FormInput
+                      label={getTranslation('visaOrKitasNumber', language)}
+                      required
+                      placeholder="Enter Visa or KITAS/KITAP Number"
+                      value={member.visaOrKitasNumber}
+                      onChange={(e) => {
+                        const updatedMembers = formData.familyMembers.map(m => 
+                          m.id === member.id ? { ...m, visaOrKitasNumber: e.target.value.toUpperCase() } : m
+                        );
+                        updateFormData('familyMembers', updatedMembers);
+                      }}
+                      error={errors[`familyMember-${member.id}-visaOrKitasNumber`]}
+                    />
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     );
   };
@@ -2185,7 +2652,7 @@ export default function FormPage() {
         {formData.modeOfTransport === 'AIR' && (
           <div className="mt-6 space-y-4">
             <p className="text-sm text-gray-600">
-              The fields in this section are based on the selected "AIR" transport mode above.
+              The fields in this section are based on the selected &quot;AIR&quot; transport mode above.
             </p>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
@@ -2243,8 +2710,8 @@ export default function FormPage() {
                   value={formData.flightName}
                   onChange={(value) => {
                     updateFormData('flightName', value);
-                    // Extract airline code from selected value (e.g., "AK" from "AK - AIR ASIA")
-                    const airlineCode = value.split(' - ')[0] || '';
+                    // Extract airline code from airline name using mapping
+                    const airlineCode = airlineToIataMap[value] || '';
                     // Clear the flight number when airline changes
                     updateFormData('flightNumber', '');
                   }}
@@ -2260,7 +2727,7 @@ export default function FormPage() {
                 </label>
                 <div className="flex items-center gap-2">
                   <span className="px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-sm text-gray-700 min-w-[50px] text-center">
-                    {formData.flightName ? formData.flightName.split(' - ')[0] : 'XXX'}
+                    {formData.flightName ? (airlineToIataMap[formData.flightName] || 'XXX') : 'XXX'}
                   </span>
                   <input
                     type="text"
@@ -2282,7 +2749,7 @@ export default function FormPage() {
         {formData.modeOfTransport === 'SEA' && (
           <div className="mt-6 space-y-4">
             <p className="text-sm text-gray-600">
-              The fields in this section are based on the selected "SEA" transport mode above.
+              The fields in this section are based on the selected &quot;SEA&quot; transport mode above.
             </p>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
@@ -2358,7 +2825,7 @@ export default function FormPage() {
           Health Declaration
         </h3>
         <p className="text-sm text-gray-600">
-          In accordance with Indonesia's national health protocols, please complete the health declaration form to support public health monitoring and prevent the spread of infectious diseases.
+          In accordance with Indonesia&apos;s national health protocols, please complete the health declaration form to support public health monitoring and prevent the spread of infectious diseases.
         </p>
         
         {/* Symptoms Question */}
@@ -2441,6 +2908,7 @@ export default function FormPage() {
             Countries of origin departure, transit and other countries that you visited within 21 days before departure to Indonesia (Can select more than one)
           </p>
           <FormSelect
+            label="Countries visited within 21 days"
             options={[
               { value: '', label: 'Select countries visited' },
               ...countries
@@ -2452,6 +2920,9 @@ export default function FormPage() {
               }
             }}
           />
+          {errors.countriesVisited && (
+            <p className="text-red-600 text-sm">{errors.countriesVisited}</p>
+          )}
           {formData.countriesVisited.length > 0 && (
             <div className="flex flex-wrap gap-2 mt-2">
               {formData.countriesVisited.map((country, index) => (
@@ -2863,6 +3334,23 @@ export default function FormPage() {
           isOpen={showQRModal}
           onClose={() => setShowQRModal(false)}
           submissionResult={storedQRData}
+          formData={formData}
+          language={language}
+        />
+      )}
+      
+      {/* QR Code Modal for fresh submission (payment step temporarily disabled) */}
+      {submissionResult && (
+        <QRCodeModal
+          isOpen={showQRModal}
+          onClose={() => {
+            setShowQRModal(false);
+            setSubmissionResult(null);
+            // OPTION: Uncomment to redirect to home after QR modal closes
+            // router.push('/');
+          }}
+          submissionResult={submissionResult}
+          formData={formData}
           language={language}
         />
       )}
