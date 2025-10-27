@@ -2345,7 +2345,7 @@ export default function FormPage() {
             visaOrKitasNumber: getTranslation('visaOrKitasNumber', language),
             yes: getTranslation('yes', language),
             no: getTranslation('no', language),
-          }}
+          } as any}
         />
       </div>
     </div>
