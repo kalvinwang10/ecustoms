@@ -1,5 +1,19 @@
 'use client';
 
+/*
+ * PAYMENT STEP TEMPORARILY DISABLED
+ * 
+ * This checkout page is currently not in use - payment flow has been 
+ * temporarily disabled to show QR codes directly after automation.
+ * 
+ * To re-enable payment flow:
+ * 1. Uncomment payment redirect in /src/app/form/page.tsx (lines ~1456-1457)
+ * 2. Comment out direct QR display in /src/app/form/page.tsx (lines ~1451-1453)
+ * 3. Restore paymentStatus requirement in /src/lib/qr-storage.ts
+ * 
+ * This file remains intact for easy future re-enabling.
+ */
+
 import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { loadStripe } from '@stripe/stripe-js';
@@ -283,12 +297,12 @@ export default function CheckoutPage() {
             This is an independent service to assist with Indonesian customs declaration preparation. 
             For manual submission, please visit the{' '}
             <a 
-              href="https://ecd.beacukai.go.id/" 
+              href="https://allindonesia.imigrasi.go.id/" 
               target="_blank" 
               rel="noopener noreferrer"
               className="text-gray-700 hover:text-gray-900 underline"
             >
-              Indonesian e-CD website
+              All Indonesia immigration website
             </a>.
           </p>
           <p className="text-xs text-gray-500">
@@ -310,6 +324,7 @@ export default function CheckoutPage() {
             router.push('/');
           }}
           submissionResult={submissionResult}
+          formData={undefined}
           language={language}
         />
       )}

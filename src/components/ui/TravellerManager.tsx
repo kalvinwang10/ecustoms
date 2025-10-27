@@ -17,6 +17,9 @@ interface Traveller {
   passportExpiryDate: string;
   mobileNumber: string;
   email: string;
+  // Visa information for each family member
+  hasVisaOrKitas: boolean | null;
+  visaOrKitasNumber: string;
 }
 
 interface TravellerManagerProps {
@@ -38,6 +41,10 @@ interface TravellerManagerProps {
     passportExpiryDate: string;
     mobileNumber: string;
     email: string;
+    hasVisaOrKitas: string;
+    visaOrKitasNumber: string;
+    yes: string;
+    no: string;
   };
 }
 
@@ -61,7 +68,10 @@ const TravellerManager: React.FC<TravellerManagerProps> = ({
       gender: null,
       passportExpiryDate: '',
       mobileNumber: '+62 ',
-      email: ''
+      email: '',
+      // Initialize visa fields
+      hasVisaOrKitas: null,
+      visaOrKitasNumber: ''
     };
     
     onChange([...travellers, newTraveller]);
@@ -80,7 +90,7 @@ const TravellerManager: React.FC<TravellerManagerProps> = ({
     setErrors(newErrors);
   };
 
-  const updateTraveller = (id: string, field: keyof Omit<Traveller, 'id'>, value: string) => {
+  const updateTraveller = (id: string, field: keyof Omit<Traveller, 'id'>, value: string | boolean | null) => {
     const updatedTravellers = travellers.map(traveller =>
       traveller.id === id ? { ...traveller, [field]: value } : traveller
     );
@@ -245,8 +255,8 @@ const TravellerManager: React.FC<TravellerManagerProps> = ({
                       const phoneNumber = traveller.mobileNumber.split(' ').slice(1).join(' ');
                       updateTraveller(traveller.id, 'mobileNumber', `${countryCode} ${phoneNumber}`);
                     }}
-                    className="w-20"
-                    placeholder="Select"
+                    className="w-32"
+                    placeholder="+62"
                   />
                   <input
                     type="text"
@@ -274,6 +284,96 @@ const TravellerManager: React.FC<TravellerManagerProps> = ({
                 error={errors[`${traveller.id}-email`]}
               />
             </div>
+          </div>
+
+          {/* Visa Information Section */}
+          <div>
+            <h4 className="text-base font-medium text-gray-800 mb-4">Visa Information</h4>
+            
+            {/* Visa/KITAS Question */}
+            <div className="space-y-4 mb-6">
+              <label className="block text-sm font-medium text-gray-700">
+                {labels.hasVisaOrKitas} <span className="text-red-500 ml-1">*</span>
+              </label>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <label 
+                  className={`flex items-center justify-center p-3 border-2 rounded-lg cursor-pointer transition-all ${
+                    traveller.hasVisaOrKitas === true 
+                      ? 'border-blue-500 bg-blue-50' 
+                      : 'border-gray-300 hover:border-gray-400'
+                  }`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    updateTraveller(traveller.id, 'hasVisaOrKitas', true);
+                  }}
+                >
+                  <input
+                    type="radio"
+                    name={`hasVisaOrKitas-${traveller.id}`}
+                    value="true"
+                    checked={traveller.hasVisaOrKitas === true}
+                    onChange={() => {}}
+                    className="sr-only"
+                  />
+                  <span className={`text-sm font-medium ${
+                    traveller.hasVisaOrKitas === true 
+                      ? 'text-blue-600' 
+                      : 'text-gray-700'
+                  }`}>
+                    {labels.yes}
+                  </span>
+                </label>
+                
+                <label 
+                  className={`flex items-center justify-center p-3 border-2 rounded-lg cursor-pointer transition-all ${
+                    traveller.hasVisaOrKitas === false 
+                      ? 'border-blue-500 bg-blue-50' 
+                      : 'border-gray-300 hover:border-gray-400'
+                  }`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    updateTraveller(traveller.id, 'hasVisaOrKitas', false);
+                    if (traveller.visaOrKitasNumber) {
+                      updateTraveller(traveller.id, 'visaOrKitasNumber', '');
+                    }
+                  }}
+                >
+                  <input
+                    type="radio"
+                    name={`hasVisaOrKitas-${traveller.id}`}
+                    value="false"
+                    checked={traveller.hasVisaOrKitas === false}
+                    onChange={() => {}}
+                    className="sr-only"
+                  />
+                  <span className={`text-sm font-medium ${
+                    traveller.hasVisaOrKitas === false 
+                      ? 'text-blue-600' 
+                      : 'text-gray-700'
+                  }`}>
+                    {labels.no}
+                  </span>
+                </label>
+              </div>
+              {errors[`${traveller.id}-hasVisaOrKitas`] && (
+                <p className="text-sm text-red-600">{errors[`${traveller.id}-hasVisaOrKitas`]}</p>
+              )}
+            </div>
+
+            {/* Conditional Visa Number Field */}
+            {traveller.hasVisaOrKitas === true && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                <FormInput
+                  label={labels.visaOrKitasNumber}
+                  required
+                  placeholder="Enter Visa or KITAS/KITAP Number"
+                  value={traveller.visaOrKitasNumber}
+                  onChange={(e) => updateTraveller(traveller.id, 'visaOrKitasNumber', e.target.value.toUpperCase())}
+                  error={errors[`${traveller.id}-visaOrKitasNumber`]}
+                />
+              </div>
+            )}
           </div>
         </div>
       ))}

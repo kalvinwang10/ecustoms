@@ -196,6 +196,7 @@ export default function Home() {
           isOpen={showQRModal}
           onClose={() => setShowQRModal(false)}
           submissionResult={storedQRData}
+          formData={undefined}
           language={language}
         />
       )}

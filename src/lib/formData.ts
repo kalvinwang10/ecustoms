@@ -48,6 +48,9 @@ export interface FormData {
     passportExpiryDate: string;
     mobileNumber: string;
     email: string;
+    // Visa information for each family member
+    hasVisaOrKitas: boolean | null;
+    visaOrKitasNumber: string;
   }>;
   
   // Health Declaration

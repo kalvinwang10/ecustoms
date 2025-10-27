@@ -2500,7 +2500,7 @@ export default function FormPage() {
                   
                   <div className="grid grid-cols-2 gap-4">
                     <label className={`flex items-center justify-center p-3 border-2 rounded-lg cursor-pointer transition-all ${
-                      member.hasVisaOrKitas === true 
+                      ('hasVisaOrKitas' in member && member.hasVisaOrKitas === true)
                         ? 'border-blue-500 bg-blue-50' 
                         : 'border-gray-300 hover:border-gray-400'
                     }`}>
@@ -2508,7 +2508,7 @@ export default function FormPage() {
                         type="radio"
                         name={`familyMemberVisa-${member.id}`}
                         value="true"
-                        checked={member.hasVisaOrKitas === true}
+                        checked={'hasVisaOrKitas' in member && member.hasVisaOrKitas === true}
                         onChange={() => {
                           const updatedMembers = formData.familyMembers.map(m => 
                             m.id === member.id ? { ...m, hasVisaOrKitas: true } : m
@@ -2518,7 +2518,7 @@ export default function FormPage() {
                         className="sr-only"
                       />
                       <span className={`text-sm font-medium ${
-                        member.hasVisaOrKitas === true 
+                        ('hasVisaOrKitas' in member && member.hasVisaOrKitas === true)
                           ? 'text-blue-600' 
                           : 'text-gray-700'
                       }`}>
@@ -2527,7 +2527,7 @@ export default function FormPage() {
                     </label>
                     
                     <label className={`flex items-center justify-center p-3 border-2 rounded-lg cursor-pointer transition-all ${
-                      member.hasVisaOrKitas === false 
+                      ('hasVisaOrKitas' in member && member.hasVisaOrKitas === false)
                         ? 'border-blue-500 bg-blue-50' 
                         : 'border-gray-300 hover:border-gray-400'
                     }`}>
@@ -2535,7 +2535,7 @@ export default function FormPage() {
                         type="radio"
                         name={`familyMemberVisa-${member.id}`}
                         value="false"
-                        checked={member.hasVisaOrKitas === false}
+                        checked={'hasVisaOrKitas' in member && member.hasVisaOrKitas === false}
                         onChange={() => {
                           const updatedMembers = formData.familyMembers.map(m => 
                             m.id === member.id ? { ...m, hasVisaOrKitas: false, visaOrKitasNumber: '' } : m
@@ -2545,7 +2545,7 @@ export default function FormPage() {
                         className="sr-only"
                       />
                       <span className={`text-sm font-medium ${
-                        member.hasVisaOrKitas === false 
+                        ('hasVisaOrKitas' in member && member.hasVisaOrKitas === false)
                           ? 'text-blue-600' 
                           : 'text-gray-700'
                       }`}>
@@ -2559,7 +2559,7 @@ export default function FormPage() {
                 </div>
 
                 {/* Conditional Visa Number Field for this family member */}
-                {member.hasVisaOrKitas === true && (
+                {('hasVisaOrKitas' in member && member.hasVisaOrKitas === true) && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                     <FormInput
                       label={getTranslation('visaOrKitasNumber', language)}

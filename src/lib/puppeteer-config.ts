@@ -88,7 +88,7 @@ export class PuppeteerManager {
     }
   }
 
-  async testConnection(url: string = 'https://ecd.beacukai.go.id/') {
+  async testConnection(url: string = 'https://allindonesia.imigrasi.go.id/') {
     let page = null;
     try {
       if (!this.browser) {
