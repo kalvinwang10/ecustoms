@@ -1248,7 +1248,7 @@ export default function FormPage() {
             }
             
             // Visa/KITAS Number for family member (if Yes is selected)
-            if ('hasVisaOrKitas' in member && 'visaOrKitasNumber' in member && member.hasVisaOrKitas === true && !member.visaOrKitasNumber.trim()) {
+            if ('hasVisaOrKitas' in member && 'visaOrKitasNumber' in member && member.hasVisaOrKitas === true && !(member.visaOrKitasNumber as string).trim()) {
               const errorMsg = getTranslation('visaOrKitasNumberRequired', language);
               newErrors[`${memberPrefix}-visaOrKitasNumber`] = errorMsg;
               trackFormValidationError(`${memberPrefix}-visaOrKitasNumber`, errorMsg);
