@@ -1241,14 +1241,14 @@ export default function FormPage() {
             const memberPrefix = `familyMember-${member.id}`;
             
             // Visa or KITAS/KITAP Question for each family member
-            if (member.hasVisaOrKitas === null) {
+            if ('hasVisaOrKitas' in member && member.hasVisaOrKitas === null) {
               const errorMsg = getTranslation('visaOrKitasRequired', language);
               newErrors[`${memberPrefix}-hasVisaOrKitas`] = errorMsg;
               trackFormValidationError(`${memberPrefix}-hasVisaOrKitas`, errorMsg);
             }
             
             // Visa/KITAS Number for family member (if Yes is selected)
-            if (member.hasVisaOrKitas === true && !member.visaOrKitasNumber.trim()) {
+            if ('hasVisaOrKitas' in member && 'visaOrKitasNumber' in member && member.hasVisaOrKitas === true && !member.visaOrKitasNumber.trim()) {
               const errorMsg = getTranslation('visaOrKitasNumberRequired', language);
               newErrors[`${memberPrefix}-visaOrKitasNumber`] = errorMsg;
               trackFormValidationError(`${memberPrefix}-visaOrKitasNumber`, errorMsg);
