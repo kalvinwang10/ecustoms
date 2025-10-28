@@ -52,7 +52,7 @@ function CheckoutForm({ onSuccess }: CheckoutFormProps) {
 
     setIsProcessing(true);
     setErrorMessage(null);
-    trackButtonClick('Complete Payment', 'Checkout Page');
+    // trackButtonClick('Complete Payment', 'Checkout Page');
 
     const { error, paymentIntent } = await stripe.confirmPayment({
       elements,
@@ -64,7 +64,7 @@ function CheckoutForm({ onSuccess }: CheckoutFormProps) {
 
     if (error) {
       setErrorMessage(error.message || 'Payment failed');
-      trackEvent('Payment Failed', { error: error.message });
+      // trackEvent('Payment Failed', { error: error.message });
       setIsProcessing(false);
     } else if (paymentIntent && paymentIntent.status === 'succeeded') {
       trackEvent('Payment Succeeded', { amount: paymentIntent.amount });
@@ -75,7 +75,7 @@ function CheckoutForm({ onSuccess }: CheckoutFormProps) {
   const handleExpressCheckout = async () => {
     if (!stripe || !elements) return;
     
-    trackEvent('Express Checkout Initiated', { method: 'express' });
+    // trackEvent('Express Checkout Initiated', { method: 'express' });
     
     const { error } = await stripe.confirmPayment({
       elements,
@@ -87,7 +87,7 @@ function CheckoutForm({ onSuccess }: CheckoutFormProps) {
 
     if (error) {
       setErrorMessage(error.message || 'Express checkout failed');
-      trackEvent('Express Checkout Failed', { error: error.message });
+      // trackEvent('Express Checkout Failed', { error: error.message });
     }
   };
 
@@ -169,7 +169,7 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     // Track page view
-    trackPageView('Checkout Page');
+    // trackPageView('Checkout Page');
 
     // Get language from localStorage
     const savedLanguage = localStorage.getItem('language') as Language;

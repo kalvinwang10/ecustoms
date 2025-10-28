@@ -104,9 +104,14 @@ function shouldRedirectToManualSubmission(formData: FormData): { shouldRedirect:
     return { shouldRedirect: true, reason: 'Has goods to declare' };
   }
   
-  // Check for health symptoms
+  // Check for health symptoms (fever, cough, runny nose, shortness of breath, sore throat, skin lesions/rashes)
   if (formData.hasSymptoms === true) {
     return { shouldRedirect: true, reason: 'Has health symptoms' };
+  }
+  
+  // Check for quarantine items (animals, fish, plants, and/or their processed products)
+  if (formData.hasQuarantineItems === true) {
+    return { shouldRedirect: true, reason: 'Has quarantine items (animals, fish, plants, or their products)' };
   }
   
   return { shouldRedirect: false };

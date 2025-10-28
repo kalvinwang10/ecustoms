@@ -53,7 +53,7 @@ const productionLog = (message: string) => {
 
 // Language switching function to set All Indonesia website to English
 async function switchToEnglish(page: Page): Promise<void> {
-  console.log('🌐 Switching website language to English...');
+  productionLog('🌐 Switching website language to English...');
   
   try {
     // Wait for the Languages button to be available and click it
@@ -357,7 +357,7 @@ function translateToIndonesian(englishName: string, type: TranslationType): stri
         if (parts.length >= 2) {
           // Return the airline name part without the code
           const airlineName = parts.slice(1).join(' - ').trim();
-          console.log(`✈️ Extracted airline name: "${englishName}" → "${airlineName}"`);
+          debugLog(`✈️ Extracted airline name: "${englishName}" → "${airlineName}"`);
           return airlineName;
         }
       }
@@ -913,7 +913,7 @@ export async function automateCustomsSubmission(
         debugLog('⏳ Waiting for DOM updates after field fixes...');
         await adaptiveDelay(page, 800, true);
         
-        console.log('🔄 Re-validating fields after fixes...');
+        productionLog('🔄 Re-validating fields after fixes...');
         const retryValidation = await validateAllFormFields(page, formData);
         if (!retryValidation.allFieldsValid) {
           console.log('❌ Some fields still invalid after fixes, but continuing with navigation attempt...');
@@ -973,7 +973,7 @@ export async function automateCustomsSubmission(
       const fixAttempted = await fixIncompleteFields(page, validationCheck, formData);
       
       if (fixAttempted) {
-        console.log('🔄 Retrying form submission after fixes...');
+        productionLog('🔄 Retrying form submission after fixes...');
         await submitForm(page);
         
         // Check again after retry
@@ -1052,7 +1052,7 @@ export async function automateCustomsSubmission(
           const pages = await browser.pages();
           console.log(`📄 Browser has ${pages.length} open page(s)`);
           if (pages.length > 0) {
-            console.log(`🌐 Current URL: ${pages[0].url()}`);
+            debugLog(`🌐 Current URL: ${pages[0].url()}`);
           }
         } catch (pageError) {
           console.log('⚠️  Could not retrieve browser page information');
@@ -1482,7 +1482,7 @@ async function clickTravelerCard(page: Page, cardIndex: number, travelerName: st
     
     // Click on the specific card
     const targetCard = travellerCards[cardIndex];
-    console.log(`🔘 Clicking on ${travelerName} card...`);
+    productionLog(`🔘 Clicking on ${travelerName} card...`);
     await targetCard.click();
     
     return true;
@@ -1523,7 +1523,7 @@ async function saveAndReturnToCardSelection(page: Page): Promise<boolean> {
     }
     
     // Wait for navigation back to card selection page
-    console.log(`⏳ Waiting for navigation back to card selection page...`);
+    debugLog(`⏳ Waiting for navigation back to card selection page...`);
     await page.waitForFunction(() => {
       return window.location.href.includes('/declaration/group') && 
              !window.location.href.includes('/declaration/group/form');
@@ -1586,7 +1586,7 @@ async function fillIndividualDeclarationForm(page: Page, formData: FormData): Pr
 
 // Helper function to select radio options with All Indonesia's custom radio button structure
 async function selectRadioOption(page: Page, fieldKey: string, option: string, description: string): Promise<void> {
-  console.log(`🔘 Selecting "${option}" for ${description}...`);
+  debugLog(`🔘 Selecting "${option}" for ${description}...`);
   
   try {
     let success = false;
@@ -1613,7 +1613,7 @@ async function selectRadioOption(page: Page, fieldKey: string, option: string, d
          (questionText.includes('animals') || questionText.includes('plants')));
       
       if (isTargetQuestion) {
-        console.log(`📍 Found target question: "${questionText.substring(0, 100)}..."`);
+        productionLog(`📍 Found target question: "${questionText.substring(0, 100)}..."`);
         
         // Find the radio button group that comes after this question
         // Look for the next sibling that contains radio buttons
@@ -1660,7 +1660,7 @@ async function selectRadioOption(page: Page, fieldKey: string, option: string, d
                 }
                 
                 // Button not selected, proceed with clicking
-                console.log(`🔘 Clicking "${option}" radio button for ${description}...`);
+                debugLog(`🔘 Clicking "${option}" radio button for ${description}...`);
                 
                 // Target the radio circle directly
                 const radioCircleContainer = await radioButton.$('div[style*="border-radius: 50%"]');
@@ -1728,7 +1728,7 @@ async function selectRadioOption(page: Page, fieldKey: string, option: string, d
     
     // Fallback to the old method if new method fails
     if (!success) {
-      console.log(`🔄 Using fallback method for ${description}...`);
+      debugLog(`🔄 Using fallback method for ${description}...`);
       
       // Old strategy as fallback
       const customRadioDivs = await page.$$('div[style*="cursor: pointer"]');
@@ -1857,7 +1857,7 @@ async function selectRadioOption(page: Page, fieldKey: string, option: string, d
     
     // Strategy 2: Fallback to broader clickable div search
     if (!success) {
-      console.log(`🔄 Trying fallback method for ${description}...`);
+      debugLog(`🔄 Trying fallback method for ${description}...`);
       
       const allClickableDivs = await page.$$('div[style*="cursor: pointer"]');
       
@@ -1953,14 +1953,14 @@ async function fillSharedGroupDeclarationElements(page: Page, formData: FormData
     
     // Enhanced fallback: Target red-bordered elements more specifically
     if (!mobileDevicesSuccess) {
-      console.log('🔄 Using enhanced fallback for mobile devices question...');
+      debugLog('🔄 Using enhanced fallback for mobile devices question...');
       
       // Strategy 1: Look for any red-bordered clickable divs containing "No" inputs
       const redBorderClickableDivs = await page.$$('div[style*="rgb(242, 48, 48)"][style*="cursor: pointer"]');
       for (const div of redBorderClickableDivs) {
         const inputInDiv = await div.$('input[readonly][value="No"]');
         if (inputInDiv) {
-          console.log('🔘 Found red-bordered "No" option, targeting radio circle directly...');
+          debugLog('🔘 Found red-bordered "No" option, targeting radio circle directly...');
           
           // IMPORTANT: Target the radio circle, not the container
           const radioCircleContainer = await div.$('div[style*="border-radius: 50%"]');
@@ -2038,7 +2038,7 @@ async function fillSharedGroupDeclarationElements(page: Page, formData: FormData
       
       // Strategy 2: Look for any remaining elements with red borders and "No" text
       if (!mobileDevicesSuccess) {
-        console.log('🔄 Final attempt: clicking any red-bordered "No" elements...');
+        debugLog('🔄 Final attempt: clicking any red-bordered "No" elements...');
         const allRedElements = await page.$$('*[style*="rgb(242, 48, 48)"]');
         for (const element of allRedElements) {
           const elementText = await element.evaluate(el => el.textContent?.toLowerCase() || '');
@@ -2048,7 +2048,7 @@ async function fillSharedGroupDeclarationElements(page: Page, formData: FormData
           });
           
           if (elementText.includes('no') && isClickable) {
-            console.log('🔘 Clicking red-bordered element with "No" text...');
+            debugLog('🔘 Clicking red-bordered element with "No" text...');
             await element.click();
             await smartDelay(page, 500);
             break;
@@ -2086,7 +2086,7 @@ async function fillSharedGroupDeclarationElements(page: Page, formData: FormData
         if (isClickable) {
           const noInput = await redElement.$('input[readonly][value="No"]');
           if (noInput) {
-            console.log('🔘 Attempting to select "No" option for red-bordered field by targeting radio circle...');
+            debugLog('🔘 Attempting to select "No" option for red-bordered field by targeting radio circle...');
             
             // Target the radio circle directly, not the container
             const radioCircleContainer = await redElement.$('div[style*="border-radius: 50%"]');
@@ -2304,7 +2304,7 @@ async function fillGroupTravelDetails(page: Page, formData: FormData): Promise<v
         // Verify we're back on the cards page
         const backOnCardsPage = await page.$('._card_container_7wxik_1') !== null;
         if (backOnCardsPage) {
-          console.log(`🔄 Successfully navigated back to traveler cards page`);
+          productionLog(`🔄 Successfully navigated back to traveler cards page`);
         } else {
           console.log(`⚠️ Not back on cards page after submitting ${cardInfo.travelerType}`);
         }
@@ -2693,7 +2693,7 @@ async function clickNextAfterVisaFill(page: Page): Promise<boolean> {
 
 // Fill travel details fields (Travel Details page)
 async function fillTravelDetails(page: Page, formData: FormData): Promise<void> {
-  console.log('📍 Filling Travel Details page...');
+  productionLog('📍 Filling Travel Details page...');
   
   // Wait for the page to load
   await smartDelay(page, 800);
@@ -2758,7 +2758,7 @@ async function fillTravelDetails(page: Page, formData: FormData): Promise<void> 
 
 // Fill transportation and address fields (Transportation and Address page)
 async function fillTransportationAndAddress(page: Page, formData: FormData): Promise<void> {
-  console.log('📍 Filling Transportation and Address page...');
+  productionLog('📍 Filling Transportation and Address page...');
   
   // Wait for the transportation page to load
   await smartDelay(page, 500);
@@ -2787,7 +2787,7 @@ async function fillTransportationAndAddress(page: Page, formData: FormData): Pro
     purposeSuccess = await safeAllIndonesiaDropdownSelect(page, '#smta_purpose_travel_foreigner', translatedPurpose);
     
     if (!purposeSuccess) {
-      console.log('🔄 Trying with fallback purpose values...');
+      debugLog('🔄 Trying with fallback purpose values...');
       // All official Indonesian purpose options as fallbacks
       const fallbackPurposes = [
         'BISNIS/RAPAT/KONFERENSI/KONVENSI/PAMERAN',
@@ -2811,17 +2811,17 @@ async function fillTransportationAndAddress(page: Page, formData: FormData): Pro
     }
   }
   
-  console.log('🏠 Selecting residence type...');
+  productionLog('🏠 Selecting residence type...');
   await safeAllIndonesiaDropdownSelect(page, '#smta_residence_type_foreigner', formData.residenceType);
   
   // Step 2: Wait for dynamic fields to load based on transport mode
-  console.log('⏳ Waiting for dynamic fields to load...');
+  debugLog('⏳ Waiting for dynamic fields to load...');
   await smartDelay(page, 1000);
   
   // Step 3: Fill mode-specific fields
   // Check English values first, then Indonesian fallback
   if (formData.modeOfTransport === 'AIR' || formData.modeOfTransport === 'UDARA') {
-    console.log('✈️ Filling air transport specific fields...');
+    productionLog('✈️ Filling air transport specific fields...');
     await fillAirTransportFields(page, formData);
   } else if (formData.modeOfTransport === 'SEA' || formData.modeOfTransport === 'LAUT') {
     console.log('🚢 Filling sea transport specific fields...');
@@ -2830,7 +2830,7 @@ async function fillTransportationAndAddress(page: Page, formData: FormData): Pro
   
   // Step 4: Fill Indonesian address section (after transport fields)
   if (formData.addressInIndonesia) {
-    console.log('🏠 Filling Indonesian address section...');
+    productionLog('🏠 Filling Indonesian address section...');
     await fillIndonesianAddress(page, formData);
   }
   
@@ -2839,7 +2839,7 @@ async function fillTransportationAndAddress(page: Page, formData: FormData): Pro
 
 // Fill Indonesian address fields (Alamat di Indonesia section)
 async function fillIndonesianAddress(page: Page, formData: FormData): Promise<void> {
-  console.log('🏠 Filling Indonesian address fields...');
+  productionLog('🏠 Filling Indonesian address fields...');
   
   try {
     // Step 1: Always select "RESIDENTIAL" for residence type using specialized function
@@ -2878,7 +2878,7 @@ async function fillIndonesianAddress(page: Page, formData: FormData): Promise<vo
     }
     
     // Wait longer for city dropdown to populate after province selection
-    console.log('⏳ Waiting for city dropdown to populate...');
+    debugLog('⏳ Waiting for city dropdown to populate...');
     await smartDelay(page, 2000); // Increased wait time for API call
     
     // Step 3: Select city with enhanced logic
@@ -2902,7 +2902,7 @@ async function fillIndonesianAddress(page: Page, formData: FormData): Promise<vo
     
     // Step 4: Fill user's address in textarea (only if address field exists)
     if (formData.addressInIndonesia && addressField) {
-      console.log(`📍 Filling address: ${formData.addressInIndonesia}`);
+      productionLog(`📍 Filling address: ${formData.addressInIndonesia}`);
       const addressSuccess = await safeTextareaInput(page, '#smta_residential_address_foreigner', formData.addressInIndonesia);
       
       if (!addressSuccess) {
@@ -2938,7 +2938,7 @@ async function fillIndonesianAddress(page: Page, formData: FormData): Promise<vo
 
 // Fill air transport specific fields
 async function fillAirTransportFields(page: Page, formData: FormData): Promise<void> {
-  console.log('✈️ Filling air transport specific fields...');
+  productionLog('✈️ Filling air transport specific fields...');
   
   // Place of Arrival (Airport)
   if (formData.placeOfArrival) {
@@ -2954,7 +2954,7 @@ async function fillAirTransportFields(page: Page, formData: FormData): Promise<v
   
   // Flight Name (with loading spinner handling)
   if (formData.flightName) {
-    console.log(`✈️ Selecting flight name: ${formData.flightName}`);
+    productionLog(`✈️ Selecting flight name: ${formData.flightName}`);
     await waitForDropdownReady(page, '#smta_flight_name_foreigner', 3000);
     await safeAllIndonesiaDropdownSelect(page, '#smta_flight_name_foreigner', formData.flightName);
   }
@@ -3179,7 +3179,7 @@ async function selectFirstDropdownOption(page: Page, selector: string): Promise<
 
 // Enhanced city selection with retry logic for virtualized dropdown
 async function selectCityWithRetry(page: Page, selector: string, maxRetries: number = 3): Promise<boolean> {
-  console.log(`🔄 Attempting to select city with retry logic...`);
+  debugLog(`🔄 Attempting to select city with retry logic...`);
   
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     console.log(`  Attempt ${attempt}/${maxRetries}`);
@@ -3253,7 +3253,7 @@ async function selectCityWithRetry(page: Page, selector: string, maxRetries: num
 
 // Specialized function to select "RESIDENTIAL" from residence type dropdown (with virtualized list)
 async function selectResidenceTypeResidential(page: Page): Promise<boolean> {
-  console.log('🏠 Selecting residence type: RESIDENTIAL');
+  productionLog('🏠 Selecting residence type: RESIDENTIAL');
   
   try {
     // Click dropdown to open it
@@ -3330,7 +3330,7 @@ async function selectResidenceTypeResidential(page: Page): Promise<boolean> {
     }
     
     // Method 4: Try Indonesian fallback if English failed
-    console.log('🔄 Trying Indonesian fallback: RUMAH...');
+    debugLog('🔄 Trying Indonesian fallback: RUMAH...');
     const rumahOptionClicked = await page.evaluate(() => {
       const dropdownItems = document.querySelectorAll('._list_dropdown_19t6p_8');
       for (const item of dropdownItems) {
@@ -3461,7 +3461,7 @@ function splitFlightNumber(flightNumber: string): { prefix: string; number: stri
 
 // Helper function for visa/KITAS selection (similar to gender selection)
 async function selectVisaOption(page: Page, selector: string, hasVisa: boolean): Promise<boolean> {
-  console.log(`🔘 Attempting to select visa option "${hasVisa ? 'Yes' : 'No'}" for ${selector}`);
+  productionLog(`🔘 Attempting to select visa option "${hasVisa ? 'Yes' : 'No'}" for ${selector}`);
   
   try {
     // Since site is now in English, use English values
@@ -3769,7 +3769,7 @@ async function safeDropdownSelect(page: Page, selector: string, value: string): 
     // Method 4: Alternative selector approach for arrival date (from test script)
     if (!dropdownOpened && isArrivalDate) {
       try {
-        console.log(`🔄 Method 4: Trying alternative selectors for arrival date...`);
+        debugLog(`🔄 Method 4: Trying alternative selectors for arrival date...`);
         const altSelectors = [
           '#tanggalKedatangan .ant-select-selector',
           '.ant-form-item:has(#tanggalKedatangan) .ant-select', 
@@ -4147,7 +4147,7 @@ async function safeAllIndonesiaDropdownSelect(page: Page, selector: string, valu
 
 // Fallback dropdown selection for cases where search input isn't found
 async function fallbackDropdownSelection(page: Page, selector: string, value: string): Promise<boolean> {
-  console.log(`🔄 Using fallback dropdown selection for ${selector} with value: "${value}"`);
+  debugLog(`🔄 Using fallback dropdown selection for ${selector} with value: "${value}"`);
   
   try {
     // Wait a bit for dropdown options to appear after opening
@@ -4231,7 +4231,7 @@ async function fallbackDropdownSelection(page: Page, selector: string, value: st
         
         // If no match found but we found options, list some for debugging
         if (options.length > 0) {
-          console.log(`  📋 Available options (first 10):`);
+          debugLog(`  📋 Available options (first 10):`);
           for (let i = 0; i < Math.min(options.length, 10); i++) {
             const debugText = await options[i].evaluate(el => {
               const pElement = el.querySelector('p');
@@ -4244,7 +4244,7 @@ async function fallbackDropdownSelection(page: Page, selector: string, value: st
     }
     
     // If we still haven't found the option, try scrolling through a virtualized list
-    console.log('🔄 Attempting virtualized scroll search...');
+    debugLog('🔄 Attempting virtualized scroll search...');
     const virtualizedContainer = await page.$('[data-testid="virtuoso-scroller"]');
     
     if (virtualizedContainer) {
@@ -4339,7 +4339,7 @@ async function selectFromHtmlSelect(page: Page, selector: string, value: string)
 
 // Radio button selection helper for All Indonesia form (custom gender component)
 async function safeRadioSelect(page: Page, selector: string, value: string): Promise<boolean> {
-  console.log(`🔘 Attempting to select gender option "${value}" for ${selector}`);
+  debugLog(`🔘 Attempting to select gender option "${value}" for ${selector}`);
   
   try {
     // For All Indonesia gender selection, it's a custom component with readonly inputs
@@ -4809,7 +4809,7 @@ async function safeDropdownSelectFamily(page: Page, rowIndex: number, value: str
 
 // Helper function to click "Add Traveller" button
 async function clickAddTravellerButton(page: Page, memberIndex: number): Promise<boolean> {
-  console.log(`🔘 Looking for "Add Traveller" button for member ${memberIndex}...`);
+  debugLog(`🔘 Looking for "Add Traveller" button for member ${memberIndex}...`);
   
   try {
     // Multiple strategies to find and click the Add Traveller button
@@ -5556,7 +5556,7 @@ async function detectAndFillMissingFields(page: Page, formData: FormData): Promi
       return false;
     }
     
-    console.log(`📋 Found ${missingFields.length} missing fields:`);
+    productionLog(`📋 Found ${missingFields.length} missing fields:`);
     missingFields.forEach(field => {
       console.log(`   - ${field.label} (${field.fieldId}): "${field.currentValue}" [${field.isDropdown ? 'dropdown' : field.fieldType}]`);
     });
@@ -5578,7 +5578,7 @@ async function detectAndFillMissingFields(page: Page, formData: FormData): Promi
           
         case 'Nama Penerbangan':
         case 'Flight Name':
-          console.log('✈️ Fixing Flight Name field...');
+          debugLog('✈️ Fixing Flight Name field...');
           success = await fillFlightName(page, formData);
           break;
           
@@ -5596,7 +5596,7 @@ async function detectAndFillMissingFields(page: Page, formData: FormData): Promi
           
         case 'Alamat di Indonesia':
         case 'Address in Indonesia':
-          console.log('📍 Fixing Address field...');
+          productionLog('📍 Fixing Address field...');
           if (formData.addressInIndonesia) {
             success = await safeTextareaInput(page, fieldSelector, formData.addressInIndonesia);
           }
@@ -5813,12 +5813,12 @@ async function validateAndFillMissingFields(page: Page, formData: FormData): Pro
 
 // Navigate to Travel Details page with comprehensive validation
 async function navigateToTravelDetailsWithValidation(page: Page, formData: FormData): Promise<boolean> {
-  console.log('🔄 Navigating to Travel Details page with validation...');
+  productionLog('🔄 Navigating to Travel Details page with validation...');
   
   const maxRetries = 3;
   
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    console.log(`📍 Travel Details navigation attempt ${attempt}/${maxRetries}`);
+    productionLog(`📍 Travel Details navigation attempt ${attempt}/${maxRetries}`);
     
     // Check for validation errors before attempting navigation
     const validationErrors = await checkForRedBordersUniversal(page, 'Personal Information');
@@ -5838,7 +5838,7 @@ async function navigateToTravelDetailsWithValidation(page: Page, formData: FormD
       
       // Wait for fixes to take effect
       await smartDelay(page, 1000);
-      console.log('🔄 Retrying navigation after fixing validation errors...');
+      productionLog('🔄 Retrying navigation after fixing validation errors...');
       continue;
     }
     
@@ -6042,7 +6042,7 @@ async function navigateToTransportationAndAddressWithValidation(page: Page, form
   const maxRetries = 3;
   
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    console.log(`📍 Transportation navigation attempt ${attempt}/${maxRetries}`);
+    productionLog(`📍 Transportation navigation attempt ${attempt}/${maxRetries}`);
     
     // Check for validation errors before attempting navigation
     const validationErrors = await checkForRedBordersUniversal(page, 'Travel Details');
@@ -6062,7 +6062,7 @@ async function navigateToTransportationAndAddressWithValidation(page: Page, form
       
       // Wait for fixes to take effect
       await smartDelay(page, 1000);
-      console.log('🔄 Retrying navigation after fixing validation errors...');
+      productionLog('🔄 Retrying navigation after fixing validation errors...');
       continue;
     }
     
@@ -6159,7 +6159,7 @@ async function navigateToConsentPageWithValidation(page: Page, formData: FormDat
   
   while (attempts < maxAttempts) {
     attempts++;
-    console.log(`📍 Navigation attempt ${attempts}/${maxAttempts}`);
+    productionLog(`📍 Navigation attempt ${attempts}/${maxAttempts}`);
     
     // Find and click next/lanjut button
     const buttons = await page.$$('button');
@@ -6235,7 +6235,7 @@ async function navigateToConsentPageWithValidation(page: Page, formData: FormDat
     const validationCheck = await checkForValidationErrors(page);
     
     if (validationCheck.hasErrors) {
-      console.log(`📋 Found validation errors on attempt ${attempts}:`);
+      productionLog(`📋 Found validation errors on attempt ${attempts}:`);
       validationCheck.errorMessages.forEach((msg: string) => console.log(`   - ${msg}`));
       
       // Try to fix the validation errors
@@ -6758,7 +6758,7 @@ async function fillCustomsDeclaration(page: Page, formData: FormData): Promise<b
     }
     
     // Handle main goods declaration
-    console.log(`📋 Setting goods declaration: ${formData.hasGoodsToDeclarate ? 'Yes' : 'No'}`);
+    productionLog(`📋 Setting goods declaration: ${formData.hasGoodsToDeclarate ? 'Yes' : 'No'}`);
     await selectGoodsDeclarationOption(page, formData.hasGoodsToDeclarate || false);
     
     // Handle technology devices declaration
@@ -6834,7 +6834,7 @@ async function fillBaggageCount(page: Page, baggageCount: string): Promise<void>
 
 // Main Declaration Page Function
 async function fillDeclarationPage(page: Page, formData: FormData): Promise<boolean> {
-  console.log('📋 Starting Declaration Page automation...');
+  productionLog('📋 Starting Declaration Page automation...');
   
   try {
     // Check if this is a group declaration page
@@ -6945,7 +6945,7 @@ async function submitDeclarationForm(page: Page): Promise<boolean> {
         }
         
         if (successAttempt < 3) {
-          console.log(`⏳ Success page not detected yet, waiting before next attempt...`);
+          debugLog(`⏳ Success page not detected yet, waiting before next attempt...`);
           await smartDelay(page, 3000); // Wait 3 seconds between attempts
         }
       }
@@ -7068,7 +7068,7 @@ async function handleSubmissionConfirmationPopup(page: Page): Promise<boolean> {
           await button.click();
           
           // Longer wait for form submission to process
-          console.log('⏳ Waiting for form submission to process...');
+          debugLog('⏳ Waiting for form submission to process...');
           await smartDelay(page, 3000);
           submitButtonClicked = true;
           break;
@@ -7139,7 +7139,7 @@ async function handleSubmissionConfirmationPopup(page: Page): Promise<boolean> {
     }
     
     // Wait for popup to close using specific modal structure
-    console.log('⏳ Waiting for confirmation popup to close...');
+    debugLog('⏳ Waiting for confirmation popup to close...');
     try {
       await page.waitForFunction(
         () => {
@@ -7158,7 +7158,7 @@ async function handleSubmissionConfirmationPopup(page: Page): Promise<boolean> {
     }
     
     // Additional wait for any page transitions after popup closes
-    console.log('⏳ Waiting for page transition after confirmation...');
+    debugLog('⏳ Waiting for page transition after confirmation...');
     await smartDelay(page, 1000);
     
     return true;
@@ -7231,7 +7231,7 @@ async function checkForSuccessPage(page: Page): Promise<boolean> {
     
     // Enhanced logging for debugging
     console.log(`📊 Success page indicators found: ${pageInfo.foundCount}/8`);
-    console.log(`🌐 Current URL: ${pageInfo.url}`);
+    debugLog(`🌐 Current URL: ${pageInfo.url}`);
     console.log(`📄 Page title: ${pageInfo.title}`);
     console.log(`🔍 Indicators: ${JSON.stringify(pageInfo.indicators, null, 2)}`);
     
@@ -8053,7 +8053,7 @@ async function validateAllFormFields(page: Page, formData: FormData): Promise<{
   allFieldsValid: boolean;
   invalidFields: Array<{field: string, selector: string, issue: string, expected?: unknown, actual?: unknown}>;
 }> {
-  console.log('📋 Validating All Indonesia form fields...');
+  productionLog('📋 Validating All Indonesia form fields...');
   
   const validation = await page.evaluate((expectedData) => {
     const result = {
@@ -8372,7 +8372,7 @@ async function handleGroupQRCodeAccess(page: Page): Promise<boolean> {
     console.log('✅ Clicked View QR Code for lead traveler');
     
     // Wait for navigation to the actual QR code page
-    console.log('⏳ Waiting for navigation to QR code page...');
+    debugLog('⏳ Waiting for navigation to QR code page...');
     await smartDelay(page, 2000);
     
     // Verify we've navigated to the QR code page
@@ -8578,7 +8578,7 @@ async function extractQRCode(page: Page): Promise<Record<string, unknown>> {
     }
     
     console.log('✅ Successfully extracted QR code data');
-    console.log(`📋 Arrival Card Number: ${qrCodeData.arrivalCardNumber}`);
+    productionLog(`📋 Arrival Card Number: ${qrCodeData.arrivalCardNumber}`);
     console.log(`👤 Passenger: ${qrCodeData.passengerName}`);
     console.log(`📄 Passport: ${qrCodeData.passportNumber}`);
     console.log(`📅 Arrival: ${qrCodeData.arrivalDate}`);

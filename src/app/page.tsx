@@ -26,12 +26,12 @@ export default function Home() {
   }, []);
 
   const handleLanguageChange = (newLanguage: Language) => {
-    trackLanguageChange(newLanguage, language);
+    // trackLanguageChange(newLanguage, language);
     setLanguage(newLanguage);
   };
 
   const handleStartFormClick = (location: string) => {
-    trackButtonClick('Start Form', location);
+    // trackButtonClick('Start Form', location);
     trackUserJourney('Form Start Clicked', 2);
   };
 
@@ -40,7 +40,7 @@ export default function Home() {
     if (stored) {
       setStoredQRData(stored);
       setShowQRModal(true);
-      trackButtonClick('View Stored QR', 'Homepage');
+      // trackButtonClick('View Stored QR', 'Homepage');
     }
   };
 

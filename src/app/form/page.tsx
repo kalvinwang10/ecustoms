@@ -23,7 +23,7 @@ import { trackFormSubmission } from '@/lib/gtag';
 import { 
   trackFormStart, 
   trackFormFieldUpdate, 
-  trackFormValidationError, 
+        // trackFormValidationError, 
   trackFormSubmission as trackMixpanelFormSubmission,
   trackButtonClick,
   trackLanguageChange,
@@ -909,7 +909,7 @@ export default function FormPage() {
 
   // Handle language changes
   const handleLanguageChange = (newLanguage: Language) => {
-    trackLanguageChange(newLanguage, language);
+    // trackLanguageChange(newLanguage, language);
     setLanguage(newLanguage);
   };
 
@@ -918,7 +918,7 @@ export default function FormPage() {
     if (stored) {
       setStoredQRData(stored);
       setShowQRModal(true);
-      trackButtonClick('View Stored QR', 'Form Page');
+      // trackButtonClick('View Stored QR', 'Form Page');
     }
   };
 
@@ -936,7 +936,7 @@ export default function FormPage() {
     
     // Track field update in Mixpanel (only for simple values, not arrays)
     if (typeof value !== 'object') {
-      trackFormFieldUpdate(field, typeof value === 'string' ? value : value?.toString() || '');
+      // trackFormFieldUpdate(field, typeof value === 'string' ? value : value?.toString() || '');
     }
     
     if (errors[field]) {
@@ -948,7 +948,7 @@ export default function FormPage() {
     if (validateCurrentStep()) {
       if (formData.currentStep < 5) {
         updateFormData('currentStep', formData.currentStep + 1);
-        trackUserJourney(`Step ${formData.currentStep + 1} Started`, formData.currentStep + 1);
+        // trackUserJourney(`Step ${formData.currentStep + 1} Started`, formData.currentStep + 1);
       }
     }
   };
@@ -966,7 +966,7 @@ export default function FormPage() {
       // Step 1: Citizenship Type Selection validation
       if (!formData.citizenshipType) {
         newErrors.citizenshipType = getTranslation('citizenshipTypeRequired', language);
-        trackFormValidationError('citizenshipType', 'Citizenship type not selected');
+        // trackFormValidationError('citizenshipType', 'Citizenship type not selected');
       }
     } else if (formData.currentStep === 2) {
       // Step 2: Personal Information validation
@@ -975,28 +975,28 @@ export default function FormPage() {
       if (!formData.passportNumber.trim()) {
         const errorMsg = getTranslation('passportNumberRequired', language);
         newErrors.passportNumber = errorMsg;
-        trackFormValidationError('passportNumber', errorMsg);
+        // trackFormValidationError('passportNumber', errorMsg);
       }
       
       // Full Passport Name
       if (!formData.fullPassportName.trim()) {
         const errorMsg = getTranslation('fullPassportNameRequired', language);
         newErrors.fullPassportName = errorMsg;
-        trackFormValidationError('fullPassportName', errorMsg);
+        // trackFormValidationError('fullPassportName', errorMsg);
       }
       
       // Nationality/Country/Region
       if (!formData.nationality) {
         const errorMsg = getTranslation('nationalityRequired', language);
         newErrors.nationality = errorMsg;
-        trackFormValidationError('nationality', errorMsg);
+        // trackFormValidationError('nationality', errorMsg);
       }
       
       // Date of Birth
       if (!formData.dateOfBirth.trim()) {
         const errorMsg = getTranslation('dateOfBirthRequired', language);
         newErrors.dateOfBirth = errorMsg;
-        trackFormValidationError('dateOfBirth', errorMsg);
+        // trackFormValidationError('dateOfBirth', errorMsg);
       } else {
         // Validate date of birth
         const [year, month, day] = formData.dateOfBirth.split('-');
@@ -1017,11 +1017,11 @@ export default function FormPage() {
           if (!isValidCalendarDate) {
             const errorMsg = getTranslation('dateOfBirthInvalid', language);
             newErrors.dateOfBirth = errorMsg;
-            trackFormValidationError('dateOfBirth', errorMsg);
+        // trackFormValidationError('dateOfBirth', errorMsg);
           } else if (!isNotFuture) {
             const errorMsg = getTranslation('dateOfBirthFuture', language);
             newErrors.dateOfBirth = errorMsg;
-            trackFormValidationError('dateOfBirth', errorMsg);
+        // trackFormValidationError('dateOfBirth', errorMsg);
           }
         }
       }
@@ -1030,21 +1030,21 @@ export default function FormPage() {
       if (!formData.countryOfBirth) {
         const errorMsg = getTranslation('countryOfBirthRequired', language);
         newErrors.countryOfBirth = errorMsg;
-        trackFormValidationError('countryOfBirth', errorMsg);
+        // trackFormValidationError('countryOfBirth', errorMsg);
       }
       
       // Gender
       if (!formData.gender) {
         const errorMsg = getTranslation('genderRequired', language);
         newErrors.gender = errorMsg;
-        trackFormValidationError('gender', errorMsg);
+        // trackFormValidationError('gender', errorMsg);
       }
       
       // Passport Expiry Date
       if (!formData.passportExpiryDate.trim()) {
         const errorMsg = getTranslation('passportExpiryDateRequired', language);
         newErrors.passportExpiryDate = errorMsg;
-        trackFormValidationError('passportExpiryDate', errorMsg);
+        // trackFormValidationError('passportExpiryDate', errorMsg);
       } else {
         // Validate passport expiry date
         const [year, month, day] = formData.passportExpiryDate.split('-');
@@ -1065,11 +1065,11 @@ export default function FormPage() {
           if (!isValidCalendarDate) {
             const errorMsg = getTranslation('passportExpiryDateInvalid', language);
             newErrors.passportExpiryDate = errorMsg;
-            trackFormValidationError('passportExpiryDate', errorMsg);
+        // trackFormValidationError('passportExpiryDate', errorMsg);
           } else if (!isFuture) {
             const errorMsg = getTranslation('passportExpiryDatePast', language);
             newErrors.passportExpiryDate = errorMsg;
-            trackFormValidationError('passportExpiryDate', errorMsg);
+        // trackFormValidationError('passportExpiryDate', errorMsg);
           }
         }
       }
@@ -1078,18 +1078,18 @@ export default function FormPage() {
       if (!formData.mobileNumber.trim()) {
         const errorMsg = getTranslation('mobileNumberRequired', language);
         newErrors.mobileNumber = errorMsg;
-        trackFormValidationError('mobileNumber', errorMsg);
+        // trackFormValidationError('mobileNumber', errorMsg);
       } else {
         // Extract phone number part (without country code)
         const phoneNumber = formData.mobileNumber.split(' ').slice(1).join(' ');
         if (!phoneNumber.trim()) {
           const errorMsg = getTranslation('mobileNumberRequired', language);
           newErrors.mobileNumber = errorMsg;
-          trackFormValidationError('mobileNumber', errorMsg);
+        // trackFormValidationError('mobileNumber', errorMsg);
         } else if (!/^\d+$/.test(phoneNumber.replace(/\s/g, ''))) {
           const errorMsg = getTranslation('mobileNumberInvalid', language);
           newErrors.mobileNumber = errorMsg;
-          trackFormValidationError('mobileNumber', errorMsg);
+        // trackFormValidationError('mobileNumber', errorMsg);
         }
       }
       
@@ -1097,14 +1097,14 @@ export default function FormPage() {
       if (!formData.email.trim()) {
         const errorMsg = getTranslation('emailRequired', language);
         newErrors.email = errorMsg;
-        trackFormValidationError('email', errorMsg);
+        // trackFormValidationError('email', errorMsg);
       } else {
         // Basic email validation
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(formData.email)) {
           const errorMsg = getTranslation('emailInvalid', language);
           newErrors.email = errorMsg;
-          trackFormValidationError('email', errorMsg);
+        // trackFormValidationError('email', errorMsg);
         }
       }
       
@@ -1116,62 +1116,62 @@ export default function FormPage() {
         if (!traveller.passportNumber.trim()) {
           const errorMsg = getTranslation('passportNumberRequired', language);
           newErrors[`${prefix}passportNumber`] = errorMsg;
-          trackFormValidationError(`traveller${index+2}-passportNumber`, errorMsg);
+        // trackFormValidationError(`traveller${index+2}-passportNumber`, errorMsg);
         }
         
         // Full Passport Name
         if (!traveller.fullPassportName.trim()) {
           const errorMsg = getTranslation('fullPassportNameRequired', language);
           newErrors[`${prefix}fullPassportName`] = errorMsg;
-          trackFormValidationError(`traveller${index+2}-fullPassportName`, errorMsg);
+        // trackFormValidationError(`traveller${index+2}-fullPassportName`, errorMsg);
         }
         
         // Nationality
         if (!traveller.nationality) {
           const errorMsg = getTranslation('nationalityRequired', language);
           newErrors[`${prefix}nationality`] = errorMsg;
-          trackFormValidationError(`traveller${index+2}-nationality`, errorMsg);
+        // trackFormValidationError(`traveller${index+2}-nationality`, errorMsg);
         }
         
         // Date of Birth
         if (!traveller.dateOfBirth.trim()) {
           const errorMsg = getTranslation('dateOfBirthRequired', language);
           newErrors[`${prefix}dateOfBirth`] = errorMsg;
-          trackFormValidationError(`traveller${index+2}-dateOfBirth`, errorMsg);
+        // trackFormValidationError(`traveller${index+2}-dateOfBirth`, errorMsg);
         }
         
         // Country of Birth
         if (!traveller.countryOfBirth) {
           const errorMsg = getTranslation('countryOfBirthRequired', language);
           newErrors[`${prefix}countryOfBirth`] = errorMsg;
-          trackFormValidationError(`traveller${index+2}-countryOfBirth`, errorMsg);
+        // trackFormValidationError(`traveller${index+2}-countryOfBirth`, errorMsg);
         }
         
         // Gender
         if (!traveller.gender) {
           const errorMsg = getTranslation('genderRequired', language);
           newErrors[`${prefix}gender`] = errorMsg;
-          trackFormValidationError(`traveller${index+2}-gender`, errorMsg);
+        // trackFormValidationError(`traveller${index+2}-gender`, errorMsg);
         }
         
         // Passport Expiry Date
         if (!traveller.passportExpiryDate.trim()) {
           const errorMsg = getTranslation('passportExpiryDateRequired', language);
           newErrors[`${prefix}passportExpiryDate`] = errorMsg;
-          trackFormValidationError(`traveller${index+2}-passportExpiryDate`, errorMsg);
+        // trackFormValidationError(`traveller${index+2}-passportExpiryDate`, errorMsg);
         }
         
         // Mobile Number
         if (!traveller.mobileNumber.trim()) {
           const errorMsg = getTranslation('mobileNumberRequired', language);
           newErrors[`${prefix}mobileNumber`] = errorMsg;
-          trackFormValidationError(`traveller${index+2}-mobileNumber`, errorMsg);
+        // trackFormValidationError(`traveller${index+2}-mobileNumber`, errorMsg);
         } else {
           const phoneNumber = traveller.mobileNumber.split(' ').slice(1).join(' ');
           if (!phoneNumber.trim()) {
             const errorMsg = getTranslation('mobileNumberRequired', language);
             newErrors[`${prefix}mobileNumber`] = errorMsg;
-            trackFormValidationError(`traveller${index+2}-mobileNumber`, errorMsg);
+        // trackFormValidationError(`traveller${index+2}-mobileNumber`, errorMsg);
           }
         }
         
@@ -1179,13 +1179,13 @@ export default function FormPage() {
         if (!traveller.email.trim()) {
           const errorMsg = getTranslation('emailRequired', language);
           newErrors[`${prefix}email`] = errorMsg;
-          trackFormValidationError(`traveller${index+2}-email`, errorMsg);
+        // trackFormValidationError(`traveller${index+2}-email`, errorMsg);
         } else {
           const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
           if (!emailRegex.test(traveller.email)) {
             const errorMsg = getTranslation('emailInvalid', language);
             newErrors[`${prefix}email`] = errorMsg;
-            trackFormValidationError(`traveller${index+2}-email`, errorMsg);
+        // trackFormValidationError(`traveller${index+2}-email`, errorMsg);
           }
         }
       });
@@ -1200,7 +1200,7 @@ export default function FormPage() {
       if (!formData.arrivalDate.trim()) {
         const errorMsg = getTranslation('arrivalDateRequired', language);
         newErrors.arrivalDate = errorMsg;
-        trackFormValidationError('arrivalDate', errorMsg);
+        // trackFormValidationError('arrivalDate', errorMsg);
       }
       
       // Departure Date (only required for foreign citizens)
@@ -1208,7 +1208,7 @@ export default function FormPage() {
         if (!formData.departureDate.trim()) {
           const errorMsg = getTranslation('departureDateRequired', language);
           newErrors.departureDate = errorMsg;
-          trackFormValidationError('departureDate', errorMsg);
+        // trackFormValidationError('departureDate', errorMsg);
         } else if (formData.arrivalDate.trim()) {
           // Validate departure is on or after arrival (allow same-day transit)
           const arrivalDate = new Date(formData.arrivalDate);
@@ -1217,7 +1217,7 @@ export default function FormPage() {
           if (departureDate < arrivalDate) {
             const errorMsg = getTranslation('departureDateMustBeAfterArrival', language);
             newErrors.departureDate = errorMsg;
-            trackFormValidationError('departureDate', errorMsg);
+        // trackFormValidationError('departureDate', errorMsg);
           }
         }
         
@@ -1225,14 +1225,14 @@ export default function FormPage() {
         if (formData.hasVisaOrKitas === null) {
           const errorMsg = getTranslation('visaOrKitasRequired', language);
           newErrors.hasVisaOrKitas = errorMsg;
-          trackFormValidationError('hasVisaOrKitas', errorMsg);
+        // trackFormValidationError('hasVisaOrKitas', errorMsg);
         }
         
         // Visa/KITAS Number (if Yes is selected by foreign citizens)
         if (formData.hasVisaOrKitas === true && !formData.visaOrKitasNumber.trim()) {
           const errorMsg = getTranslation('visaOrKitasNumberRequired', language);
           newErrors.visaOrKitasNumber = errorMsg;
-          trackFormValidationError('visaOrKitasNumber', errorMsg);
+        // trackFormValidationError('visaOrKitasNumber', errorMsg);
         }
 
         // Family Members Visa Validation (only for foreign citizens with family members)
@@ -1244,14 +1244,14 @@ export default function FormPage() {
             if ('hasVisaOrKitas' in member && member.hasVisaOrKitas === null) {
               const errorMsg = getTranslation('visaOrKitasRequired', language);
               newErrors[`${memberPrefix}-hasVisaOrKitas`] = errorMsg;
-              trackFormValidationError(`${memberPrefix}-hasVisaOrKitas`, errorMsg);
+        // trackFormValidationError(`${memberPrefix}-hasVisaOrKitas`, errorMsg);
             }
             
             // Visa/KITAS Number for family member (if Yes is selected)
             if ('hasVisaOrKitas' in member && 'visaOrKitasNumber' in member && member.hasVisaOrKitas === true && !(member.visaOrKitasNumber as string).trim()) {
               const errorMsg = getTranslation('visaOrKitasNumberRequired', language);
               newErrors[`${memberPrefix}-visaOrKitasNumber`] = errorMsg;
-              trackFormValidationError(`${memberPrefix}-visaOrKitasNumber`, errorMsg);
+        // trackFormValidationError(`${memberPrefix}-visaOrKitasNumber`, errorMsg);
             }
           });
         }
@@ -1263,14 +1263,14 @@ export default function FormPage() {
       if (!formData.modeOfTransport.trim()) {
         const errorMsg = getTranslation('modeOfTransportRequired', language);
         newErrors.modeOfTransport = errorMsg;
-        trackFormValidationError('modeOfTransport', errorMsg);
+        // trackFormValidationError('modeOfTransport', errorMsg);
       }
       
       // Purpose of Travel
       if (!formData.purposeOfTravel.trim()) {
         const errorMsg = getTranslation('purposeOfTravelRequired', language);
         newErrors.purposeOfTravel = errorMsg;
-        trackFormValidationError('purposeOfTravel', errorMsg);
+        // trackFormValidationError('purposeOfTravel', errorMsg);
       }
       
       // Conditional Air Transport validation
@@ -1279,28 +1279,28 @@ export default function FormPage() {
         if (!formData.placeOfArrival.trim()) {
           const errorMsg = getTranslation('placeOfArrivalRequired', language);
           newErrors.placeOfArrival = errorMsg;
-          trackFormValidationError('placeOfArrival', errorMsg);
+        // trackFormValidationError('placeOfArrival', errorMsg);
         }
         
         // Type of Air Transport
         if (!formData.typeOfAirTransport.trim()) {
           const errorMsg = getTranslation('typeOfAirTransportRequired', language);
           newErrors.typeOfAirTransport = errorMsg;
-          trackFormValidationError('typeOfAirTransport', errorMsg);
+        // trackFormValidationError('typeOfAirTransport', errorMsg);
         }
         
         // Flight Name
         if (!formData.flightName.trim()) {
           const errorMsg = getTranslation('flightNameRequired', language);
           newErrors.flightName = errorMsg;
-          trackFormValidationError('flightName', errorMsg);
+        // trackFormValidationError('flightName', errorMsg);
         }
         
         // Flight Number
         if (!formData.flightNumber.trim()) {
           const errorMsg = getTranslation('flightNumberRequired', language);
           newErrors.flightNumber = errorMsg;
-          trackFormValidationError('flightNumber', errorMsg);
+        // trackFormValidationError('flightNumber', errorMsg);
         }
       }
       
@@ -1310,21 +1310,21 @@ export default function FormPage() {
         if (!formData.placeOfArrival.trim()) {
           const errorMsg = getTranslation('placeOfArrivalRequired', language);
           newErrors.placeOfArrival = errorMsg;
-          trackFormValidationError('placeOfArrival', errorMsg);
+        // trackFormValidationError('placeOfArrival', errorMsg);
         }
         
         // Type of Vessel
         if (!formData.typeOfVessel.trim()) {
           const errorMsg = getTranslation('typeOfVesselRequired', language);
           newErrors.typeOfVessel = errorMsg;
-          trackFormValidationError('typeOfVessel', errorMsg);
+        // trackFormValidationError('typeOfVessel', errorMsg);
         }
         
         // Vessel Name
         if (!formData.vesselName.trim()) {
           const errorMsg = getTranslation('vesselNameRequired', language);
           newErrors.vesselName = errorMsg;
-          trackFormValidationError('vesselName', errorMsg);
+        // trackFormValidationError('vesselName', errorMsg);
         }
       }
       
@@ -1332,7 +1332,7 @@ export default function FormPage() {
       if (!formData.addressInIndonesia.trim()) {
         const errorMsg = getTranslation('addressInIndonesiaRequired', language);
         newErrors.addressInIndonesia = errorMsg;
-        trackFormValidationError('addressInIndonesia', errorMsg);
+        // trackFormValidationError('addressInIndonesia', errorMsg);
       }
     } else if (formData.currentStep === 5) {
       // Step 5: Declaration validation
@@ -1341,35 +1341,35 @@ export default function FormPage() {
       if (formData.hasSymptoms === null || formData.hasSymptoms === undefined) {
         const errorMsg = 'Please answer the health symptoms question';
         newErrors.hasSymptoms = errorMsg;
-        trackFormValidationError('hasSymptoms', errorMsg);
+        // trackFormValidationError('hasSymptoms', errorMsg);
       }
       
       // Countries Visited (Required)
       if (!formData.countriesVisited || formData.countriesVisited.length === 0) {
         const errorMsg = 'Please select at least one country of origin, departure, transit or other countries visited within 21 days';
         newErrors.countriesVisited = errorMsg;
-        trackFormValidationError('countriesVisited', errorMsg);
+        // trackFormValidationError('countriesVisited', errorMsg);
       }
       
       // Quarantine Declaration
       if (formData.hasQuarantineItems === null || formData.hasQuarantineItems === undefined) {
         const errorMsg = 'Please answer the quarantine items question';
         newErrors.hasQuarantineItems = errorMsg;
-        trackFormValidationError('hasQuarantineItems', errorMsg);
+        // trackFormValidationError('hasQuarantineItems', errorMsg);
       }
       
       // Customs Declaration
       if (formData.hasGoodsToDeclarate === null || formData.hasGoodsToDeclarate === undefined) {
         const errorMsg = getTranslation('goodsDeclarationRequired', language);
         newErrors.hasGoodsToDeclarate = errorMsg;
-        trackFormValidationError('hasGoodsToDeclarate', errorMsg);
+        // trackFormValidationError('hasGoodsToDeclarate', errorMsg);
       }
       
       // If declaring goods, validate at least one item is added
       if (formData.hasGoodsToDeclarate && formData.declaredGoods.length === 0) {
         const errorMsg = getTranslation('declaredGoodsRequired', language);
         newErrors.declaredGoods = errorMsg;
-        trackFormValidationError('declaredGoods', errorMsg);
+        // trackFormValidationError('declaredGoods', errorMsg);
       }
       
       // Validate each declared good
@@ -1378,33 +1378,33 @@ export default function FormPage() {
           if (!good.description.trim()) {
             const errorMsg = getTranslation('goodDescriptionRequired', language);
             newErrors[`good-${good.id}-description`] = errorMsg;
-            trackFormValidationError(`good-${good.id}-description`, errorMsg);
+        // trackFormValidationError(`good-${good.id}-description`, errorMsg);
           }
           
           if (!good.quantity.trim()) {
             const errorMsg = getTranslation('quantityRequired', language);
             newErrors[`good-${good.id}-quantity`] = errorMsg;
-            trackFormValidationError(`good-${good.id}-quantity`, errorMsg);
+        // trackFormValidationError(`good-${good.id}-quantity`, errorMsg);
           } else if (parseInt(good.quantity) <= 0) {
             const errorMsg = getTranslation('quantityInvalid', language);
             newErrors[`good-${good.id}-quantity`] = errorMsg;
-            trackFormValidationError(`good-${good.id}-quantity`, errorMsg);
+        // trackFormValidationError(`good-${good.id}-quantity`, errorMsg);
           }
           
           if (!good.value.trim()) {
             const errorMsg = getTranslation('valueRequired', language);
             newErrors[`good-${good.id}-value`] = errorMsg;
-            trackFormValidationError(`good-${good.id}-value`, errorMsg);
+        // trackFormValidationError(`good-${good.id}-value`, errorMsg);
           } else if (parseFloat(good.value) <= 0) {
             const errorMsg = getTranslation('valueInvalid', language);
             newErrors[`good-${good.id}-value`] = errorMsg;
-            trackFormValidationError(`good-${good.id}-value`, errorMsg);
+        // trackFormValidationError(`good-${good.id}-value`, errorMsg);
           }
           
           if (!good.currency) {
             const errorMsg = getTranslation('currencyRequired', language);
             newErrors[`good-${good.id}-currency`] = errorMsg;
-            trackFormValidationError(`good-${good.id}-currency`, errorMsg);
+        // trackFormValidationError(`good-${good.id}-currency`, errorMsg);
           }
         });
       }
@@ -1413,25 +1413,25 @@ export default function FormPage() {
       if (formData.hasTechnologyDevices === null || formData.hasTechnologyDevices === undefined) {
         const errorMsg = getTranslation('technologyDevicesRequired', language);
         newErrors.hasTechnologyDevices = errorMsg;
-        trackFormValidationError('hasTechnologyDevices', errorMsg);
+        // trackFormValidationError('hasTechnologyDevices', errorMsg);
       }
       
       // Baggage Count
       if (!formData.baggageCount || formData.baggageCount === '') {
         const errorMsg = 'Please enter the number of baggage';
         newErrors.baggageCount = errorMsg;
-        trackFormValidationError('baggageCount', errorMsg);
+        // trackFormValidationError('baggageCount', errorMsg);
       } else if (parseInt(formData.baggageCount) < 0) {
         const errorMsg = 'Baggage count cannot be negative';
         newErrors.baggageCount = errorMsg;
-        trackFormValidationError('baggageCount', errorMsg);
+        // trackFormValidationError('baggageCount', errorMsg);
       }
       
       // Final Consent
       if (!formData.consentAccurate) {
         const errorMsg = getTranslation('consentRequired', language);
         newErrors.consentAccurate = errorMsg;
-        trackFormValidationError('consentAccurate', errorMsg);
+        // trackFormValidationError('consentAccurate', errorMsg);
       }
     }
 
@@ -1440,7 +1440,7 @@ export default function FormPage() {
   };
 
   const handleSubmit = async () => {
-    trackButtonClick('Continue to E-Customs', 'Form Page');
+    // trackButtonClick('Continue to E-Customs', 'Form Page');
     trackUserJourney('Form Submit Attempted', 4);
     
     if (validateCurrentStep()) {
@@ -1493,16 +1493,34 @@ export default function FormPage() {
           );
           
           // Track error for form validation (backwards compatibility)
-          trackFormValidationError('submission', result.error?.message || 'Unknown error');
+        // trackFormValidationError('submission', result.error?.message || 'Unknown error');
+          
+          // Determine appropriate message based on error code
+          let redirectMessage = 'Automation failed. Redirecting to official customs website...';
+          if (result.error?.code === 'MANUAL_SUBMISSION_REQUIRED') {
+            // More specific message for manual submission cases
+            if (result.error?.message?.includes('health symptoms')) {
+              redirectMessage = 'Due to reported health symptoms, manual submission is required. Redirecting to official customs website...';
+            } else if (result.error?.message?.includes('quarantine items')) {
+              redirectMessage = 'Due to quarantine items declaration, manual submission is required. Redirecting to official customs website...';
+            } else if (result.error?.message?.includes('goods to declare')) {
+              redirectMessage = 'Due to goods declaration, manual submission is required. Redirecting to official customs website...';
+            } else if (result.error?.message?.includes('government flight')) {
+              redirectMessage = 'Government flights require manual submission. Redirecting to official customs website...';
+            }
+          }
           
           // Show brief notification before redirecting
           setErrors({
-            submission: 'Automation failed. Redirecting to official customs website...'
+            submission: redirectMessage
           });
+          
+          // Use fallback URL if provided, otherwise use default
+          const redirectUrl = result.fallbackUrl || 'https://allindonesia.imigrasi.go.id/';
           
           // Auto-redirect to official customs website after brief delay
           setTimeout(() => {
-            window.location.href = 'https://allindonesia.imigrasi.go.id/';
+            window.location.href = redirectUrl;
           }, 2000);
         }
       } catch (error) {
@@ -1523,7 +1541,7 @@ export default function FormPage() {
         });
         
         // Track error for form validation (backwards compatibility)
-        trackFormValidationError('submission', 'Network error');
+        // trackFormValidationError('submission', 'Network error');
         
         // Auto-redirect to official customs website after brief delay
         setTimeout(() => {
