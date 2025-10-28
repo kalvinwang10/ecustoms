@@ -1,0 +1,10 @@
+{
+  "environment": "development",
+  "timestamp": "2025-10-28T00:14:00.000Z",
+  "recommendations": {
+    "vercel": "@sparticuz/chromium",
+    "lambda": "chrome-aws-lambda",
+    "production": "system-chromium",
+    "development": "puppeteer-bundled"
+  }
+}

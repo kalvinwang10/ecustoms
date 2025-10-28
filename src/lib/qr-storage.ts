@@ -9,7 +9,8 @@ export interface StoredQRData {
     portInfo?: string;
     customsOffice?: string;
   };
-  paymentStatus: 'completed';
+  // PAYMENT STEP TEMPORARILY DISABLED - allowing QR storage without payment
+  paymentStatus?: 'completed'; // Made optional for direct QR display
   timestamp: number;
   expiresAt: number;
 }
@@ -33,7 +34,8 @@ export function saveCompletedQR(qrData: {
     
     const storedData: StoredQRData = {
       ...qrData,
-      paymentStatus: 'completed',
+      // PAYMENT STEP TEMPORARILY DISABLED - skip payment status requirement
+      // paymentStatus: 'completed', // Commented out for direct QR display
       timestamp: now,
       expiresAt
     };

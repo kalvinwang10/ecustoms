@@ -4,58 +4,117 @@ import { SubmitCustomsRequest, SubmitCustomsResponse, SubmitCustomsError } from 
 import { automateCustomsSubmission as runAutomation } from '@/lib/customs-automation';
 import { logger, ErrorCode } from '@/lib/logger';
 
-// Validation functions
-function validateFormData(formData: unknown): formData is FormData {
+// Validation functions with detailed error reporting
+function validateFormData(formData: unknown): { valid: boolean; missingFields?: string[] } {
   if (!formData || typeof formData !== 'object') {
-    return false;
+    return { valid: false, missingFields: ['formData object'] };
   }
 
   // Cast to record for field access
   const data = formData as Record<string, unknown>;
+  const missingFields: string[] = [];
 
-  // Check required fields
+  // Check required fields for All Indonesia form
   const requiredFields = [
     'passportNumber',
-    'portOfArrival', 
-    'arrivalDate',
     'fullPassportName',
-    'dateOfBirth',
-    'flightVesselNumber',
     'nationality',
+    'dateOfBirth',
+    'countryOfBirth',
+    'gender',
+    'passportExpiryDate',
+    'mobileNumber',
+    'email',
+    'arrivalDate',
+    'departureDate',
+    'modeOfTransport',
+    'purposeOfTravel',
     'addressInIndonesia',
-    'numberOfLuggage'
+    'placeOfArrival',
+    'baggageCount'
   ];
 
   for (const field of requiredFields) {
-    if (!data[field] || data[field]?.toString().trim() === '') {
-      return false;
+    // Special handling for gender which can be null but must be present
+    if (field === 'gender') {
+      if (!('gender' in data)) {
+        missingFields.push(field);
+      }
+    } else if (!data[field] || data[field]?.toString().trim() === '') {
+      missingFields.push(field);
+    }
+  }
+  
+  // Check conditional fields based on transport mode
+  if (data.modeOfTransport === 'AIR') {
+    if (!data.flightName || !data.flightName.toString().trim()) {
+      missingFields.push('flightName');
+    }
+    if (!data.flightNumber || !data.flightNumber.toString().trim()) {
+      missingFields.push('flightNumber');
+    }
+  } else if (data.modeOfTransport === 'SEA') {
+    if (!data.vesselName || !data.vesselName.toString().trim()) {
+      missingFields.push('vesselName');
+    }
+    if (!data.typeOfVessel || !data.typeOfVessel.toString().trim()) {
+      missingFields.push('typeOfVessel');
     }
   }
 
   // Validate customs declaration fields
   if (data.hasGoodsToDeclarate === null || data.hasGoodsToDeclarate === undefined) {
-    return false;
+    missingFields.push('hasGoodsToDeclarate');
   }
 
   if (data.hasTechnologyDevices === null || data.hasTechnologyDevices === undefined) {
-    return false;
+    missingFields.push('hasTechnologyDevices');
   }
 
   if (!data.consentAccurate) {
-    return false;
+    missingFields.push('consentAccurate');
+  }
+
+  // Validate countries visited (required for health declaration)
+  if (!Array.isArray(data.countriesVisited) || data.countriesVisited.length === 0) {
+    missingFields.push('countriesVisited');
   }
 
   // Validate family members array structure
   if (!Array.isArray(data.familyMembers)) {
-    return false;
+    missingFields.push('familyMembers (must be array)');
   }
 
   // If declaring goods, validate goods array
   if (data.hasGoodsToDeclarate && !Array.isArray(data.declaredGoods)) {
-    return false;
+    missingFields.push('declaredGoods (must be array when hasGoodsToDeclarate is true)');
   }
 
-  return true;
+  return { valid: missingFields.length === 0, missingFields };
+}
+
+function shouldRedirectToManualSubmission(formData: FormData): { shouldRedirect: boolean; reason?: string } {
+  // Check for government flight
+  if (formData.typeOfAirTransport === 'GOVERNMENT FLIGHT') {
+    return { shouldRedirect: true, reason: 'Government flight selected' };
+  }
+  
+  // Check for goods to declare
+  if (formData.hasGoodsToDeclarate === true) {
+    return { shouldRedirect: true, reason: 'Has goods to declare' };
+  }
+  
+  // Check for health symptoms (fever, cough, runny nose, shortness of breath, sore throat, skin lesions/rashes)
+  if (formData.hasSymptoms === true) {
+    return { shouldRedirect: true, reason: 'Has health symptoms' };
+  }
+  
+  // Check for quarantine items (animals, fish, plants, and/or their processed products)
+  if (formData.hasQuarantineItems === true) {
+    return { shouldRedirect: true, reason: 'Has quarantine items (animals, fish, plants, or their products)' };
+  }
+  
+  return { shouldRedirect: false };
 }
 
 function createErrorResponse(
@@ -110,7 +169,7 @@ async function automateCustomsSubmission(formData: FormData): Promise<SubmitCust
         error_step: 'submission',
         form_data_summary: {
           passport: formData.passportNumber,
-          port: formData.portOfArrival,
+          port: formData.placeOfArrival,
           arrival_date: formData.arrivalDate,
           has_goods: formData.hasGoodsToDeclarate,
           family_members: formData.familyMembers.length
@@ -130,7 +189,7 @@ async function automateCustomsSubmission(formData: FormData): Promise<SubmitCust
         step: 'submission',
         details: process.env.NODE_ENV === 'development' ? errorDetails : undefined
       },
-      fallbackUrl: 'https://ecd.beacukai.go.id/'
+      fallbackUrl: 'https://allindonesia.imigrasi.go.id/'
     };
   }
 }
@@ -183,22 +242,26 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate form data
-    if (!validateFormData(body.formData)) {
+    const validation = validateFormData(body.formData);
+    if (!validation.valid) {
       logger.warn('VALIDATION_FAILED', 'Form data validation failed', {
         requestId,
-        passport: (body.formData as {passportNumber?: string})?.passportNumber || 'unknown'
+        passport: (body.formData as {passportNumber?: string})?.passportNumber || 'unknown',
+        missingFields: validation.missingFields
       });
+      console.log('❌ Validation failed. Missing fields:', validation.missingFields);
       return createErrorResponse(
         'INVALID_FORM_DATA',
-        'Form data validation failed. Please ensure all required fields are completed.',
-        'validation'
+        `Form data validation failed. Missing fields: ${validation.missingFields?.join(', ')}`,
+        'validation',
+        { missingFields: validation.missingFields }
       );
     }
 
     logger.info('VALIDATION_PASSED', '✅ Form data validation passed', {
       requestId,
       passport: body.formData.passportNumber,
-      arrivalPort: body.formData.portOfArrival,
+      arrivalPort: body.formData.placeOfArrival,
       arrivalDate: body.formData.arrivalDate,
       familyMembers: body.formData.familyMembers.length,
       hasGoods: body.formData.hasGoodsToDeclarate
@@ -206,9 +269,34 @@ export async function POST(request: NextRequest) {
 
     console.log('✅ Form data validation passed');
     console.log(`📝 Processing customs submission for passport: ${body.formData.passportNumber}`);
-    console.log(`✈️  Arrival: ${body.formData.portOfArrival} on ${body.formData.arrivalDate}`);
+    console.log(`✈️  Arrival: ${body.formData.placeOfArrival} on ${body.formData.arrivalDate}`);
     console.log(`👨‍👩‍👧‍👦 Family members: ${body.formData.familyMembers.length}`);
     console.log(`📦 Declaring goods: ${body.formData.hasGoodsToDeclarate ? 'Yes' : 'No'}`);
+
+    // Check if user should be redirected to manual submission
+    const redirectCheck = shouldRedirectToManualSubmission(body.formData);
+    if (redirectCheck.shouldRedirect) {
+      logger.info('MANUAL_SUBMISSION_REDIRECT', '🔄 Redirecting to manual submission', {
+        requestId,
+        passport: body.formData.passportNumber,
+        reason: redirectCheck.reason
+      });
+      
+      console.log(`🔄 Redirecting to manual submission: ${redirectCheck.reason}`);
+      
+      const totalDuration = requestTimer();
+      logger.logApiResponse(false, totalDuration, { code: 'MANUAL_SUBMISSION_REQUIRED', message: redirectCheck.reason });
+      
+      return NextResponse.json({
+        success: false,
+        error: {
+          code: 'MANUAL_SUBMISSION_REQUIRED',
+          message: `Manual submission required: ${redirectCheck.reason}`,
+          step: 'validation'
+        },
+        fallbackUrl: 'https://allindonesia.imigrasi.go.id/'
+      }, { status: 400 });
+    }
 
     // Process customs submission
     const automationTimer = logger.startTimer('Automation Processing');
@@ -270,7 +358,7 @@ export async function POST(request: NextRequest) {
       'An unexpected error occurred while processing your customs submission',
       undefined,
       process.env.NODE_ENV === 'development' ? error : undefined,
-      'https://ecd.beacukai.go.id/'
+      'https://allindonesia.imigrasi.go.id/'
     );
   }
 }
