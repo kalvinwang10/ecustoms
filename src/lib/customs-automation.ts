@@ -22,6 +22,33 @@ import { logger, ErrorCode } from './logger';
 import { getBrowserOptions } from './browser-config';
 import { launchServerlessBrowser } from './puppeteer-serverless';
 
+// Logging configuration for different environments
+// DEBUG_MODE: Enables verbose debug logging (development only)
+// PRODUCTION_MINIMAL_LOGS: When true, reduces production logging to essential only (errors, warnings)
+// 
+// Environment variables:
+// - NODE_ENV=development: Enables all logging
+// - CUSTOMS_DEBUG=true: Forces debug logging even in production
+// - CUSTOMS_MINIMAL_LOGS=true: Manually enables minimal logging mode
+// - VERCEL=1: Auto-detected on Vercel deployments (enables minimal logging automatically)
+const DEBUG_MODE = process.env.NODE_ENV === 'development' || process.env.CUSTOMS_DEBUG === 'true';
+const PRODUCTION_MINIMAL_LOGS = process.env.NODE_ENV === 'production' && 
+  (process.env.CUSTOMS_MINIMAL_LOGS === 'true' || process.env.VERCEL === '1');
+
+// Conditional debug logging helper
+const debugLog = (message: string) => {
+  if (DEBUG_MODE) {
+    console.log(message);
+  }
+};
+
+// Conditional production logging helper (only critical logs in production)
+const productionLog = (message: string) => {
+  if (!PRODUCTION_MINIMAL_LOGS) {
+    console.log(message);
+  }
+};
+
 // Smart waiting utilities for performance optimization
 
 // Language switching function to set All Indonesia website to English
@@ -125,7 +152,7 @@ async function waitForElementInteractable(page: Page, selector: string, timeout 
 
 // Helper function to find visible element from multiple matches
 async function findVisibleElement(page: Page, selectorPattern: string): Promise<{ element: ElementHandle<Element>, id: string } | null> {
-  console.log(`🔍 Finding visible element with pattern: ${selectorPattern}`);
+  debugLog(`🔍 Finding visible element with pattern: ${selectorPattern}`);
   
   const result = await page.evaluate((pattern) => {
     const elements = document.querySelectorAll(pattern);
@@ -174,7 +201,7 @@ async function findVisibleElement(page: Page, selectorPattern: string): Promise<
   }, selectorPattern);
   
   if (result) {
-    console.log(`✅ Found visible element: ${result.id}`);
+    debugLog(`✅ Found visible element: ${result.id}`);
     console.log(`📊 All candidates:`, result.candidates);
     
     // Get the actual element handle
@@ -357,7 +384,7 @@ function translateToIndonesian(englishName: string, type: TranslationType): stri
     indonesianName = translationMap[firstKeyword];
     
     if (indonesianName) {
-      console.log(`🎯 Translated ${translationType} (extracted keyword): "${firstKeyword}" → "${indonesianName}"`);
+      debugLog(`🎯 Translated ${translationType} (extracted keyword): "${firstKeyword}" → "${indonesianName}"`);
       return indonesianName;
     }
     
@@ -366,7 +393,7 @@ function translateToIndonesian(englishName: string, type: TranslationType): stri
     for (const keyword of keywords) {
       indonesianName = translationMap[keyword];
       if (indonesianName) {
-        console.log(`🎯 Translated ${translationType} (found keyword): "${keyword}" → "${indonesianName}"`);
+        debugLog(`🎯 Translated ${translationType} (found keyword): "${keyword}" → "${indonesianName}"`);
         return indonesianName;
       }
     }
@@ -422,7 +449,7 @@ export function testPurposeTranslations(): void {
     console.log(`  ✓ "${option}" → "${translated}"`);
   });
   
-  console.log('✅ All form options have translations!');
+  debugLog('✅ All form options have translations!');
 }
 
 // Legacy function for backward compatibility
@@ -867,7 +894,7 @@ export async function automateCustomsSubmission(
     }
     
     // Wait for DOM updates to complete after field filling (adaptive timing)
-    console.log('⏳ Waiting for DOM updates to complete after field filling...');
+    debugLog('⏳ Waiting for DOM updates to complete after field filling...');
     await adaptiveDelay(page, 3000, true); // Use adaptive delay with 3000ms max
     
     // Comprehensive field validation before navigation
@@ -883,7 +910,7 @@ export async function automateCustomsSubmission(
       const fixAttempted = await fixFormFieldIssues(page, formData, fieldValidation.invalidFields);
       if (fixAttempted) {
         // Wait for DOM updates after field fixes
-        console.log('⏳ Waiting for DOM updates after field fixes...');
+        debugLog('⏳ Waiting for DOM updates after field fixes...');
         await adaptiveDelay(page, 800, true);
         
         console.log('🔄 Re-validating fields after fixes...');
@@ -891,11 +918,11 @@ export async function automateCustomsSubmission(
         if (!retryValidation.allFieldsValid) {
           console.log('❌ Some fields still invalid after fixes, but continuing with navigation attempt...');
         } else {
-          console.log('✅ All fields now valid after fixes');
+          debugLog('✅ All fields now valid after fixes');
         }
       }
     } else {
-      console.log('✅ All form fields validation passed');
+      productionLog('✅ All form fields validation passed');
     }
     
     reportProgress('travel-details', 45, 'Navigating to Travel Details page...');
@@ -1078,7 +1105,7 @@ async function clickEntryButton(page: Page): Promise<void> {
       try {
         // Wait for element to be visible
         await page.waitForSelector(selector, { timeout: 3000, visible: true });
-        console.log(`✅ Found element using selector: ${selector}`);
+        debugLog(`✅ Found element using selector: ${selector}`);
         
         // For clickable divs, check if they contain "Foreign Visitor" text
         if (selector.includes('cursor: pointer')) {
@@ -1087,7 +1114,7 @@ async function clickEntryButton(page: Page): Promise<void> {
             const text = await element.evaluate(el => el.textContent?.toLowerCase().trim());
             if (text && text.includes('foreign visitor')) {
               await element.click();
-              console.log('🎯 Clicked Foreign Visitor div');
+              debugLog('🎯 Clicked Foreign Visitor div');
               await smartDelay(page, 1000);
               clicked = true;
               break;
@@ -1096,7 +1123,7 @@ async function clickEntryButton(page: Page): Promise<void> {
         } else {
           // For image selectors, click directly
           await page.click(selector);
-          console.log('🎯 Clicked Foreign Visitor image');
+          debugLog('🎯 Clicked Foreign Visitor image');
           await smartDelay(page, 1000);
           clicked = true;
         }
@@ -1110,7 +1137,7 @@ async function clickEntryButton(page: Page): Promise<void> {
     
     // If none of the specific selectors worked, try a more general approach
     if (!clicked) {
-      console.log('🔍 Trying general approach to find Foreign Visitor...');
+      debugLog('🔍 Trying general approach to find Foreign Visitor...');
       
       // Look for any clickable element containing "Foreign Visitor" text
       const elements = await page.$$('div, button, a');
@@ -1121,7 +1148,7 @@ async function clickEntryButton(page: Page): Promise<void> {
           
           if (text && text.includes('foreign visitor') && style === 'pointer') {
             await element.click();
-            console.log('🎯 Clicked Foreign Visitor using general approach');
+            debugLog('🎯 Clicked Foreign Visitor using general approach');
             await smartDelay(page, 1000);
             clicked = true;
             break;
@@ -1145,15 +1172,15 @@ async function clickEntryButton(page: Page): Promise<void> {
 
 // Fill main form fields (Personal Information page)
 async function fillMainFormFields(page: Page, formData: FormData): Promise<void> {
-  console.log('🔗 Using All Indonesia field mappings for form fill');
+  debugLog('🔗 Using All Indonesia field mappings for form fill');
   
   // Enhanced debugging: Log field filling sequence
-  console.log('📝 Starting Personal Information field sequence:');
+  debugLog('📝 Starting Personal Information field sequence:');
   console.log(`  1. Nationality: "${formData.nationality}"`);
   console.log(`  2. Full Name: "${formData.fullPassportName}"`);
   
   // Nationality - dropdown
-  console.log('🌍 Step 1: Filling nationality field...');
+  debugLog('🌍 Step 1: Filling nationality field...');
   await safeAllIndonesiaDropdownSelect(page, '[id^="spi_nationality_"]', formData.nationality);
   
   // Log focus state after nationality selection
@@ -1165,10 +1192,10 @@ async function fillMainFormFields(page: Page, formData: FormData): Promise<void>
       className: (activeEl as HTMLElement)?.className || 'no-class'
     };
   });
-  console.log(`🔍 Focus after nationality: ${focusAfterNationality.tagName}#${focusAfterNationality.id}.${focusAfterNationality.className}`);
+  debugLog(`🔍 Focus after nationality: ${focusAfterNationality.tagName}#${focusAfterNationality.id}.${focusAfterNationality.className}`);
   
   // Full name - text input
-  console.log('👤 Step 2: Filling full name field...');
+  debugLog('👤 Step 2: Filling full name field...');
   await safeFieldInput(page, '[id^="spi_full_name_"]', formData.fullPassportName);
   
   // Verify full name field value after input
@@ -1176,7 +1203,7 @@ async function fillMainFormFields(page: Page, formData: FormData): Promise<void>
     const fullNameField = document.querySelector('[id^="spi_full_name_"]') as HTMLInputElement;
     return fullNameField ? fullNameField.value : 'field-not-found';
   });
-  console.log(`✅ Full name field verification: "${fullNameValue}"`);
+  debugLog(`✅ Full name field verification: "${fullNameValue}"`);
   
   // Date of birth - single date input (DD/MM/YYYY format)
   const dobFormatted = formatDateForSingleInput(formData.dateOfBirth);
@@ -1204,7 +1231,7 @@ async function fillMainFormFields(page: Page, formData: FormData): Promise<void>
   // Email - text input
   await safeFieldInput(page, '[id^="spi_email_"]', formData.email);
   
-  console.log('✅ Completed filling Personal Information fields');
+  productionLog('✅ Completed filling Personal Information fields');
 }
 
 // Detect if we're on the Group Member Visa Confirmation page
@@ -1217,7 +1244,7 @@ async function detectGroupVisaConfirmationPage(page: Page): Promise<boolean> {
     
     // First check: URL pattern for group travel details
     if (currentUrl.includes('/travel-details/group')) {
-      console.log('✅ Group travel details page detected by URL pattern');
+      debugLog('✅ Group travel details page detected by URL pattern');
       return true;
     }
     
@@ -1233,7 +1260,7 @@ async function detectGroupVisaConfirmationPage(page: Page): Promise<boolean> {
     });
     
     if (hasGroupVisaHeading) {
-      console.log('✅ Group Member Visa Confirmation page detected by heading');
+      debugLog('✅ Group Member Visa Confirmation page detected by heading');
       return true;
     }
     
@@ -1262,7 +1289,7 @@ async function handleGroupMemberVisaConfirmation(page: Page, formData: FormData)
   try {
     // Find all traveler cards
     const travellerCards = await page.$$('._card_container_7wxik_1');
-    console.log(`📋 Found ${travellerCards.length} traveler cards to process`);
+    productionLog(`📋 Found ${travellerCards.length} traveler cards to process`);
     
     // Process each traveler card
     for (let i = 0; i < travellerCards.length; i++) {
@@ -1373,9 +1400,9 @@ async function fillGroupDeclaration(page: Page, formData: FormData): Promise<boo
     // Log current page state for debugging
     try {
       const debugUrl = page.url();
-      console.log(`🔍 Debug info - Current URL: ${debugUrl}`);
+      debugLog(`🔍 Debug info - Current URL: ${debugUrl}`);
     } catch (debugError) {
-      console.log('🔍 Could not get debug info');
+      debugLog('🔍 Could not get debug info');
     }
     
     return false;
@@ -1396,11 +1423,11 @@ async function processNextTravelerDeclaration(page: Page, travelerIndex: number,
     }
     
     // Step 3: Wait for navigation to individual form page (/declaration/group/form)
-    console.log(`⏳ Waiting for navigation to individual form page...`);
+    debugLog(`⏳ Waiting for navigation to individual form page...`);
     await waitForNavigationToFormPage(page);
     
     // Step 4: Fill the individual declaration form
-    console.log(`📋 Filling declaration form for ${travelerName}...`);
+    productionLog(`📋 Filling declaration form for ${travelerName}...`);
     const formFilled = await fillIndividualDeclarationForm(page, formData);
     if (!formFilled) {
       return false;
@@ -1446,7 +1473,7 @@ async function clickTravelerCard(page: Page, cardIndex: number, travelerName: st
     
     // Find all traveler cards
     const travellerCards = await page.$$('._card_container_7wxik_1');
-    console.log(`🔍 Found ${travellerCards.length} traveler cards on page`);
+    debugLog(`🔍 Found ${travellerCards.length} traveler cards on page`);
     
     if (travellerCards.length <= cardIndex) {
       console.log(`❌ Card index ${cardIndex} not available (only ${travellerCards.length} cards found)`);
@@ -1517,7 +1544,7 @@ async function saveAndReturnToCardSelection(page: Page): Promise<boolean> {
 
 // Fill individual declaration form for a single traveler (health + quarantine)
 async function fillIndividualDeclarationForm(page: Page, formData: FormData): Promise<boolean> {
-  console.log('📋 Filling individual declaration form (health + quarantine)...');
+  productionLog('📋 Filling individual declaration form (health + quarantine)...');
   
   try {
     // Wait for the form to load
@@ -1619,7 +1646,7 @@ async function selectRadioOption(page: Page, fieldKey: string, option: string, d
               const inputValue = await inputInButton.evaluate(el => (el as HTMLInputElement).value);
               
               if (inputValue.toLowerCase() === option.toLowerCase()) {
-                console.log(`🎯 Found "${option}" option for ${description}`);
+                debugLog(`🎯 Found "${option}" option for ${description}`);
                 
                 // Check if this button is already selected
                 const innerCircle = await radioButton.$('div[style*="border-radius: 50%"] div');
@@ -1739,7 +1766,7 @@ async function selectRadioOption(page: Page, fieldKey: string, option: string, d
             
             if (questionContainer) {
               const questionText = await (questionContainer as ElementHandle<Element>).evaluate(el => el?.textContent?.toLowerCase() || '');
-              console.log(`📝 Checking question context: "${questionText.substring(0, 80)}..."`);
+              debugLog(`📝 Checking question context: "${questionText.substring(0, 80)}..."`);
               
               const isRelevantQuestion = 
                 (description.toLowerCase().includes('imei') && 
@@ -1752,7 +1779,7 @@ async function selectRadioOption(page: Page, fieldKey: string, option: string, d
                  questionText.includes('animals'));
               
               if (isRelevantQuestion) {
-                console.log(`🎯 Found matching question for ${description}, clicking "${option}" option`);
+                debugLog(`🎯 Found matching question for ${description}, clicking "${option}" option`);
                 
                 // Find the radio circle within this button
                 const radioCircleContainer = await div.$('div[style*="border-radius: 50%"]');
@@ -1939,7 +1966,7 @@ async function fillSharedGroupDeclarationElements(page: Page, formData: FormData
           const radioCircleContainer = await div.$('div[style*="border-radius: 50%"]');
           
           if (radioCircleContainer) {
-            console.log('🎯 Clicking directly on radio circle...');
+            debugLog('🎯 Clicking directly on radio circle...');
             
             // Click the radio circle directly
             await radioCircleContainer.click();
@@ -2065,7 +2092,7 @@ async function fillSharedGroupDeclarationElements(page: Page, formData: FormData
             const radioCircleContainer = await redElement.$('div[style*="border-radius: 50%"]');
             
             if (radioCircleContainer) {
-              console.log('🎯 Found radio circle, clicking directly...');
+              debugLog('🎯 Found radio circle, clicking directly...');
               
               // Click the radio circle
               await radioCircleContainer.click();
@@ -2200,7 +2227,7 @@ async function fillGroupTravelDetails(page: Page, formData: FormData): Promise<v
     
     // Find all traveler cards
     const travellerCards = await page.$$('._card_container_7wxik_1');
-    console.log(`📋 Found ${travellerCards.length} traveler cards to process`);
+    productionLog(`📋 Found ${travellerCards.length} traveler cards to process`);
     
     if (travellerCards.length === 0) {
       console.log('⚠️ No traveler cards found, trying alternative approach...');
@@ -2231,7 +2258,7 @@ async function fillGroupTravelDetails(page: Page, formData: FormData): Promise<v
         return { travelerType, travelerName, passportNumber };
       });
       
-      console.log(`📝 Processing ${cardInfo.travelerType}: ${cardInfo.travelerName} (${cardInfo.passportNumber})`);
+      debugLog(`📝 Processing ${cardInfo.travelerType}: ${cardInfo.travelerName} (${cardInfo.passportNumber})`);
       
       // Click the traveler card to open their form
       await card.click();
@@ -2333,13 +2360,13 @@ async function fillGroupLeadTravellerForm(page: Page, formData: FormData): Promi
       const visaSelector = idSuffix ? 
         `#std_do_have_visa_kitas_kitap_foreigner_check_${idSuffix}` : 
         '[id^="std_do_have_visa_kitas_kitap_foreigner_check_"]';
-      console.log(`📋 Setting visa/KITAS status: ${hasVisa ? 'Yes' : 'No'}`);
+      productionLog(`📋 Setting visa/KITAS status: ${hasVisa ? 'Yes' : 'No'}`);
       await selectVisaOptionByDiv(page, visaSelector, hasVisa);
       
       // If has visa, fill visa number
       if (hasVisa && formData.visaOrKitasNumber) {
         await smartDelay(page, 500);
-        console.log(`📝 Filling visa number: ${formData.visaOrKitasNumber}`);
+        debugLog(`📝 Filling visa number: ${formData.visaOrKitasNumber}`);
         
         const visaNumberSelector = idSuffix ? 
           `#std_visa_kitas_kitap_no_foreigner_check_${idSuffix}` : 
@@ -2370,7 +2397,7 @@ async function fillGroupSecondaryTravellerForm(page: Page, familyMember: FormDat
       const visaSelector = idSuffix ? 
         `#std_do_have_visa_kitas_kitap_foreigner_check_${idSuffix}` : 
         '[id^="std_do_have_visa_kitas_kitap_foreigner_check_"]';
-      console.log(`📋 Setting visa/KITAS status: ${hasVisa ? 'Yes' : 'No'}`);
+      productionLog(`📋 Setting visa/KITAS status: ${hasVisa ? 'Yes' : 'No'}`);
       await selectVisaOptionByDiv(page, visaSelector, hasVisa);
       
       // If has visa, fill visa number
@@ -3098,7 +3125,7 @@ function getProvinceByPort(placeOfArrival: string): string {
   // Fallback: Try partial matching for complex port names
   for (const [port, province] of Object.entries(portProvinceMapping)) {
     if (normalizedPort.includes(port) || port.includes(normalizedPort)) {
-      console.log(`🔍 Partial match: "${normalizedPort}" matched to province: ${province}`);
+      debugLog(`🔍 Partial match: "${normalizedPort}" matched to province: ${province}`);
       return province;
     }
   }
@@ -3204,14 +3231,14 @@ async function selectCityWithRetry(page: Page, selector: string, maxRetries: num
         console.log(`⚠️ First option not found`);
       }
       
-      console.log(`⚠️ Attempt ${attempt} failed - will retry`);
+      debugLog(`⚠️ Attempt ${attempt} failed - will retry`);
       
       // Close dropdown before retrying
       await page.keyboard.press('Escape');
       await smartDelay(page, 500);
       
     } catch (error) {
-      console.log(`❌ Attempt ${attempt} error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      debugLog(`❌ Attempt ${attempt} error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
     
     // Wait before retry (exponential backoff)
@@ -3257,7 +3284,7 @@ async function selectResidenceTypeResidential(page: Page): Promise<boolean> {
     }
     
     // Method 2: Try search approach (fallback) - check both English and Indonesian placeholders
-    console.log('🔍 Trying search method as fallback...');
+    debugLog('🔍 Trying search method as fallback...');
     const searchInput = await page.$('input[placeholder="Search"], input[placeholder="Cari"]');
     if (searchInput) {
       // Clear any existing text and type RESIDENTIAL
@@ -3286,7 +3313,7 @@ async function selectResidenceTypeResidential(page: Page): Promise<boolean> {
     }
     
     // Method 3: Try clicking first option (assuming RUMAH is first)
-    console.log('🔍 Trying first option selection as last resort...');
+    debugLog('🔍 Trying first option selection as last resort...');
     const firstOptionClicked = await page.evaluate(() => {
       const firstItem = document.querySelector('._list_dropdown_19t6p_8');
       if (firstItem) {
@@ -3583,7 +3610,7 @@ async function safeFieldInput(page: Page, selector: string, value: string): Prom
         className: (activeEl as HTMLElement)?.className || 'no-class'
       };
     });
-    console.log(`🔍 Current focus: ${focusedElementInfo.tagName}#${focusedElementInfo.id}.${focusedElementInfo.className}`);
+    debugLog(`🔍 Current focus: ${focusedElementInfo.tagName}#${focusedElementInfo.id}.${focusedElementInfo.className}`);
     
     // Clear field and type new value
     await page.keyboard.press('Backspace');
@@ -3823,12 +3850,12 @@ async function safeAllIndonesiaDropdownSelect(page: Page, selector: string, valu
   
   try {
     // Enhanced element detection: find visible dropdown instead of first match
-    console.log(`🎯 Finding visible dropdown for: ${selector}`);
+    debugLog(`🎯 Finding visible dropdown for: ${selector}`);
     const visibleElement = await findVisibleElement(page, selector);
     
     if (!visibleElement) {
       // Fallback to original method if no visible element found
-      console.log(`⚠️ No visible dropdown found, falling back to first match`);
+      debugLog(`⚠️ No visible dropdown found, falling back to first match`);
       const dropdownElement = await page.$(selector);
       if (!dropdownElement) {
         console.log(`❌ Dropdown element ${selector} not found on page`);
@@ -3838,13 +3865,13 @@ async function safeAllIndonesiaDropdownSelect(page: Page, selector: string, valu
 
     // Use the visible element or fallback
     const targetSelector = visibleElement ? `#${visibleElement.id}` : selector;
-    console.log(`📝 Targeting dropdown: ${targetSelector}`);
+    debugLog(`📝 Targeting dropdown: ${targetSelector}`);
 
     // Wait for element to be ready
     await waitForElementInteractable(page, targetSelector, 3000);
     
     // Step 1: Click dropdown to open it
-    console.log(`📋 Clicking dropdown trigger: ${targetSelector}`);
+    debugLog(`📋 Clicking dropdown trigger: ${targetSelector}`);
     
     // Check if this is an additional traveler dropdown (readonly input) and click parent container instead
     const clickSuccess = await page.evaluate((selector) => {
@@ -3853,22 +3880,22 @@ async function safeAllIndonesiaDropdownSelect(page: Page, selector: string, valu
       
       // Check if this is a readonly input element (additional traveler dropdown)
       if (element.tagName.toLowerCase() === 'input' && (element as HTMLInputElement).readOnly) {
-        console.log('🔍 Detected readonly input - clicking parent container for additional traveler dropdown');
+        // Debug: Detected readonly input - clicking parent container
         
         // Find the clickable parent container with cursor: pointer
         const parent = element.closest('div[style*="cursor: pointer"]');
         if (parent) {
-          console.log('✅ Found clickable parent container, clicking it');
+          // Debug: Found clickable parent container
           (parent as HTMLElement).click();
           return true;
         } else {
-          console.log('⚠️ No clickable parent found, falling back to direct click');
+          // Debug: No clickable parent found, falling back
           (element as HTMLElement).click();
           return true;
         }
       } else {
         // For main traveler dropdowns, click the element directly
-        console.log('🔍 Detected regular dropdown - clicking directly');
+        // Debug: Detected regular dropdown - clicking directly
         (element as HTMLElement).click();
         return true;
       }
@@ -3882,7 +3909,7 @@ async function safeAllIndonesiaDropdownSelect(page: Page, selector: string, valu
     await smartDelay(page, 1000);
     
     // Step 2: Wait for dropdown overlay and find contextual search input
-    console.log(`🔍 Waiting for dropdown overlay to appear...`);
+    debugLog(`🔍 Waiting for dropdown overlay to appear...`);
     
     let contextualSearchInput: JSHandle<Element | null> | null = null;
     let searchInputSelector = '';
@@ -3941,44 +3968,44 @@ async function safeAllIndonesiaDropdownSelect(page: Page, selector: string, valu
           const elementId = await contextualSearchInput.evaluate((el: Element | null) => el ? (el as HTMLElement).id : null);
           if (elementId) {
             searchInputSelector = `#${elementId}`;
-            console.log(`✅ Found contextual search input: ${searchInputSelector}`);
+            debugLog(`✅ Found contextual search input: ${searchInputSelector}`);
           } else {
-            console.log(`❌ Contextual search input element ID is null, trying fallback approach`);
+            debugLog(`❌ Contextual search input element ID is null, trying fallback approach`);
             await contextualSearchInput.dispose();
             return await fallbackDropdownSelection(page, targetSelector, value);
           }
         } catch (evaluateError) {
-          console.log(`❌ Error evaluating contextual search input: ${evaluateError instanceof Error ? evaluateError.message : 'Unknown error'}`);
+          debugLog(`❌ Error evaluating contextual search input: ${evaluateError instanceof Error ? evaluateError.message : 'Unknown error'}`);
           await contextualSearchInput.dispose();
           return await fallbackDropdownSelection(page, targetSelector, value);
         }
       } else {
-        console.log(`❌ No contextual search input found, trying fallback approach`);
+        debugLog(`❌ No contextual search input found, trying fallback approach`);
         return await fallbackDropdownSelection(page, targetSelector, value);
       }
       
     } catch (searchWaitError) {
-      console.log(`❌ Error finding contextual search input: ${searchWaitError instanceof Error ? searchWaitError.message : 'Unknown error'}`);
+      debugLog(`❌ Error finding contextual search input: ${searchWaitError instanceof Error ? searchWaitError.message : 'Unknown error'}`);
       
       // Try direct search input detection as a fallback
-      console.log('🔄 Trying direct search input detection...');
+      debugLog('🔄 Trying direct search input detection...');
       try {
         const directSearchInput = await page.$('input._input_19t6p_2[placeholder="Search"], input._input_19t6p_2[placeholder="Cari"]');
         if (directSearchInput) {
-          console.log('✅ Found search input via direct detection');
+          debugLog('✅ Found search input via direct detection');
           searchInputSelector = 'input._input_19t6p_2[placeholder="Search"], input._input_19t6p_2[placeholder="Cari"]';
         } else {
-          console.log('❌ Direct search input detection failed, using complete fallback');
+          debugLog('❌ Direct search input detection failed, using complete fallback');
           return await fallbackDropdownSelection(page, targetSelector, value);
         }
       } catch (directError) {
-        console.log(`❌ Direct search detection error: ${directError instanceof Error ? directError.message : 'Unknown error'}`);
+        debugLog(`❌ Direct search detection error: ${directError instanceof Error ? directError.message : 'Unknown error'}`);
         return await fallbackDropdownSelection(page, targetSelector, value);
       }
     }
     
     // Step 3: Use English value directly (site is now in English)
-    console.log(`⌨️ Typing "${value}" in dropdown search input`);
+    debugLog(`⌨️ Typing "${value}" in dropdown search input`);
     await page.click(searchInputSelector);
     await smartDelay(page, 300);
     
@@ -4127,11 +4154,11 @@ async function fallbackDropdownSelection(page: Page, selector: string, value: st
     await smartDelay(page, 800);
     
     // First, try to use any available search input to filter results
-    console.log('🔍 Checking for search input in fallback mode...');
+    debugLog('🔍 Checking for search input in fallback mode...');
     const searchInput = await page.$('input._input_19t6p_2[placeholder="Search"], input._input_19t6p_2[placeholder="Cari"]');
     
     if (searchInput) {
-      console.log('✅ Found search input, attempting to type and filter');
+      debugLog('✅ Found search input, attempting to type and filter');
       try {
         await searchInput.click();
         await smartDelay(page, 300);
@@ -4141,9 +4168,9 @@ async function fallbackDropdownSelection(page: Page, selector: string, value: st
         await searchInput.type(value, { delay: 50 });
         await smartDelay(page, 1000); // Wait for filtering
         
-        console.log(`⌨️ Typed "${value}" in search input, checking filtered results...`);
+        debugLog(`⌨️ Typed "${value}" in search input, checking filtered results...`);
       } catch (searchError) {
-        console.log(`⚠️ Search input typing failed: ${searchError instanceof Error ? searchError.message : 'Unknown error'}`);
+        debugLog(`⚠️ Search input typing failed: ${searchError instanceof Error ? searchError.message : 'Unknown error'}`);
       }
     }
     
@@ -4164,7 +4191,7 @@ async function fallbackDropdownSelection(page: Page, selector: string, value: st
     for (const optionSelector of possibleOptionSelectors) {
       const options = await page.$$(optionSelector);
       if (options.length > 0) {
-        console.log(`  Found ${options.length} options with selector: ${optionSelector}`);
+        debugLog(`  Found ${options.length} options with selector: ${optionSelector}`);
         
         // Check each option for a match
         for (let i = 0; i < Math.min(options.length, 50); i++) { // Limit to first 50 options for performance
@@ -4320,7 +4347,7 @@ async function safeRadioSelect(page: Page, selector: string, value: string): Pro
     const englishValue = value === 'male' ? 'MALE' : 
                         value === 'female' ? 'FEMALE' : value.toUpperCase();
     
-    console.log(`🔍 Looking for gender option with value: "${englishValue}"`);
+    debugLog(`🔍 Looking for gender option with value: "${englishValue}"`);
     
     // First find the gender container
     const genderContainer = await page.$(`${selector}`);
@@ -4329,7 +4356,7 @@ async function safeRadioSelect(page: Page, selector: string, value: string): Pro
       return false;
     }
     
-    console.log(`✅ Found gender container`);
+    debugLog(`✅ Found gender container`);
     
     // Find all readonly input elements within the container
     const genderOptions = await page.evaluate((containerSelector, targetValue) => {
@@ -4338,12 +4365,12 @@ async function safeRadioSelect(page: Page, selector: string, value: string): Pro
       
       // Find all readonly inputs within the container
       const inputs = container.querySelectorAll('input[readonly]');
-      console.log(`Found ${inputs.length} gender options`);
+      // Debug: found ${inputs.length} gender options
       
       // Find the index of the matching option
       for (let i = 0; i < inputs.length; i++) {
         const input = inputs[i] as HTMLInputElement;
-        console.log(`  Option ${i}: value="${input.value}"`);
+        // Debug: Option ${i}: value="${input.value}"
         
         if (input.value === targetValue) {
           return { found: true, index: i, value: input.value };
@@ -4383,10 +4410,10 @@ async function safeRadioSelect(page: Page, selector: string, value: string): Pro
       genderOptions.found = true;
       genderOptions.index = fallbackOptions.index;
       genderOptions.value = fallbackOptions.value;
-      console.log(`✅ Found gender option via Indonesian fallback at index ${genderOptions.index}: "${genderOptions.value}"`);
+      debugLog(`✅ Found gender option via Indonesian fallback at index ${genderOptions.index}: "${genderOptions.value}"`);
     }
     
-    console.log(`✅ Found gender option at index ${genderOptions.index}: "${genderOptions.value}"`);
+    debugLog(`✅ Found gender option at index ${genderOptions.index}: "${genderOptions.value}"`);
     
     // Click the parent div of the matching input
     const clickSuccess = await page.evaluate((containerSelector, optionIndex) => {
@@ -4398,7 +4425,7 @@ async function safeRadioSelect(page: Page, selector: string, value: string): Pro
       if (optionIndex >= 0 && optionIndex < clickableDivs.length) {
         const targetDiv = clickableDivs[optionIndex] as HTMLElement;
         targetDiv.click();
-        console.log(`Clicked gender option at index ${optionIndex}`);
+        // Debug: Clicked gender option at index ${optionIndex}
         return true;
       }
       
@@ -4407,7 +4434,7 @@ async function safeRadioSelect(page: Page, selector: string, value: string): Pro
     
     if (clickSuccess) {
       await smartDelay(page, 500);
-      console.log(`✅ Successfully selected gender option`);
+      debugLog(`✅ Successfully selected gender option`);
       return true;
     }
     
@@ -4605,7 +4632,7 @@ async function safeDropdownSelectFamily(page: Page, rowIndex: number, value: str
     // Try to select with retry logic (similar to currency)
     let selectionSuccess = false;
     for (let attempt = 1; attempt <= 3; attempt++) {
-      console.log(`  Attempt ${attempt}: Clicking nationality option...`);
+      debugLog(`  Attempt ${attempt}: Clicking nationality option...`);
       
       // Special handling for first family member (row 0) - more robust selection
       if (rowIndex === 0) {
@@ -4722,10 +4749,10 @@ async function safeDropdownSelectFamily(page: Page, rowIndex: number, value: str
           selectionSuccess = true;
           break;
         } else {
-          console.log(`⚠️ Attempt ${attempt} verification failed. Expected "${value}" or code "${expectedCode}", got input="${verifySelection.inputValue}" display="${verifySelection.displayText}"`);
+          debugLog(`⚠️ Attempt ${attempt} verification failed. Expected "${value}" or code "${expectedCode}", got input="${verifySelection.inputValue}" display="${verifySelection.displayText}"`);
         }
       } else {
-        console.log(`⚠️ Attempt ${attempt} verification failed. Got empty selection`);
+        debugLog(`⚠️ Attempt ${attempt} verification failed. Got empty selection`);
         if (rowIndex === 0) {
           console.log(`🔍 First row debug - input: "${verifySelection.inputValue}", display: "${verifySelection.displayText}"`);
         }
@@ -4944,7 +4971,7 @@ async function fillDynamicFamilyField(page: Page, fieldName: string, value: stri
         // Validate that the field was actually filled correctly
         const validationPassed = await validateFieldFilled(page, selector, fieldName, value, fieldType);
         if (validationPassed) {
-          console.log(`    ✅ Field validation passed for ${fieldName}`);
+          debugLog(`    ✅ Field validation passed for ${fieldName}`);
           return true;
         } else {
           console.log(`    ⚠️ Field validation failed for ${fieldName}, continuing to try other selectors...`);
@@ -5476,7 +5503,7 @@ async function handleValidationPopup(page: Page): Promise<boolean> {
 
 // Detect and fill specific missing fields from validation errors
 async function detectAndFillMissingFields(page: Page, formData: FormData): Promise<boolean> {
-  console.log('🔍 Detecting missing fields from validation errors...');
+  debugLog('🔍 Detecting missing fields from validation errors...');
   
   try {
     // Check for fields with validation errors (red borders)
@@ -6363,7 +6390,7 @@ async function checkForRedBordersUniversal(page: Page, pageContext?: string): Pr
   if (errorElements.length > 0) {
     console.log(`❌ Found ${errorElements.length} validation errors${pageContext ? ` on ${pageContext} page` : ''}:`);
     errorElements.forEach(error => {
-      console.log(`   - ${error.fieldType}: ${error.issue} (${error.borderColor})`);
+      debugLog(`   - ${error.fieldType}: ${error.issue} (${error.borderColor})`);
     });
   } else {
     console.log(`✅ No red border validation errors found${pageContext ? ` on ${pageContext} page` : ''}`);
@@ -6377,7 +6404,7 @@ async function checkForRedBordersUniversal(page: Page, pageContext?: string): Pr
 
 // Universal field fixing function
 async function fixRedBorderFields(page: Page, errorElements: Array<{fieldType: string, selector: string, issue: string}>, formData: FormData): Promise<boolean> {
-  console.log('🔧 Attempting to fix red border validation errors...');
+  debugLog('🔧 Attempting to fix red border validation errors...');
   
   let fixedCount = 0;
   
@@ -6437,7 +6464,7 @@ async function fixRedBorderFields(page: Page, errorElements: Array<{fieldType: s
     }
   }
   
-  console.log(`✅ Fixed ${fixedCount} out of ${errorElements.length} validation errors`);
+  debugLog(`✅ Fixed ${fixedCount} out of ${errorElements.length} validation errors`);
   return fixedCount > 0;
 }
 
@@ -7851,7 +7878,7 @@ async function safeDropdownSelectGoods(page: Page, rowIndex: number, value: stri
     // Try to select with retry logic
     let selectionSuccess = false;
     for (let attempt = 1; attempt <= 3; attempt++) {
-      console.log(`  Attempt ${attempt}: Clicking option...`);
+      debugLog(`  Attempt ${attempt}: Clicking option...`);
       
       // Special handling for first goods item (row 0) similar to family members
       if (rowIndex === 0) {
@@ -7924,10 +7951,10 @@ async function safeDropdownSelectGoods(page: Page, rowIndex: number, value: stri
           selectionSuccess = true;
           break;
         } else {
-          console.log(`⚠️ Attempt ${attempt} verification failed. Expected "${value}" or code "${expectedCode}", got input="${verifySelection.inputValue}" display="${verifySelection.displayText}"`);
+          debugLog(`⚠️ Attempt ${attempt} verification failed. Expected "${value}" or code "${expectedCode}", got input="${verifySelection.inputValue}" display="${verifySelection.displayText}"`);
         }
       } else {
-        console.log(`⚠️ Attempt ${attempt} verification failed. Got empty selection`);
+        debugLog(`⚠️ Attempt ${attempt} verification failed. Got empty selection`);
         console.log(`🔍 Currency debug - input: "${verifySelection.inputValue}", display: "${verifySelection.displayText}"`);
       }
       
@@ -8132,9 +8159,9 @@ async function validateAllFormFields(page: Page, formData: FormData): Promise<{
   
   console.log(`📊 Field validation results: ${validation.allFieldsValid ? 'PASSED' : 'FAILED'}`);
   if (!validation.allFieldsValid) {
-    console.log(`   Invalid fields: ${validation.invalidFields.length}`);
+    debugLog(`   Invalid fields: ${validation.invalidFields.length}`);
     validation.invalidFields.forEach(field => {
-      console.log(`     - ${field.field} (${field.selector}): ${field.issue}`);
+      debugLog(`     - ${field.field} (${field.selector}): ${field.issue}`);
     });
   }
   
