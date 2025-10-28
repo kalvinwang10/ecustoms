@@ -2850,15 +2850,22 @@ async function fillIndonesianAddress(page: Page, formData: FormData): Promise<vo
       console.log(`⚠️ Failed to select province ${selectedProvince}, continuing anyway`);
     }
     
-    await smartDelay(page, 800); // Wait for city dropdown to populate
+    // Wait longer for city dropdown to populate after province selection
+    console.log('⏳ Waiting for city dropdown to populate...');
+    await smartDelay(page, 2000); // Increased wait time for API call
     
-    // Step 3: Select first city option (only if city field exists)
+    // Step 3: Select city with enhanced logic
     if (cityField) {
-      console.log('🌃 Selecting first available city...');
-      const citySuccess = await selectFirstDropdownOption(page, '#smta_residential_city_foreigner');
+      console.log('🌃 Selecting city from dropdown...');
+      
+      // Try multiple approaches to select city
+      let citySuccess = false;
+      
+      // Select first available city from dropdown
+      citySuccess = await selectCityWithRetry(page, '#smta_residential_city_foreigner');
       
       if (!citySuccess) {
-        console.log(`⚠️ Failed to select city, continuing anyway`);
+        console.log(`❌ Failed to select city - this will prevent navigation`);
       }
       
       await smartDelay(page, 1000); // Wait for immigration office auto-population
@@ -3141,6 +3148,80 @@ async function selectFirstDropdownOption(page: Page, selector: string): Promise<
     console.log(`❌ Failed to select first option from ${selector}: ${error instanceof Error ? error.message : 'Unknown error'}`);
     return false;
   }
+}
+
+// Enhanced city selection with retry logic for virtualized dropdown
+async function selectCityWithRetry(page: Page, selector: string, maxRetries: number = 3): Promise<boolean> {
+  console.log(`🔄 Attempting to select city with retry logic...`);
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    console.log(`  Attempt ${attempt}/${maxRetries}`);
+    
+    try {
+      // Click dropdown to open it
+      await page.click(selector);
+      await smartDelay(page, 1000);
+      
+      // Wait for virtualized dropdown to load options
+      console.log(`🔍 Waiting for virtualized city options to load...`);
+      
+      // Wait for the virtuoso scroller and first option to appear
+      const virtuosoScroller = '[data-testid="virtuoso-scroller"]';
+      const firstOptionSelector = 'div[data-index="0"] ._list_dropdown_19t6p_8';
+      
+      try {
+        await page.waitForSelector(virtuosoScroller, { timeout: 3000 });
+        await page.waitForSelector(firstOptionSelector, { timeout: 3000 });
+      } catch (waitError) {
+        console.log(`⚠️ Timeout waiting for dropdown options`);
+        continue;
+      }
+      
+      // Find the first option in the virtualized list
+      const firstOption = await page.$(firstOptionSelector);
+      
+      if (firstOption) {
+        // Get the option text for logging
+        const optionText = await page.evaluate(el => {
+          const pTag = el.querySelector('p');
+          return pTag ? pTag.textContent : el.textContent;
+        }, firstOption);
+        
+        console.log(`🎯 Selecting first city option: "${optionText}"`);
+        
+        await firstOption.click();
+        await smartDelay(page, 500);
+        
+        // Verify selection worked by checking field value
+        const selectedValue = await page.$eval(selector, el => (el as HTMLInputElement).value);
+        if (selectedValue && selectedValue !== 'Select City') {
+          console.log(`✅ Successfully selected city: ${selectedValue}`);
+          return true;
+        } else {
+          console.log(`⚠️ Selection didn't update field value: ${selectedValue}`);
+        }
+      } else {
+        console.log(`⚠️ First option not found`);
+      }
+      
+      console.log(`⚠️ Attempt ${attempt} failed - will retry`);
+      
+      // Close dropdown before retrying
+      await page.keyboard.press('Escape');
+      await smartDelay(page, 500);
+      
+    } catch (error) {
+      console.log(`❌ Attempt ${attempt} error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+    
+    // Wait before retry (exponential backoff)
+    if (attempt < maxRetries) {
+      await smartDelay(page, attempt * 1000);
+    }
+  }
+  
+  console.log(`❌ Failed to select city after ${maxRetries} attempts`);
+  return false;
 }
 
 // Specialized function to select "RESIDENTIAL" from residence type dropdown (with virtualized list)
