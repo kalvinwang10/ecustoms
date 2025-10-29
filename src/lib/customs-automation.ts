@@ -463,6 +463,48 @@ async function smartDelay(page: Page, delay: number = 1500): Promise<void> {
   await new Promise(resolve => setTimeout(resolve, delay));
 }
 
+// Capture HTML structure for debugging when automation fails
+async function captureDebugHtml(page: Page, stepName: string, options: {
+  targetSelector?: string;
+  minimalHtml?: boolean;
+} = {}): Promise<string | null> {
+  try {
+    let html: string;
+    
+    if (options.targetSelector) {
+      // Capture specific element HTML
+      const element = await page.$(options.targetSelector);
+      if (element) {
+        html = await element.evaluate(el => el.outerHTML);
+        console.log(`📄 Element HTML captured for ${stepName} (${Math.round(html.length / 1024)}KB)`);
+      } else {
+        console.log(`⚠️ Target element ${options.targetSelector} not found, capturing full page`);
+        html = await page.content();
+      }
+    } else {
+      // Capture full page HTML
+      html = await page.content();
+      console.log(`📄 Full page HTML captured for ${stepName} (${Math.round(html.length / 1024)}KB)`);
+    }
+    
+    if (options.minimalHtml) {
+      // Strip out scripts, styles, and comments to reduce size
+      html = html
+        .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+        .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '')
+        .replace(/<!--[\s\S]*?-->/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+      console.log(`📄 Minimal HTML after cleanup (${Math.round(html.length / 1024)}KB)`);
+    }
+    
+    return html;
+  } catch (error) {
+    console.log(`⚠️ Could not capture HTML for ${stepName}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    return null;
+  }
+}
+
 // New adaptive delay that waits for DOM stability or timeout
 async function adaptiveDelay(page: Page, maxDelay: number = 1500, checkStability: boolean = true): Promise<void> {
   if (!checkStability) {
@@ -761,6 +803,30 @@ interface ProgressUpdate {
 type ProgressCallback = (update: ProgressUpdate) => void;
 
 
+// Store debug HTML for error reporting
+let debugHtmlCaptures: Array<{ stepName: string; html: string; timestamp: string }> = [];
+
+// Enhanced HTML capture that also stores for error reporting
+async function captureAndStoreDebugHtml(page: Page, stepName: string, options: {
+  targetSelector?: string;
+  minimalHtml?: boolean;
+} = {}): Promise<void> {
+  const html = await captureDebugHtml(page, stepName, options);
+  if (html) {
+    // Store the latest 5 captures to avoid memory issues
+    debugHtmlCaptures.push({
+      stepName,
+      html,
+      timestamp: new Date().toISOString()
+    });
+    
+    // Keep only the latest 5 captures
+    if (debugHtmlCaptures.length > 5) {
+      debugHtmlCaptures = debugHtmlCaptures.slice(-5);
+    }
+  }
+}
+
 // Main automation function
 export async function automateCustomsSubmission(
   formData: FormData,
@@ -774,6 +840,9 @@ export async function automateCustomsSubmission(
   }
 ): Promise<SubmitCustomsResponse> {
   let browser: Browser | null = null;
+  // Reset debug HTML captures for this automation run
+  debugHtmlCaptures = [];
+  
   const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   logger.setSessionId(sessionId);
   
@@ -1034,7 +1103,8 @@ export async function automateCustomsSubmission(
         code: 'AUTOMATION_ERROR',
         message: errorMessage,
         step: 'submission',
-        details: error
+        details: error,
+        debugHtml: debugHtmlCaptures.length > 0 ? debugHtmlCaptures : undefined
       },
       fallbackUrl: 'https://allindonesia.imigrasi.go.id/'
     };
@@ -5454,6 +5524,13 @@ async function handleValidationPopup(page: Page): Promise<boolean> {
         popupFound = true;
         popupMessage = text;
         console.log(`⚠️ Validation popup detected: ${popupMessage}`);
+        
+        // Capture popup HTML structure for debugging
+        await captureAndStoreDebugHtml(page, 'Validation Popup Detected', {
+          targetSelector: 'div[style*="z-index: 9999"][style*="position: fixed"]',
+          minimalHtml: true
+        });
+        
         break;
       }
     }
@@ -6087,6 +6164,12 @@ async function navigateToTransportationAndAddressWithValidation(page: Page, form
           console.log(`   - ${error.fieldType}: ${error.issue}`);
         });
         
+        // Capture form HTML to see validation errors
+        await captureAndStoreDebugHtml(page, 'Red Border Validation Errors Found', {
+          targetSelector: 'form, .form-container, [class*="form"]',
+          minimalHtml: true
+        });
+        
         // Fix the red-bordered fields
         const fixSuccess = await fixRedBorderFields(page, validationErrors.errorElements, formData);
         
@@ -6186,6 +6269,16 @@ async function navigateToTransportationAndAddress(page: Page): Promise<boolean> 
       const hasPopup = await page.$('div[style*="z-index: 9999"][style*="position: fixed"]');
       if (hasPopup) {
         console.log('🔍 Detected possible validation popup blocking navigation');
+        // Capture popup HTML for debugging
+        await captureAndStoreDebugHtml(page, 'Transportation Navigation Failure - Popup Detected', {
+          targetSelector: 'div[style*="z-index: 9999"][style*="position: fixed"]',
+          minimalHtml: true
+        });
+      } else {
+        // Capture full page HTML to see why navigation failed
+        await captureAndStoreDebugHtml(page, 'Transportation Navigation Failure', {
+          minimalHtml: true
+        });
       }
       
       return false;
