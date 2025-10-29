@@ -813,6 +813,65 @@ async function captureAndStoreDebugHtml(page: Page, stepName: string, options: {
 } = {}): Promise<void> {
   const html = await captureDebugHtml(page, stepName, options);
   if (html) {
+    // Log HTML analysis for debugging
+    console.log(`🔍 HTML Analysis for ${stepName}:`);
+    
+    // Count key elements
+    const buttonCount = (html.match(/<button[^>]*>/g) || []).length;
+    const formCount = (html.match(/<form[^>]*>/g) || []).length;
+    const inputCount = (html.match(/<input[^>]*>/g) || []).length;
+    const errorElements = (html.match(/error|invalid|required|incomplete/gi) || []).length;
+    
+    console.log(`  📊 Elements: ${buttonCount} buttons, ${formCount} forms, ${inputCount} inputs`);
+    console.log(`  ⚠️  Error indicators: ${errorElements} found`);
+    
+    // Check for specific navigation elements
+    const nextButtons = (html.match(/next|lanjut|selanjutnya/gi) || []).length;
+    const disabledButtons = (html.match(/disabled|opacity.*0\.|display.*none/gi) || []).length;
+    console.log(`  🔘 Navigation: ${nextButtons} "next" texts, ${disabledButtons} disabled/hidden elements`);
+    
+    // Look for validation indicators
+    const redBorders = (html.match(/rgb\(242,\s*48,\s*48\)|border.*red/gi) || []).length;
+    const popupIndicators = (html.match(/z-index.*9999|position.*fixed.*z-index/gi) || []).length;
+    console.log(`  🚨 Validation: ${redBorders} red borders, ${popupIndicators} popup indicators`);
+    
+    // Log current page URL and title from HTML
+    const urlMatch = html.match(/<title[^>]*>([^<]*)</i);
+    const pageTitle = urlMatch ? urlMatch[1].trim() : 'Unknown';
+    console.log(`  📄 Page: "${pageTitle}"`);
+    
+    // Check for specific issues related to step name
+    if (stepName.includes('Transportation Navigation Failure')) {
+      console.log(`  🚨 Transportation Navigation Analysis:`);
+      
+      // Check if we're actually on the Travel Details page
+      const travelDetailsIndicators = (html.match(/travel-details|std_arrival_date|std_departure_date|visa.*kitas/gi) || []).length;
+      console.log(`    - Travel Details indicators: ${travelDetailsIndicators}`);
+      
+      // Check for Transportation page indicators that should NOT be present
+      const transportationIndicators = (html.match(/smta_mode_transport|transportation.*address|mode.*transport/gi) || []).length;
+      console.log(`    - Transportation indicators: ${transportationIndicators} (should be 0 if nav failed)`);
+      
+      // Look for form validation states
+      const requiredFields = (html.match(/required.*field|field.*required/gi) || []).length;
+      const emptyFields = (html.match(/value=""|placeholder.*select/gi) || []).length;
+      console.log(`    - Form state: ${requiredFields} required field indicators, ${emptyFields} potentially empty fields`);
+      
+      // Check for JavaScript errors or loading states
+      const loadingIndicators = (html.match(/loading|spinner|wait/gi) || []).length;
+      console.log(`    - Loading indicators: ${loadingIndicators}`);
+    }
+    
+    // Log preview of HTML content around buttons and forms
+    const buttonSection = html.match(/<button[^>]*>.*?<\/button>/gi);
+    if (buttonSection && buttonSection.length > 0) {
+      console.log(`  🔘 Button HTML: ${buttonSection.slice(0, 3).join(', ')}`);
+    }
+    
+    // Log preview of HTML content
+    const preview = html.substring(0, 1000).replace(/\s+/g, ' ').trim();
+    console.log(`📄 HTML Preview (first 1000 chars):\n${preview}${html.length > 1000 ? '...[truncated]' : ''}`);
+    
     // Store the latest 5 captures to avoid memory issues
     debugHtmlCaptures.push({
       stepName,
