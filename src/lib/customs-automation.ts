@@ -5916,25 +5916,36 @@ async function navigateToTravelDetailsWithValidation(page: Page, formData: FormD
     }
     
     try {
-      // Look for Next/Lanjut button on Personal Information page
-      const buttons = await page.$$('button');
-      let buttonClicked = false;
+      // Look for Next/Lanjut button on Personal Information page using page.evaluate to avoid stale elements
+      console.log('🔍 Looking for navigation button on Personal Information page...');
       
-      for (const button of buttons) {
-        const text = await button.evaluate(el => el.textContent?.toLowerCase().trim());
-        if (text && (text.includes('next') || text.includes('lanjut') || text.includes('selanjutnya'))) {
-          console.log(`🔘 Clicking navigation button with text: "${text}"`);
-          await button.click();
-          await smartDelay(page, 1000);
-          buttonClicked = true;
-          break;
+      const clickResult = await page.evaluate(() => {
+        const buttons = document.querySelectorAll('button');
+        for (const button of buttons) {
+          const text = button.textContent?.toLowerCase().trim();
+          if (text && (text.includes('next') || text.includes('lanjut') || text.includes('selanjutnya'))) {
+            // Click the button in browser context
+            button.click();
+            return { clicked: true, text: text };
+          }
         }
-      }
+        return { clicked: false, text: null };
+      }).catch(async (error) => {
+        console.log(`❌ Error during button search/click: ${error.message}`);
+        // Capture HTML on error
+        await captureAndStoreDebugHtml(page, 'Navigation Button Click Error - Travel Details', {
+          minimalHtml: true
+        });
+        return { clicked: false, text: null };
+      });
       
-      if (!buttonClicked) {
+      if (!clickResult.clicked) {
         console.log('❌ Could not find navigation button on Personal Information page');
         return false;
       }
+      
+      console.log(`✅ Successfully clicked navigation button with text: "${clickResult.text}"`);
+      await smartDelay(page, 1000);
       
       // Check for validation popup after clicking navigation button
       await smartDelay(page, 1000);
@@ -6214,43 +6225,52 @@ async function navigateToTransportationAndAddress(page: Page): Promise<boolean> 
   console.log('🔄 Navigating to Transportation and Address page...');
   
   try {
-    // Look for Next/Lanjut button on Travel Details page
-    const buttons = await page.$$('button');
-    let buttonClicked = false;
+    // Look for Next/Lanjut button on Travel Details page using page.evaluate to avoid stale elements
+    console.log('🔍 Looking for navigation button on Travel Details page...');
     
-    for (const button of buttons) {
-      const text = await button.evaluate(el => el.textContent?.toLowerCase().trim());
-      if (text && (text.includes('next') || text.includes('lanjut') || text.includes('selanjutnya'))) {
-        console.log(`🔘 Clicking navigation button with text: "${text}"`);
-        
-        // Store current URL before clicking
-        const currentUrlBefore = page.url();
-        
-        await button.click();
-        
-        // Increased delay to allow validation to complete
-        await smartDelay(page, 2500);
-        
-        // Check if URL changed or navigation started
-        try {
-          await page.waitForFunction(
-            (urlBefore) => window.location.href !== urlBefore,
-            { timeout: 1000 },
-            currentUrlBefore
-          );
-          console.log('✅ Navigation started - URL changed');
-        } catch {
-          console.log('⚠️ URL hasn\'t changed after clicking next - validation may have failed');
+    // Store current URL before clicking
+    const currentUrlBefore = page.url();
+    
+    const clickResult = await page.evaluate(() => {
+      const buttons = document.querySelectorAll('button');
+      for (const button of buttons) {
+        const text = button.textContent?.toLowerCase().trim();
+        if (text && (text.includes('next') || text.includes('lanjut') || text.includes('selanjutnya'))) {
+          // Click the button in browser context
+          button.click();
+          return { clicked: true, text: text };
         }
-        
-        buttonClicked = true;
-        break;
       }
-    }
+      return { clicked: false, text: null };
+    }).catch(async (error) => {
+      console.log(`❌ Error during button search/click: ${error.message}`);
+      // Capture HTML on error
+      await captureAndStoreDebugHtml(page, 'Navigation Button Click Error - Transportation', {
+        minimalHtml: true
+      });
+      return { clicked: false, text: null };
+    });
     
-    if (!buttonClicked) {
+    if (!clickResult.clicked) {
       console.log('❌ Could not find navigation button on Travel Details page');
       return false;
+    }
+    
+    console.log(`✅ Successfully clicked navigation button with text: "${clickResult.text}"`);
+    
+    // Increased delay to allow validation to complete
+    await smartDelay(page, 2500);
+    
+    // Check if URL changed or navigation started
+    try {
+      await page.waitForFunction(
+        (urlBefore) => window.location.href !== urlBefore,
+        { timeout: 1000 },
+        currentUrlBefore
+      );
+      console.log('✅ Navigation started - URL changed');
+    } catch {
+      console.log('⚠️ URL hasn\'t changed after clicking next - validation may have failed');
     }
     
     // Wait for Transportation and Address page to load
@@ -6301,25 +6321,36 @@ async function navigateToConsentPageWithValidation(page: Page, formData: FormDat
     attempts++;
     productionLog(`📍 Navigation attempt ${attempts}/${maxAttempts}`);
     
-    // Find and click next/lanjut button
-    const buttons = await page.$$('button');
-    let buttonClicked = false;
+    // Find and click next/lanjut button using page.evaluate to avoid stale element issues
+    console.log('🔍 Looking for navigation button...');
     
-    for (const button of buttons) {
-      const text = await button.evaluate(el => el.textContent?.toLowerCase().trim());
-      if (text && (text.includes('next') || text.includes('lanjut'))) {
-        console.log(`🔘 Clicking navigation button with text: "${text}"`);
-        await button.click();
-        await smartDelay(page, 1000);
-        buttonClicked = true;
-        break;
+    const clickResult = await page.evaluate(() => {
+      const buttons = document.querySelectorAll('button');
+      for (const button of buttons) {
+        const text = button.textContent?.toLowerCase().trim();
+        if (text && (text.includes('next') || text.includes('lanjut') || text.includes('selanjutnya'))) {
+          // Click the button in browser context
+          button.click();
+          return { clicked: true, text: text };
+        }
       }
-    }
+      return { clicked: false, text: null };
+    }).catch(async (error) => {
+      console.log(`❌ Error during button search/click: ${error.message}`);
+      // Capture HTML on error
+      await captureAndStoreDebugHtml(page, 'Navigation Button Click Error - Declaration Page', {
+        minimalHtml: true
+      });
+      return { clicked: false, text: null };
+    });
     
-    if (!buttonClicked) {
-      console.log('❌ No navigation button found');
+    if (!clickResult.clicked) {
+      console.log('❌ No navigation button found or click failed');
       return false;
     }
+    
+    console.log(`✅ Successfully clicked navigation button with text: "${clickResult.text}"`);
+    await smartDelay(page, 1500);
     
     // Check if navigation was successful (original detection)
     const consentIndicators = await page.evaluate(() => {
