@@ -39,6 +39,11 @@ export interface SubmitCustomsError {
     message: string;
     details?: unknown;
     step?: 'validation' | 'navigation' | 'form_fill' | 'submission' | 'qr_extraction';
+    debugHtml?: Array<{
+      stepName: string;
+      html: string;
+      timestamp: string;
+    }>;
   };
   fallbackUrl?: string; // URL for manual completion
 }
