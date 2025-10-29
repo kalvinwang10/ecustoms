@@ -5435,29 +5435,26 @@ async function handleValidationPopup(page: Page): Promise<boolean> {
   console.log('🔍 Checking for validation popup...');
   
   try {
-    // Check for popup with "Data Tidak Lengkap!" message
-    const popupSelectors = [
-      'h1:contains("Data Tidak Lengkap!")',
-      '[role="dialog"] h1',
-      '.modal h1',
-      'h1[style*="text-align: center"]'
-    ];
+    // First check for the popup overlay with z-index: 9999
+    const popupOverlay = await page.$('div[style*="z-index: 9999"][style*="position: fixed"]');
+    if (!popupOverlay) {
+      console.log('ℹ️ No validation popup overlay found');
+      return false;
+    }
     
+    // Look for the h1 element within the popup
+    const h1Elements = await page.$$('h1');
     let popupFound = false;
-    for (const selector of popupSelectors) {
-      try {
-        const popup = await page.$(selector);
-        if (popup) {
-          const text = await popup.evaluate(el => el.textContent?.trim());
-          if (text && text.includes('Data Tidak Lengkap')) {
-            popupFound = true;
-            console.log('⚠️ Validation popup detected: Data Tidak Lengkap!');
-            break;
-          }
-        }
-      } catch (selectorError) {
-        // Continue trying other selectors
-        continue;
+    let popupMessage = '';
+    
+    for (const h1 of h1Elements) {
+      const text = await h1.evaluate(el => el.textContent?.trim());
+      // Check for both English and Indonesian text
+      if (text && (text.includes('Incomplete Data') || text.includes('Data Tidak Lengkap'))) {
+        popupFound = true;
+        popupMessage = text;
+        console.log(`⚠️ Validation popup detected: ${popupMessage}`);
+        break;
       }
     }
     
@@ -5466,28 +5463,27 @@ async function handleValidationPopup(page: Page): Promise<boolean> {
       return false;
     }
     
-    // Click OK button to close popup
-    const okButtonSelectors = [
-      'button:contains("OK")',
-      'button[type="button"]',
-      '.modal button',
-      '[role="dialog"] button'
-    ];
-    
-    for (const buttonSelector of okButtonSelectors) {
-      try {
-        const okButton = await page.$(buttonSelector);
-        if (okButton) {
-          const buttonText = await okButton.evaluate(el => el.textContent?.trim());
-          if (buttonText && buttonText.toLowerCase().includes('ok')) {
-            await okButton.click();
-            console.log('✅ Clicked OK to close validation popup');
-            await smartDelay(page, 1000);
-            return true;
-          }
-        }
-      } catch (buttonError) {
-        continue;
+    // Find and click the OK button
+    const buttons = await page.$$('button[type="button"]');
+    for (const button of buttons) {
+      const buttonText = await button.evaluate(el => {
+        // Check button text or span text within button
+        const spanElement = el.querySelector('span');
+        return spanElement ? spanElement.textContent?.trim() : el.textContent?.trim();
+      });
+      
+      if (buttonText && buttonText.toLowerCase() === 'ok') {
+        await button.click();
+        console.log('✅ Clicked OK to close validation popup');
+        
+        // Wait for popup to disappear
+        await page.waitForFunction(
+          () => !document.querySelector('div[style*="z-index: 9999"][style*="position: fixed"]'),
+          { timeout: 3000 }
+        ).catch(() => {});
+        
+        await smartDelay(page, 500);
+        return true;
       }
     }
     
@@ -6080,18 +6076,43 @@ async function navigateToTransportationAndAddressWithValidation(page: Page, form
     const popupHandled = await handleValidationPopup(page);
     
     if (popupHandled && attempt < maxRetries) {
-      console.log('🔧 Popup handled, checking for missing fields...');
+      console.log('🔧 Popup handled, now checking for field validation errors...');
       
-      // Detect and fill missing fields using the new enhanced function
-      const fieldsFixed = await detectAndFillMissingFields(page, formData);
+      // Check for red borders after popup is dismissed
+      const validationErrors = await checkForRedBordersUniversal(page, 'Travel Details');
       
-      if (!fieldsFixed) {
-        // Fallback to old validation method
-        await validateAndFillMissingFields(page, formData);
+      if (validationErrors.hasErrors) {
+        console.log(`📍 Found ${validationErrors.errorElements.length} red-bordered fields after popup:`);
+        validationErrors.errorElements.forEach(error => {
+          console.log(`   - ${error.fieldType}: ${error.issue}`);
+        });
+        
+        // Fix the red-bordered fields
+        const fixSuccess = await fixRedBorderFields(page, validationErrors.errorElements, formData);
+        
+        if (!fixSuccess) {
+          console.log('⚠️ Could not fix all red-bordered fields, trying alternative methods...');
+          // Fallback to other validation methods
+          const fieldsFixed = await detectAndFillMissingFields(page, formData);
+          
+          if (!fieldsFixed) {
+            await validateAndFillMissingFields(page, formData);
+          }
+        } else {
+          console.log('✅ Successfully fixed red-bordered fields');
+        }
+      } else {
+        console.log('ℹ️ No red borders found, checking for other missing fields...');
+        // Still check for missing fields even if no red borders
+        const fieldsFixed = await detectAndFillMissingFields(page, formData);
+        
+        if (!fieldsFixed) {
+          await validateAndFillMissingFields(page, formData);
+        }
       }
       
       // Wait before retry
-      await smartDelay(page, 800);
+      await smartDelay(page, 1000);
       console.log('🔄 Retrying navigation after field validation...');
       continue;
     }
@@ -6118,8 +6139,27 @@ async function navigateToTransportationAndAddress(page: Page): Promise<boolean> 
       const text = await button.evaluate(el => el.textContent?.toLowerCase().trim());
       if (text && (text.includes('next') || text.includes('lanjut') || text.includes('selanjutnya'))) {
         console.log(`🔘 Clicking navigation button with text: "${text}"`);
+        
+        // Store current URL before clicking
+        const currentUrlBefore = page.url();
+        
         await button.click();
-        await smartDelay(page, 1000);
+        
+        // Increased delay to allow validation to complete
+        await smartDelay(page, 2500);
+        
+        // Check if URL changed or navigation started
+        try {
+          await page.waitForFunction(
+            (urlBefore) => window.location.href !== urlBefore,
+            { timeout: 1000 },
+            currentUrlBefore
+          );
+          console.log('✅ Navigation started - URL changed');
+        } catch {
+          console.log('⚠️ URL hasn\'t changed after clicking next - validation may have failed');
+        }
+        
         buttonClicked = true;
         break;
       }
@@ -6141,6 +6181,13 @@ async function navigateToTransportationAndAddress(page: Page): Promise<boolean> 
       // Check if we landed on a different page by looking for other indicators
       const currentUrl = page.url();
       console.log(`Current URL: ${currentUrl}`);
+      
+      // Check if a popup might be blocking the view
+      const hasPopup = await page.$('div[style*="z-index: 9999"][style*="position: fixed"]');
+      if (hasPopup) {
+        console.log('🔍 Detected possible validation popup blocking navigation');
+      }
+      
       return false;
     }
     
