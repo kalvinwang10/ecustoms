@@ -5560,12 +5560,15 @@ async function fillRadioField(page: Page, selector: string, value: string): Prom
 }
 
 // Handle validation popup that appears when required fields are missing
-async function handleValidationPopup(page: Page): Promise<boolean> {
+async function handleValidationPopup(page: Page, formData: FormData): Promise<boolean> {
   console.log('🔍 Checking for validation popup...');
   
+  // Wait for popup to fully render in DOM
+  await smartDelay(page, 1000);
+  
   try {
-    // First check for the popup overlay with z-index: 9999
-    const popupOverlay = await page.$('div[style*="z-index: 9999"][style*="position: fixed"]');
+    // First check for the popup overlay with high z-index (flexible to catch various z-index values)
+    const popupOverlay = await page.$('div[style*="z-index: 999"][style*="position: fixed"]');
     if (!popupOverlay) {
       console.log('ℹ️ No validation popup overlay found');
       return false;
@@ -5595,7 +5598,7 @@ async function handleValidationPopup(page: Page): Promise<boolean> {
         
         // Capture popup HTML structure for debugging
         await captureAndStoreDebugHtml(page, 'Validation Popup Detected', {
-          targetSelector: 'div[style*="z-index: 9999"][style*="position: fixed"]',
+          targetSelector: 'div[style*="z-index: 999"][style*="position: fixed"]',
           minimalHtml: true
         });
         
@@ -5610,7 +5613,7 @@ async function handleValidationPopup(page: Page): Promise<boolean> {
     
     // Try to get the detailed error message from the popup
     const popupDetail = await page.evaluate(() => {
-      const popup = document.querySelector('div[style*="z-index: 9999"][style*="position: fixed"]');
+      const popup = document.querySelector('div[style*="z-index: 999"][style*="position: fixed"]');
       if (popup) {
         const paragraphs = popup.querySelectorAll('p');
         for (const p of paragraphs) {
@@ -5643,11 +5646,25 @@ async function handleValidationPopup(page: Page): Promise<boolean> {
         
         // Wait for popup to disappear
         await page.waitForFunction(
-          () => !document.querySelector('div[style*="z-index: 9999"][style*="position: fixed"]'),
+          () => !document.querySelector('div[style*="z-index: 999"][style*="position: fixed"]'),
           { timeout: 3000 }
         ).catch(() => {});
         
         await smartDelay(page, 500);
+        
+        // If this was an "Incomplete Data" popup, try to fix the missing fields
+        if (popupMessage.includes('Incomplete Data') || popupMessage.includes('Data Tidak Lengkap')) {
+          console.log('🔧 Attempting to fix missing fields after Incomplete Data popup...');
+          
+          // Get the form data to use for field filling
+          const success = await detectAndFillMissingFields(page, formData);
+          if (success) {
+            console.log('✅ Successfully filled missing fields');
+          } else {
+            console.log('⚠️ Could not fill all missing fields');
+          }
+        }
+        
         return true;
       }
     }
@@ -5751,6 +5768,7 @@ async function detectAndFillMissingFields(page: Page, formData: FormData): Promi
           
         case 'Jenis Transportasi Udara':
         case 'Air Transport Type':
+        case 'Type of Air Transport':
           console.log('🛩️ Fixing Air Transport Type field...');
           success = await fillAirTransportType(page, formData);
           break;
@@ -5772,10 +5790,314 @@ async function detectAndFillMissingFields(page: Page, formData: FormData): Promi
           }
           break;
           
+        case 'Full Passport Name':
+        case 'Full Name':
+        case 'Nama Lengkap':
+          console.log('👤 Fixing Full Name field...');
+          if (formData.fullPassportName) {
+            success = await safeFieldInput(page, fieldSelector, formData.fullPassportName);
+          }
+          break;
+          
+        case 'Date of Birth':
+        case 'Tanggal Lahir':
+          console.log('📅 Fixing Date of Birth field...');
+          if (formData.dateOfBirth) {
+            const dobFormatted = formatDateForSingleInput(formData.dateOfBirth);
+            success = await safeFieldInput(page, fieldSelector, dobFormatted);
+          }
+          break;
+          
+        case 'Gender':
+        case 'Jenis Kelamin':
+          console.log('⚧️ Fixing Gender field...');
+          if (formData.gender) {
+            const genderValue = formData.gender === 'male' ? 'male' : 'female';
+            success = await safeRadioSelect(page, fieldSelector, genderValue);
+          }
+          break;
+          
+        case 'Country/Place of Birth':
+        case 'Negara':
+        case 'Country':
+          console.log('🌍 Fixing Country field...');
+          if (formData.nationality) {
+            // Handle dropdown field for country
+            success = await safeDropdownSelect(page, fieldSelector, formData.nationality);
+          }
+          break;
+          
+        case 'Tempat Lahir':
+        case 'Place of Birth':
+          console.log('🏘️ Fixing Place of Birth field...');
+          if (formData.countryOfBirth) {
+            // Handle dropdown field for place of birth
+            success = await safeDropdownSelect(page, fieldSelector, formData.countryOfBirth);
+          }
+          break;
+          
+        case 'Passport Number':
+        case 'Nomor Paspor':
+          console.log('📘 Fixing Passport Number field...');
+          if (formData.passportNumber) {
+            success = await safeFieldInput(page, fieldSelector, formData.passportNumber);
+          }
+          break;
+          
+        case 'Date of Passport Expiry':
+        case 'Passport Expiry Date':
+        case 'Tanggal Berakhir Paspor':
+          console.log('📅 Fixing Passport Expiry Date field...');
+          if (formData.passportExpiryDate) {
+            const passportExpiryFormatted = formatDateForSingleInput(formData.passportExpiryDate);
+            success = await safeFieldInput(page, fieldSelector, passportExpiryFormatted);
+          }
+          break;
+          
+        case 'Mobile Number':
+        case 'Mobile No':
+        case 'Nomor Handphone':
+          console.log('📱 Fixing Mobile Number field...');
+          if (formData.mobileNumber) {
+            success = await safeFieldInput(page, fieldSelector, formData.mobileNumber);
+          }
+          break;
+          
+        case 'Email':
+        case 'Email Address':
+        case 'Alamat Email':
+          console.log('📧 Fixing Email field...');
+          if (formData.email) {
+            success = await safeFieldInput(page, fieldSelector, formData.email);
+          }
+          break;
+          
+        case 'Arrival Date to Indonesia':
+        case 'Arrival Date':
+        case 'Tanggal Kedatangan':
+          console.log('📅 Fixing Arrival Date field...');
+          if (formData.arrivalDate) {
+            const arrivalDateFormatted = formatDateForSingleInput(formData.arrivalDate);
+            success = await safeFieldInput(page, fieldSelector, arrivalDateFormatted);
+          }
+          break;
+          
+        case 'Departure Date from Indonesia':
+        case 'Departure Date':
+        case 'Tanggal Keberangkatan':
+          console.log('📅 Fixing Departure Date field...');
+          if (formData.departureDate) {
+            const departureDateFormatted = formatDateForSingleInput(formData.departureDate);
+            success = await safeFieldInput(page, fieldSelector, departureDateFormatted);
+          }
+          break;
+          
+        case 'Visa or KITAS/KITAP Number':
+        case 'Visa Number':
+        case 'Nomor Visa':
+          console.log('📋 Fixing Visa Number field...');
+          if (formData.visaOrKitasNumber) {
+            success = await safeFieldInput(page, fieldSelector, formData.visaOrKitasNumber);
+          }
+          break;
+          
+        case 'Mode of Transport':
+        case 'Moda Transportasi':
+          console.log('🚗 Fixing Mode of Transport field...');
+          if (formData.modeOfTransport) {
+            success = await safeAllIndonesiaDropdownSelect(page, fieldSelector, formData.modeOfTransport);
+          }
+          break;
+          
+        case 'Residence Type':
+        case 'Jenis Tempat Tinggal':
+          console.log('🏠 Fixing Residence Type field...');
+          if (formData.residenceType) {
+            success = await safeAllIndonesiaDropdownSelect(page, fieldSelector, formData.residenceType);
+          }
+          break;
+          
+        case 'Residential Province':
+        case 'Provinsi Tempat Tinggal':
+          console.log('🗺️ Fixing Residential Province field...');
+          if (formData.placeOfArrival) {
+            // Use province selection logic based on place of arrival
+            const selectedProvince = await page.evaluate((placeOfArrival) => {
+              // Define province mapping function within the browser context
+              const getProvinceByPort = (port: string): string => {
+                if (!port) return 'DKI JAKARTA';
+                const portUpper = port.toUpperCase();
+                
+                if (portUpper.includes('JAKARTA') || portUpper.includes('SOEKARNO') || portUpper.includes('CGK')) return 'DKI JAKARTA';
+                if (portUpper.includes('BALI') || portUpper.includes('DENPASAR') || portUpper.includes('DPS')) return 'BALI';
+                if (portUpper.includes('YOGYA') || portUpper.includes('JOG')) return 'DI YOGYAKARTA';
+                if (portUpper.includes('MEDAN') || portUpper.includes('KNO')) return 'SUMATERA UTARA';
+                if (portUpper.includes('SURABAYA') || portUpper.includes('MLG')) return 'JAWA TIMUR';
+                if (portUpper.includes('MAKASSAR') || portUpper.includes('UPG')) return 'SULAWESI SELATAN';
+                if (portUpper.includes('BANDUNG') || portUpper.includes('BDO')) return 'JAWA BARAT';
+                
+                return 'DKI JAKARTA'; // Default fallback
+              };
+              
+              return getProvinceByPort(placeOfArrival);
+            }, formData.placeOfArrival);
+            
+            success = await safeAllIndonesiaDropdownSelect(page, fieldSelector, selectedProvince);
+          }
+          break;
+          
+        case 'Residential City':
+        case 'Kota Tempat Tinggal':
+          console.log('🌃 Fixing Residential City field...');
+          // Use the specialized city selection function
+          success = await page.evaluate((selector) => {
+            const selectElement = document.querySelector(selector) as HTMLSelectElement;
+            if (selectElement && selectElement.options.length > 1) {
+              // Select the first available city option (index 1, skipping the placeholder)
+              selectElement.selectedIndex = 1;
+              selectElement.dispatchEvent(new Event('change', { bubbles: true }));
+              return true;
+            }
+            return false;
+          }, fieldSelector);
+          break;
+          
+        case 'Residential Address':
+        case 'Address where staying in Indonesia':
+        case 'Alamat Tempat Tinggal':
+          console.log('📍 Fixing Residential Address field...');
+          if (formData.addressInIndonesia) {
+            success = await safeTextareaInput(page, fieldSelector, formData.addressInIndonesia);
+          }
+          break;
+          
+        case 'Type of Vessel':
+        case 'Jenis Kapal':
+          console.log('🚢 Fixing Type of Vessel field...');
+          if (formData.typeOfVessel) {
+            success = await safeAllIndonesiaDropdownSelect(page, fieldSelector, formData.typeOfVessel);
+          }
+          break;
+          
+        case 'Vessel Name':
+        case 'Nama Kapal':
+          console.log('🚢 Fixing Vessel Name field...');
+          if (formData.vesselName) {
+            success = await safeFieldInput(page, fieldSelector, formData.vesselName);
+          }
+          break;
+          
         default:
           console.log(`⚠️ Unknown field: ${field.label} - attempting generic fix`);
           // Try to fill based on field ID patterns
-          if (field.fieldId.includes('flight') && field.fieldId.includes('name')) {
+          if (field.fieldId.includes('spi_nationality_')) {
+            console.log('🌍 Fixing nationality field by ID pattern...');
+            success = await safeAllIndonesiaDropdownSelect(page, fieldSelector, formData.nationality);
+          } else if (field.fieldId.includes('spi_full_name_')) {
+            console.log('👤 Fixing full name field by ID pattern...');
+            success = await safeFieldInput(page, fieldSelector, formData.fullPassportName);
+          } else if (field.fieldId.includes('spi_dob_')) {
+            console.log('📅 Fixing date of birth field by ID pattern...');
+            const dobFormatted = formatDateForSingleInput(formData.dateOfBirth);
+            success = await safeFieldInput(page, fieldSelector, dobFormatted);
+          } else if (field.fieldId.includes('spi_country_or_place_of_birth_')) {
+            console.log('🏘️ Fixing country of birth field by ID pattern...');
+            success = await safeAllIndonesiaDropdownSelect(page, fieldSelector, formData.countryOfBirth);
+          } else if (field.fieldId.includes('spi_gender_')) {
+            console.log('⚧️ Fixing gender field by ID pattern...');
+            const genderValue = formData.gender === 'male' ? 'male' : 'female';
+            success = await safeRadioSelect(page, fieldSelector, genderValue);
+          } else if (field.fieldId.includes('spi_passport_no_')) {
+            console.log('📘 Fixing passport number field by ID pattern...');
+            success = await safeFieldInput(page, fieldSelector, formData.passportNumber);
+          } else if (field.fieldId.includes('spi_date_of_passport_expiry_')) {
+            console.log('📅 Fixing passport expiry field by ID pattern...');
+            const passportExpiryFormatted = formatDateForSingleInput(formData.passportExpiryDate);
+            success = await safeFieldInput(page, fieldSelector, passportExpiryFormatted);
+          } else if (field.fieldId.includes('spi_mobile_no_')) {
+            console.log('📱 Fixing mobile number field by ID pattern...');
+            success = await safeFieldInput(page, fieldSelector, formData.mobileNumber);
+          } else if (field.fieldId.includes('spi_email_')) {
+            console.log('📧 Fixing email field by ID pattern...');
+            success = await safeFieldInput(page, fieldSelector, formData.email);
+          } else if (field.fieldId.includes('std_arrival_date_')) {
+            console.log('📅 Fixing arrival date field by ID pattern...');
+            const arrivalDateFormatted = formatDateForSingleInput(formData.arrivalDate);
+            success = await safeFieldInput(page, fieldSelector, arrivalDateFormatted);
+          } else if (field.fieldId.includes('std_departure_date_')) {
+            console.log('📅 Fixing departure date field by ID pattern...');
+            const departureDateFormatted = formatDateForSingleInput(formData.departureDate);
+            success = await safeFieldInput(page, fieldSelector, departureDateFormatted);
+          } else if (field.fieldId.includes('std_visa_kitas_kitap_no_')) {
+            console.log('📋 Fixing visa number field by ID pattern...');
+            success = await safeFieldInput(page, fieldSelector, formData.visaOrKitasNumber);
+          } else if (field.fieldId.includes('smta_mode_transport_')) {
+            console.log('🚗 Fixing mode of transport field by ID pattern...');
+            success = await safeAllIndonesiaDropdownSelect(page, fieldSelector, formData.modeOfTransport);
+          } else if (field.fieldId.includes('smta_purpose_travel_')) {
+            console.log('🎯 Fixing purpose of travel field by ID pattern...');
+            success = await fillPurposeOfTravel(page, formData);
+          } else if (field.fieldId.includes('smta_residence_type_')) {
+            console.log('🏠 Fixing residence type field by ID pattern...');
+            success = await safeAllIndonesiaDropdownSelect(page, fieldSelector, formData.residenceType);
+          } else if (field.fieldId.includes('smta_residential_province_')) {
+            console.log('🗺️ Fixing residential province field by ID pattern...');
+            const selectedProvince = await page.evaluate((placeOfArrival) => {
+              const getProvinceByPort = (port: string): string => {
+                if (!port) return 'DKI JAKARTA';
+                const portUpper = port.toUpperCase();
+                
+                if (portUpper.includes('JAKARTA') || portUpper.includes('SOEKARNO') || portUpper.includes('CGK')) return 'DKI JAKARTA';
+                if (portUpper.includes('BALI') || portUpper.includes('DENPASAR') || portUpper.includes('DPS')) return 'BALI';
+                if (portUpper.includes('YOGYA') || portUpper.includes('JOG')) return 'DI YOGYAKARTA';
+                if (portUpper.includes('MEDAN') || portUpper.includes('KNO')) return 'SUMATERA UTARA';
+                if (portUpper.includes('SURABAYA') || portUpper.includes('MLG')) return 'JAWA TIMUR';
+                if (portUpper.includes('MAKASSAR') || portUpper.includes('UPG')) return 'SULAWESI SELATAN';
+                if (portUpper.includes('BANDUNG') || portUpper.includes('BDO')) return 'JAWA BARAT';
+                
+                return 'DKI JAKARTA';
+              };
+              
+              return getProvinceByPort(placeOfArrival);
+            }, formData.placeOfArrival);
+            
+            success = await safeAllIndonesiaDropdownSelect(page, fieldSelector, selectedProvince);
+          } else if (field.fieldId.includes('smta_residential_city_')) {
+            console.log('🌃 Fixing residential city field by ID pattern...');
+            success = await page.evaluate((selector) => {
+              const selectElement = document.querySelector(selector) as HTMLSelectElement;
+              if (selectElement && selectElement.options.length > 1) {
+                selectElement.selectedIndex = 1;
+                selectElement.dispatchEvent(new Event('change', { bubbles: true }));
+                return true;
+              }
+              return false;
+            }, fieldSelector);
+          } else if (field.fieldId.includes('smta_residential_address_')) {
+            console.log('📍 Fixing residential address field by ID pattern...');
+            success = await safeTextareaInput(page, fieldSelector, formData.addressInIndonesia);
+          } else if (field.fieldId.includes('smta_place_arrival_')) {
+            console.log('🛬 Fixing place of arrival field by ID pattern...');
+            success = await fillPlaceOfArrival(page, formData);
+          } else if (field.fieldId.includes('smta_type_air_transport_')) {
+            console.log('🛩️ Fixing air transport type field by ID pattern...');
+            success = await fillAirTransportType(page, formData);
+          } else if (field.fieldId.includes('smta_flight_name_')) {
+            console.log('✈️ Fixing flight name field by ID pattern...');
+            success = await fillFlightName(page, formData);
+          } else if (field.fieldId.includes('smta_flight_number_')) {
+            console.log('🔢 Fixing flight number field by ID pattern...');
+            if (formData.flightNumber) {
+              const { number } = splitFlightNumber(formData.flightNumber);
+              success = await safeFieldInput(page, fieldSelector, number || formData.flightNumber);
+            }
+          } else if (field.fieldId.includes('smta_type_vessel_')) {
+            console.log('🚢 Fixing vessel type field by ID pattern...');
+            success = await safeAllIndonesiaDropdownSelect(page, fieldSelector, formData.typeOfVessel);
+          } else if (field.fieldId.includes('smta_vessel_name_')) {
+            console.log('🚢 Fixing vessel name field by ID pattern...');
+            success = await safeFieldInput(page, fieldSelector, formData.vesselName);
+          } else if (field.fieldId.includes('flight') && field.fieldId.includes('name')) {
             success = await fillFlightName(page, formData);
           } else if (field.fieldId.includes('purpose')) {
             success = await fillPurposeOfTravel(page, formData);
@@ -6037,16 +6359,10 @@ async function navigateToTravelDetailsWithValidation(page: Page, formData: FormD
       
       // Check for validation popup after clicking navigation button
       await smartDelay(page, 1000);
-      const popupDetected = await checkForValidationPopup(page);
+      const popupHandled = await handleValidationPopup(page, formData);
       
-      if (popupDetected) {
-        console.log('⚠️ Validation popup detected, attempting to fix missing fields');
-        
-        // Dismiss popup first
-        await dismissValidationPopup(page);
-        
-        // Check for missing fields on Personal Information page
-        await validatePersonalInformationFields(page);
+      if (popupHandled) {
+        console.log('✅ Popup handled successfully, continuing to next attempt');
         
         // If this is the last attempt, return false
         if (attempt === maxRetries) {
@@ -6124,38 +6440,6 @@ async function navigateToTravelDetailsWithValidation(page: Page, formData: FormD
   return false;
 }
 
-// Check for validation popup ("Data Tidak Lengkap!")
-async function checkForValidationPopup(page: Page): Promise<boolean> {
-  try {
-    const popup = await page.$('div[style*="position: fixed"][style*="z-index: 9999"]');
-    if (!popup) return false;
-    
-    const popupText = await popup.evaluate(el => el.textContent?.toLowerCase() || '');
-    return popupText.includes('data tidak lengkap') || popupText.includes('mohon periksa formulir');
-  } catch (error) {
-    return false;
-  }
-}
-
-// Dismiss validation popup by clicking OK button
-async function dismissValidationPopup(page: Page): Promise<void> {
-  try {
-    console.log('🔘 Dismissing validation popup...');
-    
-    // Look for OK button in popup
-    const okButton = await page.$('div[style*="position: fixed"] button');
-    if (okButton) {
-      const buttonText = await okButton.evaluate(el => el.textContent?.toLowerCase().trim());
-      if (buttonText && buttonText.includes('ok')) {
-        await okButton.click();
-        await smartDelay(page, 1000);
-        console.log('✅ Validation popup dismissed');
-      }
-    }
-  } catch (error) {
-    console.log(`⚠️ Could not dismiss popup: ${error instanceof Error ? error.message : 'Unknown error'}`);
-  }
-}
 
 // Validate and attempt to fix Personal Information fields
 async function validatePersonalInformationFields(page: Page): Promise<void> {
@@ -6239,7 +6523,7 @@ async function navigateToTransportationAndAddressWithValidation(page: Page, form
     }
     
     // Try to navigate
-    const navigationSuccess = await navigateToTransportationAndAddress(page);
+    const navigationSuccess = await navigateToTransportationAndAddress(page, formData);
     
     if (navigationSuccess) {
       console.log(`✅ Successfully navigated to Transportation page on attempt ${attempt}`);
@@ -6249,7 +6533,7 @@ async function navigateToTransportationAndAddressWithValidation(page: Page, form
     console.log(`⚠️ Navigation attempt ${attempt} failed, checking for validation popup...`);
     
     // Check for validation popup
-    const popupHandled = await handleValidationPopup(page);
+    const popupHandled = await handleValidationPopup(page, formData);
     
     if (popupHandled && attempt < maxRetries) {
       console.log('🔧 Popup handled, now checking for field validation errors...');
@@ -6309,7 +6593,7 @@ async function navigateToTransportationAndAddressWithValidation(page: Page, form
 }
 
 // Navigate to Transportation and Address page after Travel Details
-async function navigateToTransportationAndAddress(page: Page): Promise<boolean> {
+async function navigateToTransportationAndAddress(page: Page, formData: FormData): Promise<boolean> {
   console.log('🔄 Navigating to Transportation and Address page...');
   
   try {
@@ -6330,7 +6614,7 @@ async function navigateToTransportationAndAddress(page: Page): Promise<boolean> 
         'a[href="javascript:void(0)"]'
       ];
       
-      let allButtons: Element[] = [];
+      const allButtons: Element[] = [];
       for (const selector of selectors) {
         const elements = document.querySelectorAll(selector);
         elements.forEach(el => {
@@ -6401,7 +6685,7 @@ async function navigateToTransportationAndAddress(page: Page): Promise<boolean> 
       await captureAndStoreDebugHtml(page, 'Navigation Button Click Error - Transportation', {
         minimalHtml: true
       });
-      return { clicked: false, text: null };
+      return { clicked: false, text: null, buttonCount: 0 };
     });
     
     if (!clickResult.clicked) {
@@ -6427,10 +6711,10 @@ async function navigateToTransportationAndAddress(page: Page): Promise<boolean> 
       console.log('⚠️ URL hasn\'t changed after clicking next - validation may have failed');
       
       // Check if a popup appeared instead
-      const hasPopup = await page.$('div[style*="z-index: 9999"][style*="position: fixed"]');
+      const hasPopup = await page.$('div[style*="z-index: 999"][style*="position: fixed"]');
       if (hasPopup) {
         console.log('🔍 Detected popup after button click - handling popup first');
-        await handleValidationPopup(page);
+        await handleValidationPopup(page, formData);
       }
     }
     
@@ -6496,7 +6780,7 @@ async function navigateToConsentPageWithValidation(page: Page, formData: FormDat
         'a[href="javascript:void(0)"]'
       ];
       
-      let allButtons: Element[] = [];
+      const allButtons: Element[] = [];
       for (const selector of selectors) {
         const elements = document.querySelectorAll(selector);
         elements.forEach(el => {
