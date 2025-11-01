@@ -5578,11 +5578,20 @@ async function handleValidationPopup(page: Page): Promise<boolean> {
     
     for (const h1 of h1Elements) {
       const text = await h1.evaluate(el => el.textContent?.trim());
-      // Check for both English and Indonesian text
-      if (text && (text.includes('Incomplete Data') || text.includes('Data Tidak Lengkap'))) {
+      // Check for various error messages in both English and Indonesian
+      if (text && (
+        text.includes('Incomplete Data') || 
+        text.includes('Data Tidak Lengkap') ||
+        text.includes('Something Went Wrong') ||
+        text.includes('Terjadi Kesalahan') ||
+        text.includes('Error') ||
+        text.includes('Failed') ||
+        text.includes('Warning') ||
+        text.includes('Peringatan')
+      )) {
         popupFound = true;
         popupMessage = text;
-        console.log(`⚠️ Validation popup detected: ${popupMessage}`);
+        console.log(`⚠️ Popup detected: ${popupMessage}`);
         
         // Capture popup HTML structure for debugging
         await captureAndStoreDebugHtml(page, 'Validation Popup Detected', {
@@ -5597,6 +5606,26 @@ async function handleValidationPopup(page: Page): Promise<boolean> {
     if (!popupFound) {
       console.log('ℹ️ No validation popup found');
       return false;
+    }
+    
+    // Try to get the detailed error message from the popup
+    const popupDetail = await page.evaluate(() => {
+      const popup = document.querySelector('div[style*="z-index: 9999"][style*="position: fixed"]');
+      if (popup) {
+        const paragraphs = popup.querySelectorAll('p');
+        for (const p of paragraphs) {
+          const text = p.textContent?.trim();
+          // Look for detailed messages (not headers or buttons)
+          if (text && text.length > 10 && !text.includes('©')) {
+            return text;
+          }
+        }
+      }
+      return null;
+    });
+    
+    if (popupDetail) {
+      console.log(`📝 Popup detail: ${popupDetail}`);
     }
     
     // Find and click the OK button
@@ -6291,16 +6320,81 @@ async function navigateToTransportationAndAddress(page: Page): Promise<boolean> 
     const currentUrlBefore = page.url();
     
     const clickResult = await page.evaluate(() => {
-      const buttons = document.querySelectorAll('button');
-      for (const button of buttons) {
-        const text = button.textContent?.toLowerCase().trim();
+      // Comprehensive button search - try multiple selectors
+      const selectors = [
+        'button',
+        '[role="button"]',
+        '[type="button"]',
+        'div[onclick]',
+        'span[onclick]',
+        'a[href="javascript:void(0)"]'
+      ];
+      
+      let allButtons: Element[] = [];
+      for (const selector of selectors) {
+        const elements = document.querySelectorAll(selector);
+        elements.forEach(el => {
+          if (!allButtons.includes(el)) {
+            allButtons.push(el);
+          }
+        });
+      }
+      
+      console.log(`Found ${allButtons.length} total clickable elements`);
+      
+      // Look for Next button specifically
+      for (const button of allButtons) {
+        // Get text from button or nested spans
+        let text = button.textContent?.toLowerCase().trim() || '';
+        const span = button.querySelector('span');
+        if (span) {
+          text = span.textContent?.toLowerCase().trim() || text;
+        }
+        
+        // Check for navigation text
         if (text && (text.includes('next') || text.includes('lanjut') || text.includes('selanjutnya'))) {
-          // Click the button in browser context
-          button.click();
-          return { clicked: true, text: text };
+          // Additional check: ensure it's not the Back button
+          const styles = window.getComputedStyle(button as HTMLElement);
+          const bgColor = styles.backgroundColor;
+          
+          // Next button typically has blue/primary background
+          // Back button typically has gray background
+          if (!text.includes('back') && !text.includes('kembali')) {
+            console.log(`Clicking button with text: "${text}" and background: ${bgColor}`);
+            (button as HTMLElement).click();
+            return { clicked: true, text: text, buttonCount: allButtons.length };
+          }
         }
       }
-      return { clicked: false, text: null };
+      
+      // If no Next button found by text, try by position (Next is usually on the right)
+      const visibleButtons = allButtons.filter(btn => {
+        const el = btn as HTMLElement;
+        return el.offsetWidth > 0 && el.offsetHeight > 0;
+      });
+      
+      // Sort by x position (rightmost first)
+      visibleButtons.sort((a, b) => {
+        const aRect = (a as HTMLElement).getBoundingClientRect();
+        const bRect = (b as HTMLElement).getBoundingClientRect();
+        return bRect.left - aRect.left;
+      });
+      
+      // Check rightmost buttons for navigation
+      for (const button of visibleButtons.slice(0, 3)) {
+        const text = button.textContent?.toLowerCase().trim() || '';
+        const span = button.querySelector('span');
+        const spanText = span?.textContent?.toLowerCase().trim() || '';
+        
+        if ((text.includes('next') || text.includes('lanjut') || spanText.includes('next') || spanText.includes('lanjut')) 
+            && !text.includes('back') && !spanText.includes('back')) {
+          console.log(`Clicking rightmost button with text: "${text || spanText}"`);
+          (button as HTMLElement).click();
+          return { clicked: true, text: text || spanText, buttonCount: allButtons.length };
+        }
+      }
+      
+      return { clicked: false, text: null, buttonCount: allButtons.length };
     }).catch(async (error) => {
       console.log(`❌ Error during button search/click: ${error.message}`);
       // Capture HTML on error
@@ -6315,7 +6409,7 @@ async function navigateToTransportationAndAddress(page: Page): Promise<boolean> 
       return false;
     }
     
-    console.log(`✅ Successfully clicked navigation button with text: "${clickResult.text}"`);
+    console.log(`✅ Successfully clicked navigation button with text: "${clickResult.text}" (found ${clickResult.buttonCount} total buttons)`);
     
     // Increased delay to allow validation to complete
     await smartDelay(page, 2500);
@@ -6327,9 +6421,17 @@ async function navigateToTransportationAndAddress(page: Page): Promise<boolean> 
         { timeout: 1000 },
         currentUrlBefore
       );
-      console.log('✅ Navigation started - URL changed');
+      const newUrl = page.url();
+      console.log(`✅ Navigation started - URL changed from ${currentUrlBefore} to ${newUrl}`);
     } catch {
       console.log('⚠️ URL hasn\'t changed after clicking next - validation may have failed');
+      
+      // Check if a popup appeared instead
+      const hasPopup = await page.$('div[style*="z-index: 9999"][style*="position: fixed"]');
+      if (hasPopup) {
+        console.log('🔍 Detected popup after button click - handling popup first');
+        await handleValidationPopup(page);
+      }
     }
     
     // Wait for Transportation and Address page to load
@@ -6384,16 +6486,81 @@ async function navigateToConsentPageWithValidation(page: Page, formData: FormDat
     console.log('🔍 Looking for navigation button...');
     
     const clickResult = await page.evaluate(() => {
-      const buttons = document.querySelectorAll('button');
-      for (const button of buttons) {
-        const text = button.textContent?.toLowerCase().trim();
+      // Comprehensive button search - try multiple selectors
+      const selectors = [
+        'button',
+        '[role="button"]',
+        '[type="button"]',
+        'div[onclick]',
+        'span[onclick]',
+        'a[href="javascript:void(0)"]'
+      ];
+      
+      let allButtons: Element[] = [];
+      for (const selector of selectors) {
+        const elements = document.querySelectorAll(selector);
+        elements.forEach(el => {
+          if (!allButtons.includes(el)) {
+            allButtons.push(el);
+          }
+        });
+      }
+      
+      console.log(`Found ${allButtons.length} total clickable elements`);
+      
+      // Look for Next button specifically
+      for (const button of allButtons) {
+        // Get text from button or nested spans
+        let text = button.textContent?.toLowerCase().trim() || '';
+        const span = button.querySelector('span');
+        if (span) {
+          text = span.textContent?.toLowerCase().trim() || text;
+        }
+        
+        // Check for navigation text
         if (text && (text.includes('next') || text.includes('lanjut') || text.includes('selanjutnya'))) {
-          // Click the button in browser context
-          button.click();
-          return { clicked: true, text: text };
+          // Additional check: ensure it's not the Back button
+          const styles = window.getComputedStyle(button as HTMLElement);
+          const bgColor = styles.backgroundColor;
+          
+          // Next button typically has blue/primary background
+          // Back button typically has gray background
+          if (!text.includes('back') && !text.includes('kembali')) {
+            console.log(`Clicking button with text: "${text}" and background: ${bgColor}`);
+            (button as HTMLElement).click();
+            return { clicked: true, text: text, buttonCount: allButtons.length };
+          }
         }
       }
-      return { clicked: false, text: null };
+      
+      // If no Next button found by text, try by position (Next is usually on the right)
+      const visibleButtons = allButtons.filter(btn => {
+        const el = btn as HTMLElement;
+        return el.offsetWidth > 0 && el.offsetHeight > 0;
+      });
+      
+      // Sort by x position (rightmost first)
+      visibleButtons.sort((a, b) => {
+        const aRect = (a as HTMLElement).getBoundingClientRect();
+        const bRect = (b as HTMLElement).getBoundingClientRect();
+        return bRect.left - aRect.left;
+      });
+      
+      // Check rightmost buttons for navigation
+      for (const button of visibleButtons.slice(0, 3)) {
+        const text = button.textContent?.toLowerCase().trim() || '';
+        const span = button.querySelector('span');
+        const spanText = span?.textContent?.toLowerCase().trim() || '';
+        
+        if ((text.includes('next') || text.includes('lanjut') || spanText.includes('next') || spanText.includes('lanjut')) 
+            && !text.includes('back') && !spanText.includes('back')) {
+          console.log(`Clicking rightmost button with text: "${text || spanText}"`);
+          (button as HTMLElement).click();
+          return { clicked: true, text: text || spanText, buttonCount: allButtons.length };
+        }
+      }
+      
+      return { clicked: false, text: null, buttonCount: allButtons.length };
     }).catch(async (error) => {
       console.log(`❌ Error during button search/click: ${error.message}`);
       // Capture HTML on error
