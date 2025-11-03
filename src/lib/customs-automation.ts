@@ -21,6 +21,7 @@ import fs from 'fs/promises';
 import { logger, ErrorCode } from './logger';
 import { getBrowserOptions } from './browser-config';
 import { launchServerlessBrowser } from './puppeteer-serverless';
+import { put } from '@vercel/blob';
 
 // Logging configuration for different environments
 // DEBUG_MODE: Enables verbose debug logging (development only)
@@ -804,7 +805,7 @@ type ProgressCallback = (update: ProgressUpdate) => void;
 
 
 // Store debug HTML for error reporting
-let debugHtmlCaptures: Array<{ stepName: string; html: string; timestamp: string }> = [];
+let debugHtmlCaptures: Array<{ stepName: string; html: string; timestamp: string; blobUrl?: string }> = [];
 
 // Enhanced HTML capture that also stores for error reporting
 async function captureAndStoreDebugHtml(page: Page, stepName: string, options: {
@@ -820,20 +821,82 @@ async function captureAndStoreDebugHtml(page: Page, stepName: string, options: {
     const buttonCount = (html.match(/<button[^>]*>/g) || []).length;
     const formCount = (html.match(/<form[^>]*>/g) || []).length;
     const inputCount = (html.match(/<input[^>]*>/g) || []).length;
-    const errorElements = (html.match(/error|invalid|required|incomplete/gi) || []).length;
     
     console.log(`  📊 Elements: ${buttonCount} buttons, ${formCount} forms, ${inputCount} inputs`);
-    console.log(`  ⚠️  Error indicators: ${errorElements} found`);
+    
+    // Extract actual error messages (not just count)
+    try {
+      const errorMatches = Array.from(html.matchAll(/>([^<]*(?:error|invalid|required|incomplete)[^<]{0,150})</gi));
+      const errorMessages = errorMatches
+        .map(m => m[1].trim())
+        .filter(msg => msg.length > 5 && msg.length < 200) // Filter out noise and overly long matches
+        .filter((msg, index, self) => self.indexOf(msg) === index) // Remove duplicates
+        .slice(0, 10); // Limit to first 10 unique messages
+      
+      console.log(`  ⚠️  Error indicators: ${errorMessages.length} found`);
+      if (errorMessages.length > 0) {
+        errorMessages.forEach(msg => {
+          console.log(`     → "${msg}"`);
+        });
+      }
+    } catch (error) {
+      console.log(`  ⚠️  Error indicators: Could not extract (parsing error)`);
+    }
     
     // Check for specific navigation elements
     const nextButtons = (html.match(/next|lanjut|selanjutnya/gi) || []).length;
     const disabledButtons = (html.match(/disabled|opacity.*0\.|display.*none/gi) || []).length;
     console.log(`  🔘 Navigation: ${nextButtons} "next" texts, ${disabledButtons} disabled/hidden elements`);
     
-    // Look for validation indicators
+    // Look for validation indicators with actual content extraction
     const redBorders = (html.match(/rgb\(242,\s*48,\s*48\)|border.*red/gi) || []).length;
-    const popupIndicators = (html.match(/z-index.*9999|position.*fixed.*z-index/gi) || []).length;
+    
+    // Extract popup text when indicators found
+    let popupIndicators = 0;
+    const popupTexts: Array<{ h1?: string; p?: string }> = [];
+    
+    try {
+      // Find divs with high z-index and fixed position
+      const popupPattern = /<div[^>]*(?:z-index[^>]*(?:9999|999)[^>]*|position[^>]*fixed[^>]*)>([\s\S]*?)<\/div>/gi;
+      const popupMatches = Array.from(html.matchAll(popupPattern));
+      
+      popupIndicators = popupMatches.length;
+      
+      for (const match of popupMatches.slice(0, 3)) { // Limit to first 3 popups
+        const popupContent = match[1];
+        
+        // Extract h1 text
+        const h1Match = popupContent.match(/<h1[^>]*>([^<]+)<\/h1>/i);
+        const h1Text = h1Match?.[1]?.trim();
+        
+        // Extract p text (first paragraph)
+        const pMatch = popupContent.match(/<p[^>]*>([^<]+)<\/p>/i);
+        const pText = pMatch?.[1]?.trim();
+        
+        // Only add if we found meaningful text
+        if (h1Text || pText) {
+          popupTexts.push({
+            h1: h1Text && h1Text.length < 100 ? h1Text : undefined,
+            p: pText && pText.length < 200 ? pText : undefined
+          });
+        }
+      }
+    } catch (error) {
+      // Silently handle parsing errors
+    }
+    
     console.log(`  🚨 Validation: ${redBorders} red borders, ${popupIndicators} popup indicators`);
+    if (popupTexts.length > 0) {
+      popupTexts.forEach(popup => {
+        if (popup.h1 && popup.p) {
+          console.log(`     → Popup: "${popup.h1}" - "${popup.p}"`);
+        } else if (popup.h1) {
+          console.log(`     → Popup: "${popup.h1}"`);
+        } else if (popup.p) {
+          console.log(`     → Popup message: "${popup.p}"`);
+        }
+      });
+    }
     
     // Log current page URL and title from HTML
     const urlMatch = html.match(/<title[^>]*>([^<]*)</i);
@@ -872,11 +935,30 @@ async function captureAndStoreDebugHtml(page: Page, stepName: string, options: {
     const preview = html.substring(0, 1000).replace(/\s+/g, ' ').trim();
     console.log(`📄 HTML Preview (first 1000 chars):\n${preview}${html.length > 1000 ? '...[truncated]' : ''}`);
     
+    // Store HTML in Vercel Blob for persistent access
+    let blobUrl: string | undefined;
+    try {
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const filename = `${timestamp}-${stepName.replace(/\s+/g, '-')}.html`;
+      
+      const blob = await put(filename, html, {
+        access: 'public',
+        addRandomSuffix: false,
+        contentType: 'text/html',
+      });
+      
+      blobUrl = blob.url;
+      console.log(`📦 HTML stored at: ${blob.url}`);
+    } catch (blobError) {
+      console.log(`⚠️ Failed to store HTML in Blob: ${blobError instanceof Error ? blobError.message : 'Unknown error'}`);
+    }
+    
     // Store the latest 5 captures to avoid memory issues
     debugHtmlCaptures.push({
       stepName,
-      html,
-      timestamp: new Date().toISOString()
+      html: blobUrl ? html.substring(0, 5000) : html, // Store truncated if blob uploaded
+      timestamp: new Date().toISOString(),
+      blobUrl,
     });
     
     // Keep only the latest 5 captures

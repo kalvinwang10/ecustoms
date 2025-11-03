@@ -12,6 +12,7 @@
   "dependencies": {
     "@stripe/react-stripe-js": "^3.9.0",
     "@stripe/stripe-js": "^7.8.0",
+    "@vercel/blob": "^2.0.0",
     "mixpanel-browser": "^2.67.0",
     "next": "15.4.5",
     "puppeteer": "^24.16.1",
