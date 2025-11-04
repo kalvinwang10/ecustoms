@@ -5736,7 +5736,20 @@ async function handleValidationPopup(page: Page, formData: FormData): Promise<bo
       console.log(`📝 Popup detail: ${popupDetail}`);
     }
     
-    // Find and click the OK button
+    // Determine the button to click based on popup type
+    let targetButtonText = 'ok';
+    let isConfirmationPopup = false;
+    
+    // Check if this is a "Data Verification" confirmation popup
+    if (popupMessage.includes('Data Verification') || popupMessage.includes('Verifikasi Data')) {
+      targetButtonText = 'yes, it is';
+      isConfirmationPopup = true;
+      console.log('🔍 Detected confirmation popup - looking for "Yes, it is" button');
+    } else {
+      console.log('🔍 Detected error popup - looking for "OK" button');
+    }
+    
+    // Find and click the appropriate button
     const buttons = await page.$$('button[type="button"]');
     for (const button of buttons) {
       const buttonText = await button.evaluate(el => {
@@ -5745,14 +5758,20 @@ async function handleValidationPopup(page: Page, formData: FormData): Promise<bo
         return spanElement ? spanElement.textContent?.trim() : el.textContent?.trim();
       });
       
-      if (buttonText && buttonText.toLowerCase() === 'ok') {
+      if (buttonText && buttonText.toLowerCase() === targetButtonText) {
         await button.click();
-        console.log('✅ Clicked OK to close validation popup');
+        
+        if (isConfirmationPopup) {
+          console.log('✅ Clicked "Yes, it is" to confirm data verification');
+        } else {
+          console.log('✅ Clicked OK to close validation popup');
+        }
         
         // Wait for popup to disappear
         await page.waitForFunction(
-          () => !document.querySelector('div[style*="z-index: 999"][style*="position: fixed"]'),
-          { timeout: 3000 }
+          (selector) => !document.querySelector(selector),
+          { timeout: 3000 },
+          matchedSelector
         ).catch(() => {});
         
         await smartDelay(page, 500);
@@ -5774,7 +5793,11 @@ async function handleValidationPopup(page: Page, formData: FormData): Promise<bo
       }
     }
     
-    console.log('⚠️ Found popup but could not find OK button');
+    if (isConfirmationPopup) {
+      console.log('⚠️ Found confirmation popup but could not find "Yes, it is" button');
+    } else {
+      console.log('⚠️ Found popup but could not find OK button');
+    }
     return false;
     
   } catch (error) {
