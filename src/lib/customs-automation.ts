@@ -5649,8 +5649,29 @@ async function handleValidationPopup(page: Page, formData: FormData): Promise<bo
   await smartDelay(page, 1000);
   
   try {
-    // First check for the popup overlay with high z-index (flexible to catch various z-index values)
-    const popupOverlay = await page.$('div[style*="z-index: 999"][style*="position: fixed"]');
+    // Try multiple selectors to catch various popup implementations
+    const popupSelectors = [
+      'div[style*="z-index: 9999"]',  // High z-index (most common)
+      'div[style*="z-index: 999"][style*="position: fixed"]',  // Original selector
+      'div[style*="position: fixed"][style*="z-index"]',  // Any z-index with fixed position
+      '.modal-overlay',  // Common class name
+      '.popup-overlay',  // Common class name
+      '[role="dialog"]',  // Semantic HTML
+      '[role="alertdialog"]',  // Semantic HTML for alerts
+    ];
+    
+    let popupOverlay = null;
+    let matchedSelector = '';
+    
+    for (const selector of popupSelectors) {
+      popupOverlay = await page.$(selector);
+      if (popupOverlay) {
+        matchedSelector = selector;
+        console.log(`✅ Found popup overlay using selector: ${selector}`);
+        break;
+      }
+    }
+    
     if (!popupOverlay) {
       console.log('ℹ️ No validation popup overlay found');
       return false;
@@ -5667,6 +5688,8 @@ async function handleValidationPopup(page: Page, formData: FormData): Promise<bo
       if (text && (
         text.includes('Incomplete Data') || 
         text.includes('Data Tidak Lengkap') ||
+        text.includes('Data Verification') ||
+        text.includes('Verifikasi Data') ||
         text.includes('Something Went Wrong') ||
         text.includes('Terjadi Kesalahan') ||
         text.includes('Error') ||
@@ -5680,7 +5703,7 @@ async function handleValidationPopup(page: Page, formData: FormData): Promise<bo
         
         // Capture popup HTML structure for debugging
         await captureAndStoreDebugHtml(page, 'Validation Popup Detected', {
-          targetSelector: 'div[style*="z-index: 999"][style*="position: fixed"]',
+          targetSelector: matchedSelector,
           minimalHtml: true
         });
         
@@ -5694,8 +5717,8 @@ async function handleValidationPopup(page: Page, formData: FormData): Promise<bo
     }
     
     // Try to get the detailed error message from the popup
-    const popupDetail = await page.evaluate(() => {
-      const popup = document.querySelector('div[style*="z-index: 999"][style*="position: fixed"]');
+    const popupDetail = await page.evaluate((selector) => {
+      const popup = document.querySelector(selector);
       if (popup) {
         const paragraphs = popup.querySelectorAll('p');
         for (const p of paragraphs) {
@@ -5707,7 +5730,7 @@ async function handleValidationPopup(page: Page, formData: FormData): Promise<bo
         }
       }
       return null;
-    });
+    }, matchedSelector);
     
     if (popupDetail) {
       console.log(`📝 Popup detail: ${popupDetail}`);
