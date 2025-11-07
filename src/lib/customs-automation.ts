@@ -1018,6 +1018,7 @@ export async function automateCustomsSubmission(
   
   const automationTimer = logger.startTimer('Complete Automation');
   let automationSuccess = false;
+  let page: Page | null = null;
   
   try {
     reportProgress('initialization', 5, 'Starting browser...');
@@ -1060,7 +1061,7 @@ export async function automateCustomsSubmission(
       }
     }
     
-    const page = await browser.newPage();
+    page = await browser.newPage();
     await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
     logger.debug('PAGE_CREATED', 'New browser page created');
     
@@ -1224,6 +1225,18 @@ export async function automateCustomsSubmission(
   } catch (error) {
     automationTimer();
     const errorMessage = error instanceof Error ? error instanceof Error ? error.message : 'Unknown error' : 'Unknown error occurred';
+    
+    // Capture HTML at point of failure for debugging
+    if (page && !page.isClosed()) {
+      try {
+        await captureAndStoreDebugHtml(page, 'Automation Failure', {
+          minimalHtml: false  // Capture full HTML for debugging
+        });
+        console.log('📸 Captured page state at failure point');
+      } catch (captureError) {
+        console.log(`⚠️ Could not capture HTML at failure: ${captureError instanceof Error ? captureError.message : 'Unknown error'}`);
+      }
+    }
     
     logger.error(
       ErrorCode.API_ERROR,
