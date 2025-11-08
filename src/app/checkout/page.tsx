@@ -32,9 +32,10 @@ function CheckoutForm({ onSuccess }: CheckoutFormProps) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
+  const cardInstanceRef = useRef<any>(null);
 
   useEffect(() => {
-    let cardInstance: any = null;
+    let isMounted = true;
     
     async function initializeSquare() {
       try {
@@ -43,20 +44,69 @@ function CheckoutForm({ onSuccess }: CheckoutFormProps) {
           return;
         }
 
+        // Clear any existing card instance
+        if (cardInstanceRef.current) {
+          try {
+            await cardInstanceRef.current.destroy();
+          } catch (e) {
+            // Ignore errors during cleanup
+          }
+          cardInstanceRef.current = null;
+        }
+
         const paymentsInstance = await payments(
           process.env.NEXT_PUBLIC_SQUARE_APPLICATION_ID!,
           process.env.NEXT_PUBLIC_SQUARE_LOCATION_ID!
         );
         
-        if (paymentsInstance) {
-          cardInstance = await paymentsInstance.card();
+        if (paymentsInstance && isMounted) {
+          const cardInstance = await paymentsInstance.card({
+            style: {
+              '.input-container': {
+                borderColor: '#E5E7EB',
+                borderRadius: '8px',
+              },
+              '.input-container.is-focus': {
+                borderColor: '#3B82F6',
+              },
+              '.input-container.is-error': {
+                borderColor: '#EF4444',
+              },
+              '.message-text': {
+                color: '#6B7280',
+              },
+              '.message-icon': {
+                color: '#6B7280',
+              },
+              '.message-text.is-error': {
+                color: '#EF4444',
+              },
+              '.message-icon.is-error': {
+                color: '#EF4444',
+              },
+              input: {
+                fontSize: '16px',
+                color: '#111827',
+              },
+              'input::placeholder': {
+                color: '#9CA3AF',
+              },
+            },
+          });
+          
           await cardInstance.attach('#card-container');
-          setCard(cardInstance);
-          setIsInitialized(true);
+          cardInstanceRef.current = cardInstance;
+          
+          if (isMounted) {
+            setCard(cardInstance);
+            setIsInitialized(true);
+          }
         }
       } catch (error) {
         console.error('Failed to initialize Square:', error);
-        setErrorMessage('Failed to load payment form');
+        if (isMounted) {
+          setErrorMessage('Failed to load payment form');
+        }
       }
     }
     
@@ -64,8 +114,12 @@ function CheckoutForm({ onSuccess }: CheckoutFormProps) {
     
     // Cleanup on unmount
     return () => {
-      if (cardInstance) {
-        cardInstance.destroy();
+      isMounted = false;
+      if (cardInstanceRef.current) {
+        cardInstanceRef.current.destroy().catch(() => {
+          // Ignore errors during cleanup
+        });
+        cardInstanceRef.current = null;
       }
     };
   }, []);
@@ -110,7 +164,6 @@ function CheckoutForm({ onSuccess }: CheckoutFormProps) {
       }
     } catch (error) {
       setErrorMessage('Payment failed. Please try again.');
-      trackEvent('Payment Failed', { error: 'Network error' });
     } finally {
       setIsProcessing(false);
     }
