@@ -81,14 +81,14 @@ function CheckoutForm({ onSuccess }: CheckoutFormProps) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             sourceId: tokenResult.token,
-            amount: 3500, // $35.00 in cents
+            amount: 2800, // $28.00 in cents
           }),
         });
         
         const result = await response.json();
         
         if (result.success) {
-          trackEvent('Payment Succeeded', { amount: 3500, currency: 'USD' });
+          trackEvent('Payment Succeeded', { amount: 2800, currency: 'USD' });
           onSuccess(result.payment);
         } else {
           setErrorMessage(result.error || 'Payment failed');
@@ -132,7 +132,7 @@ function CheckoutForm({ onSuccess }: CheckoutFormProps) {
             : 'bg-blue-600 hover:bg-blue-700'
         }`}
       >
-        {isProcessing ? 'Processing...' : 'Pay $35.00'}
+        {isProcessing ? 'Processing...' : 'Pay $28.00'}
       </button>
 
       {/* Security Badge */}
@@ -242,7 +242,7 @@ export default function CheckoutPage() {
           <div className="space-y-2">
             <div className="flex justify-between">
               <span className="text-gray-600">Customs Declaration Processing Fee</span>
-              <span className="font-medium">$35.00</span>
+              <span className="font-medium">$28.00</span>
             </div>
             <div className="text-right">
               <span className="text-xs text-gray-500">includes service fees</span>
@@ -250,7 +250,7 @@ export default function CheckoutPage() {
             <div className="border-t pt-2 mt-4">
               <div className="flex justify-between font-semibold">
                 <span>Total</span>
-                <span>$35.00</span>
+                <span>$28.00</span>
               </div>
             </div>
           </div>

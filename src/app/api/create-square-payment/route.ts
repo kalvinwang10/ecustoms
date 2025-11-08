@@ -10,7 +10,7 @@ const client = new SquareClient({
 
 export async function POST(request: NextRequest) {
   try {
-    const { sourceId, amount = 3500 } = await request.json(); // $35.00 in cents
+    const { sourceId, amount = 2800 } = await request.json(); // $28.00 in cents
     
     const response = await client.payments.create({
       sourceId,
