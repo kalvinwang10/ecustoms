@@ -34,6 +34,8 @@ function CheckoutForm({ onSuccess }: CheckoutFormProps) {
   const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
+    let cardInstance: any = null;
+    
     async function initializeSquare() {
       try {
         if (!process.env.NEXT_PUBLIC_SQUARE_APPLICATION_ID || !process.env.NEXT_PUBLIC_SQUARE_LOCATION_ID) {
@@ -47,7 +49,7 @@ function CheckoutForm({ onSuccess }: CheckoutFormProps) {
         );
         
         if (paymentsInstance) {
-          const cardInstance = await paymentsInstance.card();
+          cardInstance = await paymentsInstance.card();
           await cardInstance.attach('#card-container');
           setCard(cardInstance);
           setIsInitialized(true);
@@ -59,6 +61,13 @@ function CheckoutForm({ onSuccess }: CheckoutFormProps) {
     }
     
     initializeSquare();
+    
+    // Cleanup on unmount
+    return () => {
+      if (cardInstance) {
+        cardInstance.destroy();
+      }
+    };
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -110,14 +119,19 @@ function CheckoutForm({ onSuccess }: CheckoutFormProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Square Card Form */}
-      <div 
-        id="card-container" 
-        className="min-h-[200px] border border-gray-300 rounded-lg p-4"
-      />
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Card Information
+        </label>
+        <div 
+          id="card-container" 
+          className="bg-white"
+        />
+      </div>
 
       {/* Error Message */}
       {errorMessage && (
-        <div className="text-red-600 text-sm bg-red-50 p-3 rounded-lg">
+        <div className="text-red-600 text-sm bg-red-50 p-3 rounded-lg border border-red-200">
           {errorMessage}
         </div>
       )}
