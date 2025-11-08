@@ -63,7 +63,8 @@ function CheckoutForm({ onSuccess }: CheckoutFormProps) {
           const cardInstance = await paymentsInstance.card({
             style: {
               '.input-container': {
-                borderColor: '#E5E7EB',
+                borderColor: '#D1D5DB',
+                borderWidth: '1px',
                 borderRadius: '8px',
               },
               '.input-container.is-focus': {
@@ -73,23 +74,24 @@ function CheckoutForm({ onSuccess }: CheckoutFormProps) {
                 borderColor: '#EF4444',
               },
               '.message-text': {
-                color: '#6B7280',
+                color: '#374151',
               },
               '.message-icon': {
                 color: '#6B7280',
               },
               '.message-text.is-error': {
-                color: '#EF4444',
+                color: '#DC2626',
               },
               '.message-icon.is-error': {
-                color: '#EF4444',
+                color: '#DC2626',
               },
               input: {
                 fontSize: '16px',
                 color: '#111827',
+                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
               },
               'input::placeholder': {
-                color: '#9CA3AF',
+                color: '#6B7280',
               },
             },
           });
