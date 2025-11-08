@@ -10,8 +10,7 @@
     "postinstall": "node scripts/install-chromium.js || true"
   },
   "dependencies": {
-    "@stripe/react-stripe-js": "^3.9.0",
-    "@stripe/stripe-js": "^7.8.0",
+    "@square/web-sdk": "^2.1.0",
     "@vercel/blob": "^2.0.0",
     "mixpanel-browser": "^2.67.0",
     "next": "15.4.5",
@@ -21,7 +20,7 @@
     "puppeteer-extra-plugin-stealth": "^2.11.2",
     "react": "19.1.0",
     "react-dom": "19.1.0",
-    "stripe": "^18.4.0",
+    "square": "^43.2.0",
     "uuid": "^11.1.0"
   },
   "devDependencies": {
