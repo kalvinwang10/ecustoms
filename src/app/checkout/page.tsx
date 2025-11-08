@@ -307,19 +307,19 @@ export default function CheckoutPage() {
 
         {/* Order Summary */}
         <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-          <h2 className="text-lg font-semibold mb-4">Order Summary</h2>
+          <h2 className="text-lg font-semibold mb-4 text-gray-900">Order Summary</h2>
           <div className="space-y-2">
             <div className="flex justify-between">
               <span className="text-gray-600">Customs Declaration Processing Fee</span>
-              <span className="font-medium">$28.00</span>
+              <span className="font-medium text-gray-900">$28.00</span>
             </div>
             <div className="text-right">
               <span className="text-xs text-gray-500">includes service fees</span>
             </div>
-            <div className="border-t pt-2 mt-4">
+            <div className="border-t border-gray-200 pt-2 mt-4">
               <div className="flex justify-between font-semibold">
-                <span>Total</span>
-                <span>$28.00</span>
+                <span className="text-gray-900">Total</span>
+                <span className="text-gray-900">$28.00</span>
               </div>
             </div>
           </div>
