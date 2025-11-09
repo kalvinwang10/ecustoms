@@ -88,7 +88,6 @@ function CheckoutForm({ onSuccess }: CheckoutFormProps) {
               input: {
                 fontSize: '16px',
                 color: '#111827',
-                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
               },
               'input::placeholder': {
                 color: '#6B7280',
