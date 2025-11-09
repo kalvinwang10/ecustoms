@@ -41,8 +41,15 @@ export async function POST(request: NextRequest) {
       note: 'Electronic Customs Declaration Processing Fee',
     });
 
+    // Convert BigInt values to strings for JSON serialization
+    const paymentData = JSON.parse(
+      JSON.stringify(response, (key, value) =>
+        typeof value === 'bigint' ? value.toString() : value
+      )
+    );
+
     return NextResponse.json({ 
-      payment: response,
+      payment: paymentData,
       success: true 
     });
   } catch (error: any) {
