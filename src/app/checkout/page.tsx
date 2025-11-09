@@ -231,6 +231,13 @@ export default function CheckoutPage() {
       status?: string;
       portInfo?: string;
       customsOffice?: string;
+      passengerName?: string;
+      passportNumber?: string;
+      nationality?: string;
+      arrivalDate?: string;
+      departureDate?: string;
+      arrivalCardNumber?: string;
+      submissionStatus?: string;
     };
   } | null>(null);
 
