@@ -1459,15 +1459,15 @@ export default function FormPage() {
           trackMixpanelFormSubmission();
           trackUserJourney('Form Submitted Successfully', 5);
           
-          // PAYMENT STEP TEMPORARILY DISABLED - Show QR code directly
-          // Store QR data and show modal immediately (skip payment flow)
-          setSubmissionResult(result);
-          saveCompletedQR(result); // Save without payment requirement
-          setShowQRModal(true);
+          // PAYMENT ENABLED - Redirect to checkout for payment
+          sessionStorage.setItem('pendingQR', JSON.stringify(result));
+          sessionStorage.setItem('pendingFormData', JSON.stringify(formData));
+          router.push('/checkout');
           
-          // COMMENTED OUT - Payment flow for future re-enabling:
-          // sessionStorage.setItem('pendingQR', JSON.stringify(result));
-          // router.push('/checkout');
+          // DISABLED - Direct QR display (payment flow now enabled):
+          // setSubmissionResult(result);
+          // saveCompletedQR(result);
+          // setShowQRModal(true);
         } else {
           // Track automation failure in Mixpanel
           trackAutomationFailure(
