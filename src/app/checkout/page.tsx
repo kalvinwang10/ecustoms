@@ -222,6 +222,7 @@ export default function CheckoutPage() {
   const [language, setLanguage] = useState<Language>('en');
   const [isLoading, setIsLoading] = useState(true);
   const [showQRModal, setShowQRModal] = useState(false);
+  const [formData, setFormData] = useState<any>(null);
   const [submissionResult, setSubmissionResult] = useState<{
     qrCode?: { imageData?: string };
     submissionDetails?: { 
@@ -245,10 +246,22 @@ export default function CheckoutPage() {
 
     // Check if we have pending QR data
     const pendingQR = sessionStorage.getItem('pendingQR');
+    const pendingFormDataStr = sessionStorage.getItem('pendingFormData');
+    
     if (!pendingQR) {
       // No pending QR data, redirect back to form
       router.push('/form');
       return;
+    }
+
+    // Parse and store form data if available
+    if (pendingFormDataStr) {
+      try {
+        const parsedFormData = JSON.parse(pendingFormDataStr);
+        setFormData(parsedFormData);
+      } catch (error) {
+        console.error('Failed to parse form data:', error);
+      }
     }
 
     setIsLoading(false);
@@ -279,6 +292,7 @@ export default function CheckoutPage() {
       
       // Clear pending data
       sessionStorage.removeItem('pendingQR');
+      sessionStorage.removeItem('pendingFormData');
     }
   };
 
@@ -365,7 +379,7 @@ export default function CheckoutPage() {
             router.push('/');
           }}
           submissionResult={submissionResult}
-          formData={undefined}
+          formData={formData}
           language={language}
         />
       )}

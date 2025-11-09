@@ -1461,6 +1461,7 @@ export default function FormPage() {
           
           // PAYMENT ENABLED - Redirect to checkout for payment
           sessionStorage.setItem('pendingQR', JSON.stringify(result));
+          sessionStorage.setItem('pendingFormData', JSON.stringify(formData));
           router.push('/checkout');
           
           // DISABLED - Direct QR display (payment flow now enabled):
