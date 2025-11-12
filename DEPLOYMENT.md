@@ -81,37 +81,38 @@ cmds = ["npm install", "npm run build"]
 | `CHROME_PATH` | Path to Chrome executable | `/usr/bin/chromium` |
 | `NODE_ENV` | Environment mode | `production` |
 | `PUPPETEER_SKIP_CHROMIUM_DOWNLOAD` | Skip auto-download | `true` (for custom installs) |
-| `LOGTAIL_SOURCE_TOKEN` | Logtail logging token (optional) | `your_token_here` |
+| `BETTERSTACK_API_TOKEN` | Better Stack Telemetry API token (optional) | `your_token_here` |
 | `SQUARE_ACCESS_TOKEN` | Square payment access token | `your_token_here` |
 | `SQUARE_LOCATION_ID` | Square location ID | `LSSYB466FR338` |
 | `NEXT_PUBLIC_SQUARE_APPLICATION_ID` | Square app ID (client-side) | `your_app_id` |
 | `NEXT_PUBLIC_SQUARE_LOCATION_ID` | Square location ID (client-side) | `LSSYB466FR338` |
 | `BLOB_READ_WRITE_TOKEN` | Vercel Blob storage token | Auto-injected by Vercel |
 
-## Logging Setup (Logtail)
+## Logging Setup (Better Stack)
 
-The application uses Logtail for persistent log storage, overcoming Vercel's 256-line, 1-day log retention limits.
+The application uses Better Stack's HTTP API for persistent log storage, overcoming Vercel's 256-line, 1-day log retention limits.
 
 ### Setup Steps:
 
-1. **Create Logtail Account**
-   - Go to https://betterstack.com/logtail
+1. **Create Better Stack Account**
+   - Go to https://betterstack.com/
    - Sign up for free account (1GB/month, 3-day retention)
-   - Create a new source
 
-2. **Get Source Token**
-   - In Logtail dashboard, copy your Source Token
-   - It looks like: `abc123def456...`
+2. **Get Telemetry API Token**
+   - Follow the guide: https://betterstack.com/docs/logs/api/getting-started/
+   - Navigate to your team's API tokens page
+   - Create a new **"Telemetry API token"** (not a source token)
+   - Copy the token (it's a long alphanumeric string)
 
 3. **Add to Local Development**
    ```bash
    # Add to .env.local
-   LOGTAIL_SOURCE_TOKEN=your_token_here
+   BETTERSTACK_API_TOKEN=your_telemetry_api_token_here
    ```
 
 4. **Add to Vercel**
    - Go to Vercel Dashboard → Your Project → Settings → Environment Variables
-   - Add `LOGTAIL_SOURCE_TOKEN` with your token
+   - Add `BETTERSTACK_API_TOKEN` with your token
    - Select environments: Production, Preview, Development
    - Click Save
 
@@ -148,11 +149,12 @@ The application uses Logtail for persistent log storage, overcoming Vercel's 256
 
 ### Troubleshooting:
 
-**Logs not appearing in Logtail?**
-1. Verify `LOGTAIL_SOURCE_TOKEN` is set in Vercel
-2. Check token is correct (no extra spaces)
-3. Redeploy after adding environment variable
-4. Check Logtail dashboard for connection status
+**Logs not appearing in Better Stack?**
+1. Verify `BETTERSTACK_API_TOKEN` is set in Vercel
+2. Make sure you're using a **Telemetry API token** (not Source token)
+3. Check token is correct (no extra spaces)
+4. Redeploy after adding environment variable
+5. Check Better Stack dashboard for logs
 
 **Want longer retention?**
 - Upgrade to paid plan ($5/month for 30-day retention)

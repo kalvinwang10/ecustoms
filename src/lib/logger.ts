@@ -1,10 +1,7 @@
 // Centralized logging utility for customs automation
-import { Logtail } from '@logtail/node';
 
-// Initialize Logtail (will be no-op if token not provided)
-const logtail = process.env.LOGTAIL_SOURCE_TOKEN 
-  ? new Logtail(process.env.LOGTAIL_SOURCE_TOKEN)
-  : null;
+// Better Stack HTTP API endpoint
+const BETTERSTACK_ENDPOINT = 'https://in.logs.betterstack.com';
 
 export enum LogLevel {
   ERROR = 'ERROR',
@@ -107,26 +104,42 @@ class Logger {
     return { formatted, structured };
   }
 
-  private async sendToLogtail(level: LogLevel, structured: Record<string, unknown>) {
-    if (logtail) {
-      try {
-        switch (level) {
-          case LogLevel.ERROR:
-            await logtail.error(structured.message as string, structured);
-            break;
-          case LogLevel.WARN:
-            await logtail.warn(structured.message as string, structured);
-            break;
-          case LogLevel.INFO:
-            await logtail.info(structured.message as string, structured);
-            break;
-          case LogLevel.DEBUG:
-            await logtail.debug(structured.message as string, structured);
-            break;
-        }
-      } catch (logtailError) {
-        // Don't let Logtail errors break the application
-        console.error('Failed to send log to Logtail:', logtailError);
+  private async sendToBetterStack(level: LogLevel, structured: Record<string, unknown>) {
+    // Only send if API token is configured
+    if (!process.env.BETTERSTACK_API_TOKEN) {
+      return;
+    }
+
+    try {
+      // Send log to Better Stack via HTTP API
+      const response = await fetch(BETTERSTACK_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.BETTERSTACK_API_TOKEN}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          dt: structured.timestamp || new Date().toISOString(),
+          level: level.toLowerCase(),
+          message: structured.message as string,
+          code: structured.code,
+          sessionId: structured.sessionId,
+          duration: structured.duration,
+          context: structured.context,
+          error: structured.error,
+          system: structured.system,
+        }),
+      });
+
+      // Log if request failed (but don't throw to avoid breaking the app)
+      if (!response.ok) {
+        console.error(`Better Stack API error: ${response.status} ${response.statusText}`);
+      }
+    } catch (error) {
+      // Silent fail - don't break the application if logging fails
+      // Only log to console in development
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('Failed to send log to Better Stack:', error);
       }
     }
   }
@@ -135,24 +148,24 @@ class Logger {
     const { formatted, structured } = this.formatLog(LogLevel.ERROR, code, message, context, error);
     console.error(formatted);
     
-    // Send to Logtail
-    this.sendToLogtail(LogLevel.ERROR, structured);
+    // Send to Better Stack (async, non-blocking)
+    this.sendToBetterStack(LogLevel.ERROR, structured);
   }
 
   warn(code: string, message: string, context?: LogContext) {
     const { formatted, structured } = this.formatLog(LogLevel.WARN, code, message, context);
     console.warn(formatted);
     
-    // Send to Logtail
-    this.sendToLogtail(LogLevel.WARN, structured);
+    // Send to Better Stack (async, non-blocking)
+    this.sendToBetterStack(LogLevel.WARN, structured);
   }
 
   info(code: string, message: string, context?: LogContext) {
     const { formatted, structured } = this.formatLog(LogLevel.INFO, code, message, context);
     console.log(formatted);
     
-    // Send to Logtail
-    this.sendToLogtail(LogLevel.INFO, structured);
+    // Send to Better Stack (async, non-blocking)
+    this.sendToBetterStack(LogLevel.INFO, structured);
   }
 
   debug(code: string, message: string, context?: LogContext) {
@@ -160,8 +173,8 @@ class Logger {
       const { formatted, structured } = this.formatLog(LogLevel.DEBUG, code, message, context);
       console.log(formatted);
       
-      // Send to Logtail
-      this.sendToLogtail(LogLevel.DEBUG, structured);
+      // Send to Better Stack (async, non-blocking)
+      this.sendToBetterStack(LogLevel.DEBUG, structured);
     }
   }
 
