@@ -1,4 +1,11 @@
 // Centralized logging utility for customs automation
+import { Logtail } from '@logtail/node';
+
+// Initialize Logtail (will be no-op if token not provided)
+const logtail = process.env.LOGTAIL_SOURCE_TOKEN 
+  ? new Logtail(process.env.LOGTAIL_SOURCE_TOKEN)
+  : null;
+
 export enum LogLevel {
   ERROR = 'ERROR',
   WARN = 'WARN',
@@ -66,12 +73,12 @@ class Logger {
     message: string,
     context?: LogContext,
     error?: Error
-  ): string {
+  ): { formatted: string; structured: Record<string, unknown> } {
     const timestamp = new Date().toISOString();
     const duration = Date.now() - this.startTime;
     const system = this.getSystemInfo();
 
-    const log = {
+    const structured = {
       timestamp,
       level,
       code,
@@ -95,33 +102,66 @@ class Logger {
     const errorStr = error ? `\n  Error: ${error.message}\n  Stack: ${error.stack}` : '';
     const systemStr = system.memory ? `\n  Memory: ${system.memory.used}MB/${system.memory.total}MB (${system.memory.percentage}%)` : '';
 
-    return `${prefix} ${message}${contextStr}${errorStr}${systemStr}`;
+    const formatted = `${prefix} ${message}${contextStr}${errorStr}${systemStr}`;
+
+    return { formatted, structured };
   }
 
-  error(code: ErrorCode, message: string, context?: LogContext, error?: Error) {
-    const formatted = this.formatLog(LogLevel.ERROR, code, message, context, error);
-    console.error(formatted);
-    
-    // In production, you could also send to monitoring service
-    if (process.env.NODE_ENV === 'production') {
-      // TODO: Send to monitoring service (e.g., Sentry, DataDog, CloudWatch)
+  private async sendToLogtail(level: LogLevel, structured: Record<string, unknown>) {
+    if (logtail) {
+      try {
+        switch (level) {
+          case LogLevel.ERROR:
+            await logtail.error(structured.message as string, structured);
+            break;
+          case LogLevel.WARN:
+            await logtail.warn(structured.message as string, structured);
+            break;
+          case LogLevel.INFO:
+            await logtail.info(structured.message as string, structured);
+            break;
+          case LogLevel.DEBUG:
+            await logtail.debug(structured.message as string, structured);
+            break;
+        }
+      } catch (logtailError) {
+        // Don't let Logtail errors break the application
+        console.error('Failed to send log to Logtail:', logtailError);
+      }
     }
   }
 
+  error(code: ErrorCode, message: string, context?: LogContext, error?: Error) {
+    const { formatted, structured } = this.formatLog(LogLevel.ERROR, code, message, context, error);
+    console.error(formatted);
+    
+    // Send to Logtail
+    this.sendToLogtail(LogLevel.ERROR, structured);
+  }
+
   warn(code: string, message: string, context?: LogContext) {
-    const formatted = this.formatLog(LogLevel.WARN, code, message, context);
+    const { formatted, structured } = this.formatLog(LogLevel.WARN, code, message, context);
     console.warn(formatted);
+    
+    // Send to Logtail
+    this.sendToLogtail(LogLevel.WARN, structured);
   }
 
   info(code: string, message: string, context?: LogContext) {
-    const formatted = this.formatLog(LogLevel.INFO, code, message, context);
+    const { formatted, structured } = this.formatLog(LogLevel.INFO, code, message, context);
     console.log(formatted);
+    
+    // Send to Logtail
+    this.sendToLogtail(LogLevel.INFO, structured);
   }
 
   debug(code: string, message: string, context?: LogContext) {
     if (process.env.NODE_ENV !== 'production') {
-      const formatted = this.formatLog(LogLevel.DEBUG, code, message, context);
+      const { formatted, structured } = this.formatLog(LogLevel.DEBUG, code, message, context);
       console.log(formatted);
+      
+      // Send to Logtail
+      this.sendToLogtail(LogLevel.DEBUG, structured);
     }
   }
 

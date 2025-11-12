@@ -81,6 +81,82 @@ cmds = ["npm install", "npm run build"]
 | `CHROME_PATH` | Path to Chrome executable | `/usr/bin/chromium` |
 | `NODE_ENV` | Environment mode | `production` |
 | `PUPPETEER_SKIP_CHROMIUM_DOWNLOAD` | Skip auto-download | `true` (for custom installs) |
+| `LOGTAIL_SOURCE_TOKEN` | Logtail logging token (optional) | `your_token_here` |
+| `SQUARE_ACCESS_TOKEN` | Square payment access token | `your_token_here` |
+| `SQUARE_LOCATION_ID` | Square location ID | `LSSYB466FR338` |
+| `NEXT_PUBLIC_SQUARE_APPLICATION_ID` | Square app ID (client-side) | `your_app_id` |
+| `NEXT_PUBLIC_SQUARE_LOCATION_ID` | Square location ID (client-side) | `LSSYB466FR338` |
+| `BLOB_READ_WRITE_TOKEN` | Vercel Blob storage token | Auto-injected by Vercel |
+
+## Logging Setup (Logtail)
+
+The application uses Logtail for persistent log storage, overcoming Vercel's 256-line, 1-day log retention limits.
+
+### Setup Steps:
+
+1. **Create Logtail Account**
+   - Go to https://betterstack.com/logtail
+   - Sign up for free account (1GB/month, 3-day retention)
+   - Create a new source
+
+2. **Get Source Token**
+   - In Logtail dashboard, copy your Source Token
+   - It looks like: `abc123def456...`
+
+3. **Add to Local Development**
+   ```bash
+   # Add to .env.local
+   LOGTAIL_SOURCE_TOKEN=your_token_here
+   ```
+
+4. **Add to Vercel**
+   - Go to Vercel Dashboard → Your Project → Settings → Environment Variables
+   - Add `LOGTAIL_SOURCE_TOKEN` with your token
+   - Select environments: Production, Preview, Development
+   - Click Save
+
+5. **Redeploy**
+   - Trigger a new deployment for changes to take effect
+   - Or run: `vercel --prod`
+
+### Features:
+
+- ✅ **Persistent Logs**: 3-day retention (free tier), upgradeable
+- ✅ **Real-time Streaming**: See logs as they happen
+- ✅ **Search & Filter**: Find specific logs quickly
+- ✅ **Structured Data**: All context, errors, and metadata preserved
+- ✅ **No Code Changes**: Uses existing logger automatically
+
+### Viewing Logs:
+
+1. Go to https://logs.betterstack.com/
+2. Select your source
+3. View real-time logs with full context
+4. Use search to filter by:
+   - Session ID
+   - Error codes
+   - Passport numbers
+   - Time ranges
+   - Log levels
+
+### Log Levels:
+
+- **ERROR**: Critical failures, exceptions
+- **WARN**: Validation issues, retries
+- **INFO**: Successful operations, milestones
+- **DEBUG**: Detailed step-by-step (dev only)
+
+### Troubleshooting:
+
+**Logs not appearing in Logtail?**
+1. Verify `LOGTAIL_SOURCE_TOKEN` is set in Vercel
+2. Check token is correct (no extra spaces)
+3. Redeploy after adding environment variable
+4. Check Logtail dashboard for connection status
+
+**Want longer retention?**
+- Upgrade to paid plan ($5/month for 30-day retention)
+- Or export logs periodically to your own storage
 
 ### Troubleshooting
 
