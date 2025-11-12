@@ -81,6 +81,101 @@ cmds = ["npm install", "npm run build"]
 | `CHROME_PATH` | Path to Chrome executable | `/usr/bin/chromium` |
 | `NODE_ENV` | Environment mode | `production` |
 | `PUPPETEER_SKIP_CHROMIUM_DOWNLOAD` | Skip auto-download | `true` (for custom installs) |
+| `BETTERSTACK_API_TOKEN` | Better Stack Source Token (optional) | `your_token_here` |
+| `BETTERSTACK_ENDPOINT` | Better Stack ingestion endpoint (optional) | `https://s1586589.eu-nbg-2.betterstackdata.com` |
+| `SQUARE_ACCESS_TOKEN` | Square payment access token | `your_token_here` |
+| `SQUARE_LOCATION_ID` | Square location ID | `LSSYB466FR338` |
+| `NEXT_PUBLIC_SQUARE_APPLICATION_ID` | Square app ID (client-side) | `your_app_id` |
+| `NEXT_PUBLIC_SQUARE_LOCATION_ID` | Square location ID (client-side) | `LSSYB466FR338` |
+| `BLOB_READ_WRITE_TOKEN` | Vercel Blob storage token | Auto-injected by Vercel |
+
+## Logging Setup (Better Stack)
+
+The application uses Better Stack's HTTP API for persistent log storage, overcoming Vercel's 256-line, 1-day log retention limits.
+
+### Setup Steps:
+
+1. **Create Better Stack Account**
+   - Go to https://betterstack.com/
+   - Sign up for free account (1GB/month, 3-day retention)
+
+2. **Create HTTP Source**
+   - In Better Stack dashboard, go to Sources
+   - Click "Connect source" → "HTTP"
+   - Give it a name (e.g., "Customs Automation")
+   - Click "Create source"
+
+3. **Get Source Token and Endpoint**
+   - After creating the source, you'll see:
+     - **Source token** (24-character string like `Qj72G7YEokqFcTFN8fGdApfU`)
+     - **Ingesting host** (like `s1586589.eu-nbg-2.betterstackdata.com`)
+   - Copy both values
+
+4. **Add to Local Development**
+   ```bash
+   # Add to .env.local
+   BETTERSTACK_API_TOKEN=Qj72G7YEokqFcTFN8fGdApfU
+   BETTERSTACK_ENDPOINT=https://s1586589.eu-nbg-2.betterstackdata.com
+   ```
+
+5. **Test Connection**
+   ```bash
+   node test-logtail-connection.mjs
+   ```
+   - Should show "✨ Test completed successfully!"
+   - Check Better Stack dashboard for test logs
+
+6. **Add to Vercel**
+   - Go to Vercel Dashboard → Your Project → Settings → Environment Variables
+   - Add both variables:
+     - `BETTERSTACK_API_TOKEN` with your source token
+     - `BETTERSTACK_ENDPOINT` with your ingesting host URL (include `https://`)
+   - Select environments: Production, Preview, Development
+   - Click Save
+
+7. **Redeploy**
+   - Trigger a new deployment for changes to take effect
+   - Or run: `vercel --prod`
+
+### Features:
+
+- ✅ **Persistent Logs**: 3-day retention (free tier), upgradeable
+- ✅ **Real-time Streaming**: See logs as they happen
+- ✅ **Search & Filter**: Find specific logs quickly
+- ✅ **Structured Data**: All context, errors, and metadata preserved
+- ✅ **No Code Changes**: Uses existing logger automatically
+
+### Viewing Logs:
+
+1. Go to https://logs.betterstack.com/
+2. Select your source
+3. View real-time logs with full context
+4. Use search to filter by:
+   - Session ID
+   - Error codes
+   - Passport numbers
+   - Time ranges
+   - Log levels
+
+### Log Levels:
+
+- **ERROR**: Critical failures, exceptions
+- **WARN**: Validation issues, retries
+- **INFO**: Successful operations, milestones
+- **DEBUG**: Detailed step-by-step (dev only)
+
+### Troubleshooting:
+
+**Logs not appearing in Better Stack?**
+1. Verify `BETTERSTACK_API_TOKEN` is set in Vercel
+2. Make sure you're using a **Telemetry API token** (not Source token)
+3. Check token is correct (no extra spaces)
+4. Redeploy after adding environment variable
+5. Check Better Stack dashboard for logs
+
+**Want longer retention?**
+- Upgrade to paid plan ($5/month for 30-day retention)
+- Or export logs periodically to your own storage
 
 ### Troubleshooting
 
