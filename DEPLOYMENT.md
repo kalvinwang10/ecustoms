@@ -81,7 +81,8 @@ cmds = ["npm install", "npm run build"]
 | `CHROME_PATH` | Path to Chrome executable | `/usr/bin/chromium` |
 | `NODE_ENV` | Environment mode | `production` |
 | `PUPPETEER_SKIP_CHROMIUM_DOWNLOAD` | Skip auto-download | `true` (for custom installs) |
-| `BETTERSTACK_API_TOKEN` | Better Stack Telemetry API token (optional) | `your_token_here` |
+| `BETTERSTACK_API_TOKEN` | Better Stack Source Token (optional) | `your_token_here` |
+| `BETTERSTACK_ENDPOINT` | Better Stack ingestion endpoint (optional) | `https://s1586589.eu-nbg-2.betterstackdata.com` |
 | `SQUARE_ACCESS_TOKEN` | Square payment access token | `your_token_here` |
 | `SQUARE_LOCATION_ID` | Square location ID | `LSSYB466FR338` |
 | `NEXT_PUBLIC_SQUARE_APPLICATION_ID` | Square app ID (client-side) | `your_app_id` |
@@ -98,25 +99,41 @@ The application uses Better Stack's HTTP API for persistent log storage, overcom
    - Go to https://betterstack.com/
    - Sign up for free account (1GB/month, 3-day retention)
 
-2. **Get Telemetry API Token**
-   - Follow the guide: https://betterstack.com/docs/logs/api/getting-started/
-   - Navigate to your team's API tokens page
-   - Create a new **"Telemetry API token"** (not a source token)
-   - Copy the token (it's a long alphanumeric string)
+2. **Create HTTP Source**
+   - In Better Stack dashboard, go to Sources
+   - Click "Connect source" → "HTTP"
+   - Give it a name (e.g., "Customs Automation")
+   - Click "Create source"
 
-3. **Add to Local Development**
+3. **Get Source Token and Endpoint**
+   - After creating the source, you'll see:
+     - **Source token** (24-character string like `Qj72G7YEokqFcTFN8fGdApfU`)
+     - **Ingesting host** (like `s1586589.eu-nbg-2.betterstackdata.com`)
+   - Copy both values
+
+4. **Add to Local Development**
    ```bash
    # Add to .env.local
-   BETTERSTACK_API_TOKEN=your_telemetry_api_token_here
+   BETTERSTACK_API_TOKEN=Qj72G7YEokqFcTFN8fGdApfU
+   BETTERSTACK_ENDPOINT=https://s1586589.eu-nbg-2.betterstackdata.com
    ```
 
-4. **Add to Vercel**
+5. **Test Connection**
+   ```bash
+   node test-logtail-connection.mjs
+   ```
+   - Should show "✨ Test completed successfully!"
+   - Check Better Stack dashboard for test logs
+
+6. **Add to Vercel**
    - Go to Vercel Dashboard → Your Project → Settings → Environment Variables
-   - Add `BETTERSTACK_API_TOKEN` with your token
+   - Add both variables:
+     - `BETTERSTACK_API_TOKEN` with your source token
+     - `BETTERSTACK_ENDPOINT` with your ingesting host URL (include `https://`)
    - Select environments: Production, Preview, Development
    - Click Save
 
-5. **Redeploy**
+7. **Redeploy**
    - Trigger a new deployment for changes to take effect
    - Or run: `vercel --prod`
 

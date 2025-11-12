@@ -30,7 +30,8 @@ console.log(`   First 10 chars: ${token.substring(0, 10)}...`);
 // Test sending logs via HTTP API
 console.log('\n2️⃣ Sending test logs via HTTP API...');
 const testId = `test-${Date.now()}`;
-const endpoint = 'https://in.logs.betterstack.com';
+const endpoint = process.env.BETTERSTACK_ENDPOINT || 'https://in.logs.betterstack.com';
+console.log(`   Using endpoint: ${endpoint}`);
 
 try {
   // Send INFO log

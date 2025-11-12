@@ -1,7 +1,7 @@
 // Centralized logging utility for customs automation
 
-// Better Stack HTTP API endpoint
-const BETTERSTACK_ENDPOINT = 'https://in.logs.betterstack.com';
+// Better Stack HTTP API endpoint (can be customized per source)
+const BETTERSTACK_ENDPOINT = process.env.BETTERSTACK_ENDPOINT || 'https://in.logs.betterstack.com';
 
 export enum LogLevel {
   ERROR = 'ERROR',
