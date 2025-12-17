@@ -82,8 +82,15 @@ class SlackNotifier {
     const timestamp = data.timestamp || new Date().toISOString();
     
     const message: SlackMessage = {
-      text: 'New payment received successfully',
+      text: '@channel New payment received successfully',
       blocks: [
+        {
+          type: 'section',
+          text: {
+            type: 'mrkdwn',
+            text: '@channel',
+          },
+        },
         {
           type: 'header',
           text: {
@@ -151,8 +158,15 @@ class SlackNotifier {
     const timestamp = data.timestamp || new Date().toISOString();
 
     const message: SlackMessage = {
-      text: 'Payment failed',
+      text: '@channel Payment failed',
       blocks: [
+        {
+          type: 'section',
+          text: {
+            type: 'mrkdwn',
+            text: '@channel',
+          },
+        },
         {
           type: 'header',
           text: {
@@ -208,8 +222,15 @@ class SlackNotifier {
     }
   ): Promise<boolean> {
     const message: SlackMessage = {
-      text: 'New customs submission completed',
+      text: '@channel New customs submission completed',
       blocks: [
+        {
+          type: 'section',
+          text: {
+            type: 'mrkdwn',
+            text: '@channel',
+          },
+        },
         {
           type: 'header',
           text: {
@@ -269,7 +290,7 @@ class SlackNotifier {
           text: `💳 *Payment ID:* ${submissionDetails.paymentId}`,
         },
       };
-      message.blocks?.splice(2, 0, paymentSection);
+      message.blocks?.splice(3, 0, paymentSection);
     }
 
     if (submissionDetails.airtableUrl) {
@@ -282,6 +303,16 @@ class SlackNotifier {
       };
       message.blocks?.splice(-1, 0, airtableSection);
     }
+
+    // Add All Indonesia submission link
+    const allIndonesiaSection = {
+      type: 'section',
+      text: {
+        type: 'mrkdwn',
+        text: `📝 *Manual Submission:* <https://allindonesia.imigrasi.go.id/arrival-card-submission/personal-information|Submit to All Indonesia>`,
+      },
+    };
+    message.blocks?.splice(-1, 0, allIndonesiaSection);
 
     return this.sendToSlack(message);
   }
