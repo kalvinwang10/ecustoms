@@ -89,6 +89,12 @@ export default function QRCodeModal({ isOpen, onClose, submissionResult, formDat
   };
 
   const handleDownload = async () => {
+    // Skip download if no QR code
+    if (!submissionResult.qrCode?.imageData) {
+      alert('No QR code available to download. Please complete your submission at All Indonesia.');
+      return;
+    }
+    
     try {
       const svgDataUrl = submissionResult.qrCode?.imageData || '';
       const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
@@ -177,6 +183,12 @@ export default function QRCodeModal({ isOpen, onClose, submissionResult, formDat
   };
 
   const handlePrint = () => {
+    // Skip print if no QR code
+    if (!submissionResult.qrCode?.imageData) {
+      alert('No QR code available to print. Please complete your submission at All Indonesia.');
+      return;
+    }
+    
     const printWindow = window.open('', '_blank');
     if (printWindow) {
       printWindow.document.write(`
@@ -273,7 +285,7 @@ export default function QRCodeModal({ isOpen, onClose, submissionResult, formDat
           <p className="text-xl font-bold text-gray-900">INDONESIA</p>
         </div>
 
-        {/* QR Code */}
+        {/* Success Message or QR Code */}
         <div className="text-center mb-6">
           {submissionResult.qrCode?.imageData ? (
             <img
@@ -300,9 +312,23 @@ export default function QRCodeModal({ isOpen, onClose, submissionResult, formDat
               }}
             />
           ) : (
-            <div className="text-red-500 text-sm p-4">
-              ⚠️ QR code not available<br />
-              <small>Please try again or contact support</small>
+            <div className="bg-green-50 border-2 border-green-200 rounded-lg p-6">
+              <svg className="w-16 h-16 mx-auto text-green-500 mb-4" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+              <p className="text-green-700 font-semibold text-lg mb-2">Payment Successful!</p>
+              <p className="text-gray-600 text-sm">
+                Your payment has been processed. Please proceed to{' '}
+                <a 
+                  href="https://allindonesia.imigrasi.go.id/" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-blue-600 underline hover:text-blue-800"
+                >
+                  All Indonesia
+                </a>
+                {' '}to complete your customs declaration.
+              </p>
             </div>
           )}
         </div>
@@ -315,18 +341,20 @@ export default function QRCodeModal({ isOpen, onClose, submissionResult, formDat
           </p>
         </div>
 
-        {/* Download Button */}
-        <div className="text-center mb-4">
-          <button
-            onClick={handleDownload}
-            className="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-medium rounded hover:bg-blue-700 transition-colors text-sm w-full sm:w-auto justify-center"
-          >
+        {/* Download Button - only show if QR exists */}
+        {submissionResult.qrCode?.imageData && (
+          <div className="text-center mb-4">
+            <button
+              onClick={handleDownload}
+              className="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-medium rounded hover:bg-blue-700 transition-colors text-sm w-full sm:w-auto justify-center"
+            >
             <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
             </svg>
             {getTranslation('qrModal.download', language)}
           </button>
         </div>
+        )}
 
         {/* Submitted Status */}
         <div className="text-center">

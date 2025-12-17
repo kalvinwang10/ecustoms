@@ -140,12 +140,38 @@ function CheckoutForm({ onSuccess }: CheckoutFormProps) {
       const tokenResult = await card.tokenize();
       
       if (tokenResult.status === 'OK') {
+        // Get form data from sessionStorage to pass to API
+        const pendingFormData = sessionStorage.getItem('pendingFormData');
+        const pendingQR = sessionStorage.getItem('pendingQR');
+        
+        let parsedFormData = null;
+        let parsedSubmissionDetails = null;
+        
+        if (pendingFormData) {
+          try {
+            parsedFormData = JSON.parse(pendingFormData);
+          } catch (e) {
+            console.error('Failed to parse pendingFormData:', e);
+          }
+        }
+        
+        if (pendingQR) {
+          try {
+            const qrData = JSON.parse(pendingQR);
+            parsedSubmissionDetails = qrData.submissionDetails;
+          } catch (e) {
+            console.error('Failed to parse pendingQR:', e);
+          }
+        }
+        
         const response = await fetch('/api/create-square-payment', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             sourceId: tokenResult.token,
             amount: 2800, // $28.00 in cents
+            formData: parsedFormData,
+            submissionDetails: parsedSubmissionDetails,
           }),
         });
         
@@ -275,24 +301,50 @@ export default function CheckoutPage() {
   }, [router]);
 
   const handlePaymentSuccess = async (payment?: Record<string, unknown>) => {
-    // Track conversion for Google Ads when QR code is about to be shown
-    trackPurchaseSuccess(payment?.id as string);
+    // Extract payment ID from nested structure
+    let paymentId: string | undefined;
+    if (payment?.payment && typeof payment.payment === 'object' && 'id' in payment.payment) {
+      const paymentData = payment.payment as any;
+      paymentId = paymentData.id;
+    } else if (payment?.result && typeof payment.result === 'object' && 'payment' in payment.result) {
+      const paymentResult = payment.result as any;
+      paymentId = paymentResult.payment?.id;
+    } else if (payment?.id) {
+      paymentId = payment.id as string;
+    } else {
+      console.warn('Could not extract payment ID from payment data');
+      paymentId = `UNKNOWN-${Date.now()}`;
+    }
+
+    // Track conversion for Google Ads
+    trackPurchaseSuccess(paymentId);
 
     // Scroll modal container to top for mobile visibility
     if (modalContainerRef.current) {
       modalContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    // Retrieve stored QR data
+    // Retrieve stored data
     const pendingQR = sessionStorage.getItem('pendingQR');
+    
     if (pendingQR) {
       const qrData = JSON.parse(pendingQR);
-      setSubmissionResult(qrData);
       
-      // Save QR code to persistent storage for 2 days
-      saveCompletedQR(qrData);
+      // Since we're skipping automation, there's no QR code
+      // Create a success result without QR
+      const successResult = {
+        ...qrData,
+        paymentSuccess: true,
+        paymentId: paymentId,
+        message: 'Payment successful! Your form data has been saved.'
+      };
       
-      // Small delay to ensure scroll completes before showing QR modal
+      setSubmissionResult(successResult);
+      
+      // Save the successful payment record
+      saveCompletedQR(successResult);
+      
+      // Show success modal (modified to not require QR)
       setTimeout(() => {
         setShowQRModal(true);
       }, 300);
