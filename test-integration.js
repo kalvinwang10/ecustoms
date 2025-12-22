@@ -9,17 +9,17 @@ const testFormData = {
   passportNumber: 'TEST123456',
   fullPassportName: 'John Doe',
   nationality: 'UNITED STATES',
-  dateOfBirth: '01/01/1990',
+  dateOfBirth: '01/01/1990', // Already in DD/MM/YYYY format
   countryOfBirth: 'UNITED STATES',
   gender: 'male',
-  passportExpiryDate: '01/01/2030',
+  passportExpiryDate: '01/01/2030', // Already in DD/MM/YYYY format
   mobileNumber: '+1234567890',
   email: 'john.doe@test.com',
   citizenshipType: 'foreign',
   
   // Travel Details
-  arrivalDate: '2024-01-15',
-  departureDate: '2024-01-25',
+  arrivalDate: '15/01/2024', // Changed to DD/MM/YYYY format
+  departureDate: '25/01/2024', // Changed to DD/MM/YYYY format
   hasVisaOrKitas: false,
   visaOrKitasNumber: '',
   
@@ -90,6 +90,7 @@ async function testCompleteIntegration() {
         fields: {
           'Submission ID': paymentInfo.submissionId,
           'Payment ID': paymentInfo.paymentId,
+          'Document Type': 'Indonesia Arrival Card',
           'Traveller Type': 'Primary',
           'Passport Number': testFormData.passportNumber,
           'Full Passport Name': testFormData.fullPassportName,
@@ -103,7 +104,7 @@ async function testCompleteIntegration() {
           'Citizenship Type': testFormData.citizenshipType,
           'Arrival Date': testFormData.arrivalDate,
           'Departure Date': testFormData.departureDate,
-          'Has Visa or KITAS': testFormData.hasVisaOrKitas,
+          'Has Visa or KITAS': testFormData.hasVisaOrKitas ? 'Yes' : 'No',
           'Visa or KITAS Number': testFormData.visaOrKitasNumber,
           'Mode of Transport': testFormData.modeOfTransport,
           'Purpose of Travel': testFormData.purposeOfTravel,
@@ -113,14 +114,15 @@ async function testCompleteIntegration() {
           'Flight Number': testFormData.flightNumber,
           'Residence Type': testFormData.residenceType,
           'Address in Indonesia': testFormData.addressInIndonesia,
-          'Has Symptoms': testFormData.hasSymptoms,
+          'Has Symptoms': testFormData.hasSymptoms ? 'Yes' : 'No',
           'Selected Symptoms': testFormData.selectedSymptoms.join(', '),
           'Countries Visited': testFormData.countriesVisited.join(', '),
-          'Has Quarantine Items': testFormData.hasQuarantineItems,
-          'Has Goods to Declare': testFormData.hasGoodsToDeclarate,
+          'Has Quarantine Items': testFormData.hasQuarantineItems ? 'Yes' : 'No',
+          'Has Goods to Declare': testFormData.hasGoodsToDeclarate ? 'Yes' : 'No',
           'Declared Goods (JSON)': JSON.stringify(testFormData.declaredGoods),
-          'Has Technology Devices': testFormData.hasTechnologyDevices,
-          'Baggage Count': testFormData.baggageCount
+          'Has Technology Devices': testFormData.hasTechnologyDevices ? 'Yes' : 'No',
+          'Baggage Count': testFormData.baggageCount,
+          'Province': 'DKI JAKARTA' // Based on SOEKARNO-HATTA INTERNATIONAL AIRPORT
         }
       }]
     };

@@ -317,18 +317,20 @@ export default function QRCodeModal({ isOpen, onClose, submissionResult, formDat
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
               </svg>
               <p className="text-green-700 font-semibold text-lg mb-2">Payment Successful!</p>
-              <p className="text-gray-600 text-sm">
-                Your payment has been processed. Please proceed to{' '}
-                <a 
-                  href="https://allindonesia.imigrasi.go.id/" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-blue-600 underline hover:text-blue-800"
-                >
-                  All Indonesia
-                </a>
-                {' '}to complete your customs declaration.
+              <p className="text-gray-700 font-medium mb-3">
+                Your Indonesian Arrival Card is being processed
               </p>
+              <p className="text-gray-600 text-sm mb-3">
+                You will receive your completed arrival card and QR code in your email within a few minutes.
+              </p>
+              <div className="bg-blue-50 border border-blue-200 rounded p-3 mt-4">
+                <p className="text-blue-700 text-sm font-medium mb-1">
+                  📧 Check your email at: {formData?.email || 'your registered email'}
+                </p>
+                <p className="text-blue-600 text-xs">
+                  Please also check your spam folder if you don't see it in your inbox.
+                </p>
+              </div>
             </div>
           )}
         </div>

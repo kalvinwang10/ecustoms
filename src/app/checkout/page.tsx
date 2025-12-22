@@ -336,7 +336,7 @@ export default function CheckoutPage() {
         ...qrData,
         paymentSuccess: true,
         paymentId: paymentId,
-        message: 'Payment successful! Your form data has been saved.'
+        message: 'Payment successful! Your Indonesian Arrival Card is being processed.'
       };
       
       setSubmissionResult(successResult);
