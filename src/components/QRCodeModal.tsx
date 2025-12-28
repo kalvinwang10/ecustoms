@@ -303,7 +303,7 @@ export default function QRCodeModal({ isOpen, onClose, submissionResult, formDat
                 const target = e.target as HTMLImageElement;
                 target.style.display = 'none';
                 const errorDiv = document.createElement('div');
-                errorDiv.innerHTML = '⚠️ QR code failed to load<br><small>Please take a screenshot or try again</small>';
+                errorDiv.innerHTML = 'QR code failed to load<br><small>Please take a screenshot or try again</small>';
                 errorDiv.className = 'text-red-500 text-sm p-4';
                 target.parentNode?.appendChild(errorDiv);
               }}
@@ -312,35 +312,26 @@ export default function QRCodeModal({ isOpen, onClose, submissionResult, formDat
               }}
             />
           ) : (
-            <div className="bg-green-50 border-2 border-green-200 rounded-lg p-6">
-              <svg className="w-16 h-16 mx-auto text-green-500 mb-4" fill="currentColor" viewBox="0 0 20 20">
+            <div className="bg-green-50 border-2 border-green-200 rounded-lg p-8">
+              <svg className="w-16 h-16 mx-auto text-green-600 mb-4" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
               </svg>
-              <p className="text-green-700 font-semibold text-lg mb-2">Payment Successful!</p>
-              <p className="text-gray-700 font-medium mb-3">
-                Your Indonesian Arrival Card is being processed
+              <h2 className="text-green-800 font-bold text-xl mb-4 text-center">
+                Your All Indonesia Arrival Card is being processed
+              </h2>
+              <p className="text-gray-700 text-base mb-4 text-center">
+                You will receive your completed arrival card and QR code within a few minutes.
               </p>
-              <p className="text-gray-600 text-sm mb-3">
-                You will receive your completed arrival card and QR code in your email within a few minutes.
-              </p>
-              <div className="bg-blue-50 border border-blue-200 rounded p-3 mt-4">
-                <p className="text-blue-700 text-sm font-medium mb-1">
-                  📧 Check your email at: {formData?.email || 'your registered email'}
+              <div className="border-t border-green-200 pt-4 mt-4">
+                <p className="text-gray-800 font-semibold text-base mb-2 text-center">
+                  Check your email at: <span className="text-green-700">{formData?.email || 'your registered email'}</span>
                 </p>
-                <p className="text-blue-600 text-xs">
+                <p className="text-gray-600 text-sm text-center">
                   Please also check your spam folder if you don't see it in your inbox.
                 </p>
               </div>
             </div>
           )}
-        </div>
-
-        {/* Arrival Card Number */}
-        <div className="text-center mb-6">
-          <p className="text-gray-600 text-sm">Arrival Card Number</p>
-          <p className="text-xl font-bold text-gray-900">
-            {submissionResult.submissionDetails?.submissionId || '25102000188896'}
-          </p>
         </div>
 
         {/* Download Button - only show if QR exists */}
