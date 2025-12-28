@@ -39,23 +39,38 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    const response = await client.payments.create({
-      sourceId,
-      amountMoney: {
-        amount: BigInt(amount),
-        currency: 'USD',
-      },
-      locationId,
-      idempotencyKey: crypto.randomUUID(),
-      note: 'Electronic Customs Declaration Processing Fee',
-    });
+    // TEMPORARILY DISABLED: Skip actual payment processing
+    // const response = await client.payments.create({
+    //   sourceId,
+    //   amountMoney: {
+    //     amount: BigInt(amount),
+    //     currency: 'USD',
+    //   },
+    //   locationId,
+    //   idempotencyKey: crypto.randomUUID(),
+    //   note: 'Electronic Customs Declaration Processing Fee',
+    // });
 
-    // Convert BigInt values to strings for JSON serialization
-    const paymentData = JSON.parse(
-      JSON.stringify(response, (key, value) =>
-        typeof value === 'bigint' ? value.toString() : value
-      )
-    );
+    // Create mock payment response for testing
+    const mockPaymentId = `TEMP-${Date.now()}`;
+    const paymentData: any = {
+      result: {
+        payment: {
+          id: mockPaymentId,
+          status: 'PENDING',
+          amountMoney: {
+            amount: amount.toString(),
+            currency: 'USD',
+          },
+          createdAt: new Date().toISOString(),
+          note: 'Electronic Customs Declaration Processing Fee (NOT CHARGED)',
+        },
+      },
+      payment: {
+        id: mockPaymentId,
+        status: 'PENDING',
+      },
+    };
 
     // Check different possible payment locations
     const payment = paymentData?.result?.payment || paymentData?.payment || paymentData;
@@ -70,7 +85,7 @@ export async function POST(request: NextRequest) {
         currency: 'USD',
         status: 'success',
         timestamp: paymentData.result.payment.createdAt,
-        paymentMethod: 'Square',
+        paymentMethod: 'TEMP - Not Charged',
       });
       
       // If we have form data, store in Airtable and send submission complete notification
@@ -80,7 +95,7 @@ export async function POST(request: NextRequest) {
         try {
           const airtableResult = await airtableIntegration.storeTravellerData(formData, {
             paymentId: paymentId,
-            submissionId: `PAYMENT-${paymentId || Date.now()}`,
+            submissionId: `TEMP-${paymentId || Date.now()}`,
           });
           airtableUrl = airtableResult.airtableUrl;
         } catch (error) {
@@ -91,8 +106,8 @@ export async function POST(request: NextRequest) {
         if (submissionDetails) {
           try {
             await slackNotifier.notifySubmissionComplete({
-              submissionId: `PAYMENT-${paymentId || Date.now()}`,
-              arrivalCardNumber: 'Pending manual submission',
+              submissionId: `TEMP-${paymentId || Date.now()}`,
+              arrivalCardNumber: 'Pending manual submission (TEMP)',
               passengerName: submissionDetails.passengerName || formData.fullPassportName,
               passportNumber: submissionDetails.passportNumber || formData.passportNumber,
               nationality: submissionDetails.nationality || formData.nationality,
@@ -115,7 +130,7 @@ export async function POST(request: NextRequest) {
         try {
           const airtableResult = await airtableIntegration.storeTravellerData(formData, {
             paymentId: paymentId,
-            submissionId: `PAYMENT-${paymentId || Date.now()}`,
+            submissionId: `TEMP-${paymentId || Date.now()}`,
           });
           airtableUrl = airtableResult.airtableUrl;
         } catch (error) {
@@ -126,8 +141,8 @@ export async function POST(request: NextRequest) {
         if (submissionDetails) {
           try {
             await slackNotifier.notifySubmissionComplete({
-              submissionId: `PAYMENT-${paymentId || Date.now()}`,
-              arrivalCardNumber: 'Pending manual submission',
+              submissionId: `TEMP-${paymentId || Date.now()}`,
+              arrivalCardNumber: 'Pending manual submission (TEMP)',
               passengerName: submissionDetails.passengerName || formData.fullPassportName,
               passportNumber: submissionDetails.passportNumber || formData.passportNumber,
               nationality: submissionDetails.nationality || formData.nationality,
