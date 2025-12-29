@@ -1436,102 +1436,36 @@ export default function FormPage() {
       trackFormSubmission(); // Remove URL parameter to prevent unwanted redirect
       
       try {
-        // Call our API to automate the submission
-        const response = await fetch('/api/submit-customs', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            formData: formData,
-            options: {
-              headless: true,
-              timeout: 60000,
-              retries: 3
-            }
-          }),
-        });
+        // Skip automation - go directly to payment
+        // Track successful form submission
+        trackMixpanelFormSubmission();
+        trackUserJourney('Form Submitted Successfully', 5);
         
-        const result = await response.json();
+        // Store form data for payment processing
+        sessionStorage.setItem('pendingFormData', JSON.stringify(formData));
         
-        if (result.success) {
-          // Track successful form submission
-          trackMixpanelFormSubmission();
-          trackUserJourney('Form Submitted Successfully', 5);
-          
-          // PAYMENT ENABLED - Redirect to checkout for payment
-          sessionStorage.setItem('pendingQR', JSON.stringify(result));
-          sessionStorage.setItem('pendingFormData', JSON.stringify(formData));
-          router.push('/checkout');
-          
-          // DISABLED - Direct QR display (payment flow now enabled):
-          // setSubmissionResult(result);
-          // saveCompletedQR(result);
-          // setShowQRModal(true);
-        } else {
-          // Track automation failure in Mixpanel
-          trackAutomationFailure(
-            result.error?.code || 'UNKNOWN_ERROR',
-            result.error?.message || 'Unknown error',
-            result.error?.step,
-            result.error?.details
-          );
-          
-          // Track error for form validation (backwards compatibility)
-        // trackFormValidationError('submission', result.error?.message || 'Unknown error');
-          
-          // Determine appropriate message based on error code
-          let redirectMessage = 'Automation failed. Redirecting to official customs website...';
-          if (result.error?.code === 'MANUAL_SUBMISSION_REQUIRED') {
-            // More specific message for manual submission cases
-            if (result.error?.message?.includes('health symptoms')) {
-              redirectMessage = 'Due to reported health symptoms, manual submission is required. Redirecting to official customs website...';
-            } else if (result.error?.message?.includes('quarantine items')) {
-              redirectMessage = 'Due to quarantine items declaration, manual submission is required. Redirecting to official customs website...';
-            } else if (result.error?.message?.includes('goods to declare')) {
-              redirectMessage = 'Due to goods declaration, manual submission is required. Redirecting to official customs website...';
-            } else if (result.error?.message?.includes('government flight')) {
-              redirectMessage = 'Government flights require manual submission. Redirecting to official customs website...';
-            }
+        // Create a placeholder submission object (no QR code since we're skipping automation)
+        const placeholderSubmission = {
+          success: true,
+          message: 'Form data collected. Proceeding to payment...',
+          formData: formData,
+          timestamp: new Date().toISOString(),
+          submissionDetails: {
+            passengerName: formData.fullPassportName,
+            passportNumber: formData.passportNumber,
+            nationality: formData.nationality,
+            arrivalDate: formData.arrivalDate
           }
-          
-          // Show brief notification before redirecting
-          setErrors({
-            submission: redirectMessage
-          });
-          
-          // Use fallback URL if provided, otherwise use default
-          const redirectUrl = result.fallbackUrl || 'https://allindonesia.imigrasi.go.id/';
-          
-          // Auto-redirect to official customs website after brief delay
-          setTimeout(() => {
-            window.location.href = redirectUrl;
-          }, 2000);
-        }
+        };
+        sessionStorage.setItem('pendingQR', JSON.stringify(placeholderSubmission));
+        
+        // Redirect directly to checkout for payment
+        router.push('/checkout');
       } catch (error) {
         console.error('Submission error:', error);
-        const errorMessage = error instanceof Error ? error.message : 'Network error';
-        
-        // Track network failure in Mixpanel
-        trackAutomationFailure(
-          'NETWORK_ERROR',
-          errorMessage,
-          'api_call',
-          error
-        );
-        
-        // Show brief notification before redirecting
         setErrors({
-          submission: 'Network error. Redirecting to official customs website...'
+          submission: 'An error occurred. Please try again.'
         });
-        
-        // Track error for form validation (backwards compatibility)
-        // trackFormValidationError('submission', 'Network error');
-        
-        // Auto-redirect to official customs website after brief delay
-        setTimeout(() => {
-          window.location.href = 'https://allindonesia.imigrasi.go.id/';
-        }, 2000);
       } finally {
         setIsSubmitting(false);
       }

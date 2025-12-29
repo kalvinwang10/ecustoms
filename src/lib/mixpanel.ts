@@ -133,7 +133,7 @@ export const trackFormValidationError = (fieldName: string, errorMessage: string
   });
 };
 
-export const trackFormSubmission = () => {
+export const  trackFormSubmission = () => {
   trackEvent('Form Submitted', {
     form_type: 'customs_declaration',
     submission_date: new Date().toISOString(),

@@ -46,6 +46,15 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Disclaimer Bar */}
+      <div className="bg-gray-200 text-black text-xs py-2">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <p>
+            Independent service assisting with Indonesian customs declarations. Not affiliated with Indonesian Customs and Excise Directorate General.
+          </p>
+        </div>
+      </div>
+      
       <Header language={language} onLanguageChange={handleLanguageChange} />
       
       {/* QR Notification Banner */}
@@ -58,21 +67,23 @@ export default function Home() {
       )}
       
       <main>
-        <section className="py-12 sm:py-16 min-h-[50vh] sm:min-h-0 flex items-center" style={{backgroundColor: '#153854'}}>
+        <section className="py-16 sm:py-24 flex items-center bg-gradient-to-br from-slate-800 to-slate-900">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center">
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-4 sm:mb-6">
-                {getTranslation('heroTitle', language)}
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-6 leading-tight">
+                Complete All Indonesia{' '}
+                <br className="sm:hidden" />
+                Customs Declaration
               </h1>
-              <p className="text-lg sm:text-xl text-gray-300 mb-6 sm:mb-8 max-w-3xl mx-auto">
-                {getTranslation('heroSubtitle', language)}
+              <p className="text-lg sm:text-xl text-gray-300 mb-8 max-w-3xl mx-auto leading-relaxed">
+                Fill out your customs form easily with an intuitive interface and multi-language support.
               </p>
               <Link
                 href="/form"
                 onClick={() => handleStartFormClick('Hero Section')}
-                className="inline-flex items-center px-6 py-3 sm:px-8 sm:py-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors shadow-lg text-sm sm:text-base"
+                className="inline-flex items-center justify-center px-8 py-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-all transform hover:scale-105 shadow-lg text-base"
               >
-                {getTranslation('continueOnline', language)}
+                Continue
                 <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                 </svg>
@@ -81,83 +92,92 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="py-8 sm:py-16">
+        <section className="py-16 sm:py-20 bg-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
               <div>
-                <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4 sm:mb-6">
-                  {getTranslation('whatIsCustomsForm', language)}
+                <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6">
+                  What is the Indonesian Customs Declaration?
                 </h2>
-                <p className="text-base sm:text-lg text-gray-600 mb-6 sm:mb-8">
-                  {getTranslation('customsFormExplanation', language)}
+                <p className="text-lg text-gray-600 mb-8 leading-relaxed">
+                  The Indonesian Customs Declaration (e-CD) is a mandatory document required by all travelers entering Indonesia. It streamlines the customs process and ensures compliance with import regulations.
                 </p>
                 
-                <div className="space-y-4">
-                  <div className="flex items-start space-x-3">
-                    <div className="flex-shrink-0 w-6 h-6 bg-green-100 rounded-full flex items-center justify-center mt-1">
-                      <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                <div className="space-y-6">
+                  <div className="flex items-start space-x-4">
+                    <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mt-0.5">
+                      <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
                     </div>
-                    <p className="text-gray-700">{getTranslation('requiredForAllTravelers', language)}</p>
+                    <div>
+                      <h3 className="font-semibold text-gray-900 mb-1">Required for All Travelers</h3>
+                      <p className="text-gray-600">Every passenger entering Indonesia must complete this declaration</p>
+                    </div>
                   </div>
                   
-                  <div className="flex items-start space-x-3">
-                    <div className="flex-shrink-0 w-6 h-6 bg-green-100 rounded-full flex items-center justify-center mt-1">
-                      <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                  <div className="flex items-start space-x-4">
+                    <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mt-0.5">
+                      <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
                     </div>
-                    <p className="text-gray-700">{getTranslation('mustBeDeclared', language)}</p>
+                    <div>
+                      <h3 className="font-semibold text-gray-900 mb-1">Declare Your Items</h3>
+                      <p className="text-gray-600">Accurately declare all goods to avoid penalties and delays</p>
+                    </div>
                   </div>
                   
-                  <div className="flex items-start space-x-3">
-                    <div className="flex-shrink-0 w-6 h-6 bg-green-100 rounded-full flex items-center justify-center mt-1">
-                      <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                  <div className="flex items-start space-x-4">
+                    <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mt-0.5">
+                      <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
                     </div>
-                    <p className="text-gray-700">{getTranslation('helpsPeventDelays', language)}</p>
+                    <div>
+                      <h3 className="font-semibold text-gray-900 mb-1">Save Time at Arrival</h3>
+                      <p className="text-gray-600">Complete online to expedite your airport customs clearance</p>
+                    </div>
                   </div>
                 </div>
               </div>
               
-              <div className="bg-white rounded-lg shadow-xl p-4 sm:p-8">
-                <div className="space-y-4 sm:space-y-6">
-                  <div className="flex items-center space-x-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                    <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
-                      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl shadow-xl p-8 border border-gray-200">
+                <h3 className="text-2xl font-bold text-gray-900 mb-6 text-center">Our Service Features</h3>
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-4 p-5 bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+                    <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
+                      <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                       </svg>
                     </div>
-                    <div>
-                      <h3 className="font-semibold text-blue-900">{getTranslation('submitDeclaration', language)}</h3>
-                      <p className="text-sm text-blue-700">{getTranslation('submitDeclarationDesc', language)}</p>
+                    <div className="flex-1">
+                      <h4 className="font-bold text-gray-900">Digital Submission</h4>
+                      <p className="text-sm text-gray-600 mt-1">Complete your customs declaration digitally before arrival</p>
                     </div>
                   </div>
                   
-                  <div className="flex items-center space-x-4 p-4 bg-green-50 rounded-lg border border-green-200">
-                    <div className="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center">
-                      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2" />
+                  <div className="flex items-center space-x-4 p-5 bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+                    <div className="w-14 h-14 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center shadow-lg">
+                      <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
                       </svg>
                     </div>
-                    <div>
-                      <h3 className="font-semibold text-green-900">{getTranslation('multiLanguageSupport', language)}</h3>
-                      <p className="text-sm text-green-700">{getTranslation('multiLanguageSupportDesc', language)}</p>
+                    <div className="flex-1">
+                      <h4 className="font-bold text-gray-900">Multi-Language Support</h4>
+                      <p className="text-sm text-gray-600 mt-1">Available in multiple languages for international travelers</p>
                     </div>
                   </div>
                   
-                  <div className="flex items-center space-x-4 p-4 bg-purple-50 rounded-lg border border-purple-200">
-                    <div className="w-12 h-12 bg-purple-600 rounded-lg flex items-center justify-center">
-                      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <div className="flex items-center space-x-4 p-5 bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+                    <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                      <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
                       </svg>
                     </div>
-                    <div>
-                      <h3 className="font-semibold text-purple-900">{getTranslation('printablePdf', language)}</h3>
-                      <p className="text-sm text-purple-700">{getTranslation('printablePdfDesc', language)}</p>
+                    <div className="flex-1">
+                      <h4 className="font-bold text-gray-900">QR Code Generation</h4>
+                      <p className="text-sm text-gray-600 mt-1">Receive a QR code for quick scanning at customs</p>
                     </div>
                   </div>
                 </div>
@@ -166,24 +186,46 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="bg-blue-600 py-8 sm:py-16">
+        <section className="bg-gradient-to-r from-blue-600 to-blue-700 py-16 sm:py-20">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">
-              {getTranslation('readyToComplete', language)}
+            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
+              Ready to Complete Your Declaration?
             </h2>
-            <p className="text-lg sm:text-xl text-blue-100 mb-6 sm:mb-8">
-              {getTranslation('getStartedNow', language)}
+            <p className="text-lg sm:text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
+              Save time at the airport by preparing your customs declaration online now.
             </p>
-            <Link
-              href="/form"
-              onClick={() => handleStartFormClick('CTA Section')}
-              className="inline-flex items-center px-6 py-3 sm:px-8 sm:py-4 bg-white text-blue-600 font-semibold rounded-lg hover:bg-gray-100 transition-colors shadow-lg text-sm sm:text-base"
-            >
-              {getTranslation('continueOnline', language)}
-              <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-              </svg>
-            </Link>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link
+                href="/form"
+                onClick={() => handleStartFormClick('CTA Section')}
+                className="inline-flex items-center justify-center px-8 py-4 bg-white text-blue-600 font-semibold rounded-lg hover:bg-gray-50 transition-all transform hover:scale-105 shadow-lg text-base"
+              >
+                Start Your Declaration
+                <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                </svg>
+              </Link>
+            </div>
+            <div className="mt-8 flex items-center justify-center space-x-6 text-white text-sm">
+              <div className="flex items-center">
+                <svg className="w-5 h-5 mr-2 text-green-300" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                <span>No account required</span>
+              </div>
+              <div className="flex items-center">
+                <svg className="w-5 h-5 mr-2 text-green-300" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                <span>Secure & encrypted</span>
+              </div>
+              <div className="flex items-center">
+                <svg className="w-5 h-5 mr-2 text-green-300" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                <span>Fast processing</span>
+              </div>
+            </div>
           </div>
         </section>
       </main>

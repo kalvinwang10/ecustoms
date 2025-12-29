@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
+import { slackNotifier } from '@/lib/slack-notifications';
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,6 +22,18 @@ export async function POST(request: NextRequest) {
     // Handle payment events
     if (event.type === 'payment.created') {
       console.log('Payment successful:', event.data.object.payment);
+      
+      const payment = event.data.object.payment;
+      
+      // Send Slack notification for successful payment
+      await slackNotifier.notifyPaymentSuccess({
+        paymentId: payment.id,
+        amount: 0, // Amount removed from display, keeping for interface compatibility
+        currency: payment.amount_money?.currency || 'USD',
+        status: 'success',
+        timestamp: payment.created_at,
+        paymentMethod: 'Square',
+      });
     }
     
     return NextResponse.json({ received: true });
