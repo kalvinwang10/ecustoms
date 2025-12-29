@@ -75,18 +75,12 @@ export async function POST(request: NextRequest) {
     // Check different possible payment locations
     const payment = paymentData?.result?.payment || paymentData?.payment || paymentData;
 
-    // Send Slack notification for successful payment
+    // Process submission without payment notification
     if (paymentData?.result?.payment) {
       const paymentId = paymentData.result.payment.id;
       
-      await slackNotifier.notifyPaymentSuccess({
-        paymentId: paymentId,
-        amount: 0, // Amount removed from display, keeping for interface compatibility
-        currency: 'USD',
-        status: 'success',
-        timestamp: paymentData.result.payment.createdAt,
-        paymentMethod: 'TEMP - Not Charged',
-      });
+      // REMOVED: Payment success notification - not needed for temp mode
+      // await slackNotifier.notifyPaymentSuccess({...});
       
       // If we have form data, store in Airtable and send submission complete notification
       if (formData) {
@@ -169,14 +163,8 @@ export async function POST(request: NextRequest) {
       console.error('Square API errors:', JSON.stringify(error.errors, null, 2));
     }
     
-    // Send Slack notification for failed payment
-    await slackNotifier.notifyPaymentFailed({
-      amount: 0, // Amount removed from display, keeping for interface compatibility
-      currency: 'USD',
-      status: 'failed',
-      errorMessage: error.message || 'Unknown error',
-      timestamp: new Date().toISOString(),
-    });
+    // REMOVED: Payment failed notification - not needed for temp mode
+    // await slackNotifier.notifyPaymentFailed({...});
     
     return NextResponse.json(
       { 
