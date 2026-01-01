@@ -39,45 +39,26 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // TEMPORARILY DISABLED: Skip actual payment processing
-    // const response = await client.payments.create({
-    //   sourceId,
-    //   amountMoney: {
-    //     amount: BigInt(amount),
-    //     currency: 'USD',
-    //   },
-    //   locationId,
-    //   idempotencyKey: crypto.randomUUID(),
-    //   note: 'Electronic Customs Declaration Processing Fee',
-    // });
+    // Process actual Square payment
+    const response = await client.payments.create({
+      sourceId,
+      amountMoney: {
+        amount: BigInt(amount),
+        currency: 'USD',
+      },
+      locationId,
+      idempotencyKey: crypto.randomUUID(),
+      note: 'Electronic Customs Declaration Processing Fee',
+    });
 
-    // Create mock payment response for testing
-    const mockPaymentId = `TEMP-${Date.now()}`;
-    const paymentData: any = {
-      result: {
-        payment: {
-          id: mockPaymentId,
-          status: 'PENDING',
-          amountMoney: {
-            amount: amount.toString(),
-            currency: 'USD',
-          },
-          createdAt: new Date().toISOString(),
-          note: 'Electronic Customs Declaration Processing Fee (NOT CHARGED)',
-        },
-      },
-      payment: {
-        id: mockPaymentId,
-        status: 'PENDING',
-      },
-    };
+    const paymentData = response;
 
     // Check different possible payment locations
-    const payment = paymentData?.result?.payment || paymentData?.payment || paymentData;
+    const payment = (paymentData as any)?.result?.payment || (paymentData as any)?.payment || paymentData;
 
     // Process submission without payment notification
-    if (paymentData?.result?.payment) {
-      const paymentId = paymentData.result.payment.id;
+    if ((paymentData as any)?.result?.payment) {
+      const paymentId = (paymentData as any).result.payment.id;
       
       // REMOVED: Payment success notification - not needed for temp mode
       // await slackNotifier.notifyPaymentSuccess({...});
@@ -89,7 +70,7 @@ export async function POST(request: NextRequest) {
         try {
           const airtableResult = await airtableIntegration.storeTravellerData(formData, {
             paymentId: paymentId,
-            submissionId: `TEMP-${paymentId || Date.now()}`,
+            submissionId: paymentId || `SUB-${Date.now()}`,
           });
           airtableUrl = airtableResult.airtableUrl;
         } catch (error) {
@@ -100,8 +81,8 @@ export async function POST(request: NextRequest) {
         if (submissionDetails) {
           try {
             await slackNotifier.notifySubmissionComplete({
-              submissionId: `TEMP-${paymentId || Date.now()}`,
-              arrivalCardNumber: 'Pending manual submission (TEMP)',
+              submissionId: paymentId || `SUB-${Date.now()}`,
+              arrivalCardNumber: 'Pending processing',
               passengerName: submissionDetails.passengerName || formData.fullPassportName,
               passportNumber: submissionDetails.passportNumber || formData.passportNumber,
               nationality: submissionDetails.nationality || formData.nationality,
@@ -124,7 +105,7 @@ export async function POST(request: NextRequest) {
         try {
           const airtableResult = await airtableIntegration.storeTravellerData(formData, {
             paymentId: paymentId,
-            submissionId: `TEMP-${paymentId || Date.now()}`,
+            submissionId: paymentId || `SUB-${Date.now()}`,
           });
           airtableUrl = airtableResult.airtableUrl;
         } catch (error) {
@@ -135,8 +116,8 @@ export async function POST(request: NextRequest) {
         if (submissionDetails) {
           try {
             await slackNotifier.notifySubmissionComplete({
-              submissionId: `TEMP-${paymentId || Date.now()}`,
-              arrivalCardNumber: 'Pending manual submission (TEMP)',
+              submissionId: paymentId || `SUB-${Date.now()}`,
+              arrivalCardNumber: 'Pending processing',
               passengerName: submissionDetails.passengerName || formData.fullPassportName,
               passportNumber: submissionDetails.passportNumber || formData.passportNumber,
               nationality: submissionDetails.nationality || formData.nationality,
@@ -151,8 +132,13 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Convert BigInt values to strings for JSON serialization
+    const serializedPaymentData = JSON.parse(JSON.stringify(paymentData, (key, value) =>
+      typeof value === 'bigint' ? value.toString() : value
+    ));
+
     return NextResponse.json({ 
-      payment: paymentData,
+      payment: serializedPaymentData,
       success: true 
     });
   } catch (error: any) {

@@ -2716,7 +2716,7 @@ export default function FormPage() {
               <FormInput
                 label={getTranslation('vesselName', language)}
                 required
-                placeholder="Enter Vessel Name"
+                placeholder={getTranslation('vesselNamePlaceholder', language)}
                 value={formData.vesselName}
                 onChange={(e) => updateFormData('vesselName', e.target.value)}
                 error={errors.vesselName}
