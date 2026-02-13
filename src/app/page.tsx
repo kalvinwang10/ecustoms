@@ -50,7 +50,7 @@ export default function Home() {
       <div className="bg-gray-200 text-black text-xs py-2">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <p>
-            Independent service assisting with Indonesian customs declarations. Not affiliated with Indonesian Customs and Excise Directorate General.
+            <strong>Legal Disclaimer:</strong> Independent service assisting with Indonesian customs declarations. Not affiliated with Indonesian Customs and Excise Directorate General.
           </p>
         </div>
       </div>
