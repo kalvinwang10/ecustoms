@@ -3183,6 +3183,15 @@ export default function FormPage() {
 
   return (
     <div>
+      {/* Disclaimer Bar */}
+      <div className="bg-gray-200 text-black text-xs py-2">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <p>
+            <strong>Legal Disclaimer:</strong> Independent service assisting with Indonesian customs declarations. Not affiliated with Indonesian Customs and Excise Directorate General.
+          </p>
+        </div>
+      </div>
+
       <Header language={language} onLanguageChange={handleLanguageChange} />
       
       {/* QR Notification Banner */}
